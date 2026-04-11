@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Admin Dashboard</h1>
+
+    <!-- Quick Links -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <a href="{{ url_for('admin_users') }}" class="btn btn-primary btn-lg w-100">Manage Users</a>
+        </div>
+        <div class="col-md-4">
+            <a href="{{ url_for('admin_packages_table') }}" class="btn btn-success btn-lg w-100">Manage Packages</a>
+        </div>
+        <div class="col-md-4">
+            <a href="{{ url_for('admin_announcements') }}" class="btn btn-warning btn-lg w-100">Manage Announcements</a>
+        </div>
+    </div>
+
+    <!-- Recent Announcements -->
+    <h3>Recent Announcements</h3>
+    {% if announcements %}
+        {% for a in announcements %}
+        <div class="card mb-2">
+            <div class="card-body">
+                <h5>{{ a.title }}</h5>
+                <p>{{ a.message }}</p>
+                <small class="text-muted">{{ a.created_at.strftime('%Y-%m-%d') }}</small>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>No announcements yet.</p>
+    {% endif %}
+
+    <!-- Recent Packages with Search -->
+    <h3 class="mt-4">Recent Packages</h3>
+
+    <div class="mb-3">
+        <input type="text" id="package-search" class="form-control" placeholder="Search by Tracking ID...">
+    </div>
+
+    <div id="packages-table">
+        {% include 'partials/admin_packages_table.html' %}
+    </div>
+</div>
+
+<!-- Socket.IO for real-time updates -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+<script>
+    const socket = io('/admin');  // Namespace for admin updates
+
+    socket.on('update_packages', (data) => {
+        console.log('Update received:', data.message);
+
+        fetch("{{ url_for('admin_packages_table') }}")
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('packages-table').innerHTML = html;
+            })
+            .catch(err => console.error('Error updating packages:', err));
+    });
+
+    // Search functionality
+    const searchInput = document.getElementById('package-search');
+    searchInput.addEventListener('input', function() {
+        const query = this.value;
+
+        fetch(`{{ url_for('admin_packages_table') }}?search=${encodeURIComponent(query)}`)
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('packages-table').innerHTML = html;
+            })
+            .catch(err => console.error('Error fetching search results:', err));
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,356 @@
+/* =========================
+   GLOBAL SETTINGS
+========================= */
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa; /* Light professional background */
+    color: #333;
+}
+
+/* =========================
+   NAVBAR FIXES
+========================= */
+.navbar {
+    position: fixed; /* Fixed at top */
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px; /* Bootstrap default height */
+    z-index: 1030; /* Above everything */
+}
+
+/* Push content down so it's not hidden behind navbar */
+.page-content {
+    padding-top: 56px; /* Same as navbar height */
+}
+
+/* =========================
+   HERO SECTION (HOMEPAGE)
+========================= */
+.hero-page {
+    background: url("/static/images/lb9.jpg") no-repeat center center;
+    background-size: cover;
+    width: 100%;
+    padding-top: 80px; /* leave space for fixed navbar */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #fff;
+}
+
+.announcement-section {
+    max-width: 700px;
+    margin: 30px auto 60px auto;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 25px 30px;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2);
+    color: #111;
+    text-align: left;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.announcement-section h3 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 700;
+    font-size: 1.8rem;
+}
+
+.announcement-card {
+    background: #f9f9f9;
+    padding: 15px 20px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.announcement-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.no-announcements {
+    color: #777;
+    font-style: italic;
+    text-align: center;
+}
+
+.status-check {
+    font-size: 1.3rem;
+    vertical-align: middle;
+}
+
+.hero-content.top-hero p {
+    font-size: 1.25rem;
+    margin-top: 10px;
+    font-weight: 600;
+}
+
+.slogan-text {
+  color: #7b39e6;
+  font-weight: bold;
+}
+
+.slogan-text .status-check {
+  color: #cd0b7c;
+}
+
+/* Different spacing for top hero card */
+.hero-content.top-hero {
+    margin-top: 20px;
+    max-width: 650px;
+    width: 90%;
+    background: rgba(255,255,255,0.95);
+    color: #111;
+    border-radius: 20px;
+    padding: 30px 40px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+}
+
+.hero-page::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.25); /* lighter */
+    z-index: 1;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+
+    max-width: 600px;
+    width: 90%;
+
+    background: rgba(0, 0, 0, 0.6); /* slightly stronger */
+    backdrop-filter: blur(10px);
+
+    border-radius: 16px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+
+    animation: fadeInUp 0.8s ease;
+}
+
+/* Hero main heading */
+.hero-content h1 {
+    font-size: 3.2rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    animation: fadeInUp 0.8s ease;
+}
+
+/* Hero paragraph / status */
+.hero-content p {
+    color: #eb09dc;
+    text-shadow: 1.5px 1.5px 6px rgba(0, 0, 0, 0.3);
+    font-size: 1.75rem;
+    line-height: 1.4;
+    margin-bottom: 25px;
+    animation: fadeInUp 1s ease;
+}
+
+.hero-content .btn {
+    font-size: 1.2rem;
+    padding: 12px 24px;
+    border-radius: 8px;
+    transition: all 0.25s ease;
+    animation: fadeInUp 1.2s ease;
+}
+
+.hero-content .btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Announcement and Pickup Cards */
+.announcement-card, .pickup-card {
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    margin-bottom: 15px;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Hover effect */
+.announcement-card:hover,
+.pickup-card:hover {
+    transform: translateY(-4px);
+    transition: 0.2s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .hero-content h1 {
+        font-size: 2rem;
+    }
+    .hero-content p {
+        font-size: 1rem;
+    }
+    .hero-content .btn {
+        font-size: 1rem;
+        padding: 0.6rem 1.2rem;
+    }
+}
+
+/* =========================
+   CARD STYLING (GLOBAL)
+========================= */
+.card {
+    border-radius: 12px;
+    border: none;
+}
+
+/* =========================
+   LOGIN / REGISTER FORM
+========================= */
+body.auth-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding-top: 0;
+}
+
+/* Centered form card */
+.card.centered-card {
+    background-color: #ffffff;
+    padding: 50px 40px;
+    border-radius: 15px;
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Inputs */
+.card.centered-card input,
+.card.centered-card select,
+.card.centered-card textarea {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 15px;
+    font-size: 1rem;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+/* Button */
+.card.centered-card button {
+    width: 100%;
+    padding: 14px;
+    font-size: 1rem;
+    border-radius: 6px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+}
+
+/* Button hover */
+.card.centered-card button:hover {
+    background-color: #218838;
+}
+
+/* Form heading */
+.card.centered-card h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+/* =========================
+   FLASH MESSAGES
+========================= */
+.alert {
+    border-radius: 8px;
+}
+
+/* =========================
+   ANIMATIONS
+========================= */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================
+   UTILITIES
+========================= */
+.text-white {
+    color: #fff !important;
+}
+
+.shadow-lg {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* =========================
+   SCHEDULE PICKUP FORM ENHANCEMENTS
+========================= */
+.schedule-card {
+    width: 100%;
+    max-width: 1500px;
+    border-radius: 20px;
+    padding: 40px 35px;
+    background-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+
+/* Form headings */
+.schedule-card h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+/* Input fields */
+.schedule-card .form-control,
+.schedule-card .form-select,
+.schedule-card textarea {
+    font-size: 1.25rem;
+    padding: 16px;
+    border-radius: 8px;
+}
+
+/* Submit button */
+.schedule-card .btn {
+    font-size: 1.5rem;
+    padding: 16px 0;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .schedule-card {
+        max-width: 95%;
+        padding: 30px 25px;
+    }
+    .schedule-card h2 {
+        font-size: 2rem;
+    }
+    .schedule-card .form-control,
+    .schedule-card .form-select,
+    .schedule-card textarea {
+        font-size: 1.1rem;
+        padding: 14px;
+    }
+    .schedule-card .btn {
+        font-size: 1.25rem;
+        padding: 14px 0;
+    }
+}

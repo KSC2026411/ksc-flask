@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+{% block body_class %}hero-page{% endblock %}
+
+{% block content %}
+<div class="hero-content top-hero">
+    <h1>Welcome to KSC LOGISTICS</h1>
+    <p>WE SHIP THEM CHEAP <span class="status-check">✅</span></p>
+</div>
+
+<div class="announcement-section">
+    <h3>Announcements</h3>
+    {% if announcements %}
+        {% for announcement in announcements %}
+            <div class="announcement-card">
+                <strong>{{ announcement.title }}</strong><br>
+                <small class="text-muted">{{ announcement.created_at.strftime('%b %d, %Y') }}</small>
+                <p>{{ announcement.message }}</p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="announcement-card no-announcements">
+            No announcements available.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Packages{% endblock %}
+
+{% block content %}
+<h2>All Packages</h2>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Tracking #</th>
+            <th>Customer</th>
+            <th>Description</th>
+            <th>Pickup Address</th>
+            <th>Pickup Date</th>
+            <th>Status</th>
+            <th>Update Status</th>
+            <th>Suggest Reschedule</th>
+            <th>Reschedule Action</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for p in packages %}
+        <tr>
+            <td>{{ p.tracking_number }}</td>
+            <td>{{ p.user.name if p.user else "N/A" }}</td>
+            <td>{{ p.description or "N/A" }}</td>
+            <td>
+                {{ p.street or "" }}
+                {{ p.city or "" }},
+                {{ p.state or "" }}
+                {{ p.zip_code or "" }}
+            </td>
+            <td>{{ p.pickup_date.strftime('%Y-%m-%d') if p.pickup_date else "N/A" }}</td>
+
+            <td>
+                <span class="badge bg-secondary">
+                    {{ p.status if p.status else "Pending" }}
+                </span>
+            </td>
+
+            <!-- STATUS UPDATE -->
+            <td>
+                <form method="POST" action="{{ url_for('admin_update_package', id=p.id) }}">
+                    <select name="status" class="form-select form-select-sm mb-1">
+                        <option value="Pending" {% if p.status == 'Pending' %}selected{% endif %}>Pending</option>
+                        <option value="In Warehouse" {% if p.status == 'In Warehouse' %}selected{% endif %}>In Warehouse</option>
+                        <option value="Loaded" {% if p.status == 'Loaded' %}selected{% endif %}>Loaded</option>
+                        <option value="Ready for Pickup" {% if p.status == 'Ready for Pickup' %}selected{% endif %}>Ready for Pickup</option>
+                        <option value="In Transit" {% if p.status == 'In Transit' %}selected{% endif %}>In Transit</option>
+                        <option value="Scheduled" {% if p.status == 'Scheduled' %}selected{% endif %}>Scheduled</option>
+                        <option value="Shipped" {% if p.status == 'Shipped' %}selected{% endif %}>Shipped</option>
+                        <option value="Delivered" {% if p.status == 'Delivered' %}selected{% endif %}>Delivered</option>
+                        <option value="Picked Up" {% if p.status == 'Picked Up' %}selected{% endif %}>Picked Up</option>
+                        <option value="Cancelled" {% if p.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                        <option value="Pending Reschedule" {% if p.status == 'Pending Reschedule' %}selected{% endif %}>Pending Reschedule</option>
+                        <option value="Admin Suggested Reschedule" {% if p.status == 'Admin Suggested Reschedule' %}selected{% endif %}>Admin Suggested Reschedule</option>
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-primary w-100">Update</button>
+                </form>
+            </td>
+
+            <!-- ADMIN SUGGEST RESCHEDULE -->
+            <td>
+                <form action="{{ url_for('admin_suggest_reschedule', id=p.id) }}" method="POST">
+                    <input type="date" name="new_date" class="form-control form-control-sm mb-1" required>
+                    <button type="submit" class="btn btn-warning btn-sm w-100">
+                        Suggest
+                    </button>
+                </form>
+            </td>
+
+            <!-- RESCHEDULE ACTION -->
+            <td>
+                {% if p.status == "Pending Reschedule" and p.admin_suggested_date %}
+                    
+                    <div class="mb-1 small text-muted">
+                        Suggested: {{ p.admin_suggested_date.strftime('%Y-%m-%d') }}
+                    </div>
+
+                    <form action="{{ url_for('accept_admin_reschedule', id=p.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-success btn-sm">Accept</button>
+                    </form>
+
+                    <form action="{{ url_for('reject_admin_reschedule', id=p.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm">Deny</button>
+                    </form>
+
+                {% else %}
+                    <span class="text-muted">N/A</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="9" class="text-center">No packages found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
