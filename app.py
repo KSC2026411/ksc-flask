@@ -96,7 +96,12 @@ def serve_static_file(filename):
 # -------------------
 @app.route("/")
 def home():
-    announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
+    try:
+        announcements = Announcement.query.order_by(
+            Announcement.created_at.desc()
+        ).all()
+    except Exception:
+        announcements = []
     return render_template("home.html", announcements=announcements)
 
 @app.route("/register", methods=["GET", "POST"])
@@ -517,6 +522,7 @@ def admin_connect():
 # -------------------
 if __name__ == '__main__':
     with app.app_context():
+        db.create_all()
 
         # -------------------
         # TEMP ADMIN (DEV ONLY)
