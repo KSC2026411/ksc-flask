@@ -18,8 +18,18 @@ from models import db, User, Package, Announcement
 # -------------------
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", "dev-secret-key")
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db_url = os.environ.get("DATABASE_URL", "").strip()
+
+# Local fallback
+if not db_url:
+    db_url = "sqlite:///local.db"
+
+# Fix Render PostgreSQL format
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["DEV_MODE"] = os.environ.get("DEV_MODE", "false").lower() == "true"
 
 db.init_app(app)
@@ -28,8 +38,11 @@ login_manager.init_app(app)
 login_manager.login_view = "login"
 migrate = Migrate(app, db)
 
-socketio = SocketIO(app, async_mode='eventlet')
-stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "sk_test_123")
+socketio = SocketIO(app, async_mode="threading")
+stripe_key = os.getenv("STRIPE_SECRET_KEY")
+
+if stripe_key:
+    stripe.api_key = stripe_key
 
 # -------------------
 # HELPERS
