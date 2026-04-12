@@ -33,6 +33,10 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["DEV_MODE"] = os.environ.get("DEV_MODE", "false").lower() == "true"
 
 db.init_app(app)
+
+with app.app_context():
+    db.create_all()
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
@@ -513,7 +517,6 @@ def admin_connect():
 # -------------------
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()
 
         # -------------------
         # TEMP ADMIN (DEV ONLY)
