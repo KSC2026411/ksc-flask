@@ -18,25 +18,17 @@ from models import db, User, Package, Announcement
 # -------------------
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", "dev-secret-key")
-db_url = os.environ.get("DATABASE_URL", "").strip()
+uri = os.environ.get("DATABASE_URL")
 
-# Local fallback
-if not db_url:
-    db_url = "sqlite:///local.db"
+if uri and uri.startswith("postgres://"):
+    uri = uri.replace("postgres://", "postgresql://", 1)
 
-# Fix Render PostgreSQL format
-if db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql://", 1)
-
-app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+app.config['SQLALCHEMY_DATABASE_URI'] = uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["DEV_MODE"] = os.environ.get("DEV_MODE", "false").lower() == "true"
 
-db.init_app(app)
-
-with app.app_context():
-    db.create_all()
-
+db = SQLAlchemy(app)
+    
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
@@ -544,9 +536,4 @@ if __name__ == '__main__':
                 db.session.commit()
                 print(f"Temporary admin created: {admin_email} / {admin_password}")
 
-    socketio.run(
-        app,
-        host='0.0.0.0',
-        port=int(os.environ.get("PORT", 5000)),
-        debug=False
-    )
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
