@@ -1,0 +1,51 @@
+{% extends "base_public.html" %}
+
+{% block title %}Home{% endblock %}
+{% block body_class %}hero-page{% endblock %}
+
+{% block content %}
+
+<div class="main-container w-100">
+
+    <div class="welcome-card text-center mx-auto">
+
+        <h1 class="fw-bold">Welcome to KSC LOGISTICS</h1>
+        <p class="tagline">WE SHIP THEM CHEAP ✅</p>
+
+        <!-- BUTTONS -->
+        <div class="mt-4 d-flex justify-content-center gap-3 flex-wrap">
+
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('main.my_packages') }}" class="btn btn-primary btn-lg px-4">
+                    Go to Dashboard
+                </a>
+            {% else %}
+                <a href="{{ url_for('main.login') }}" class="btn btn-success btn-lg px-4">
+                    Login
+                </a>
+
+                <a href="{{ url_for('main.register') }}" class="btn btn-outline-light btn-lg px-4">
+                    Register
+                </a>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="footer-content">
+        <span><strong>KSC LOGISTICS</strong></span>
+        <span>WE SHIP THEM CHEAP ✅</span>
+        <span>📞 +1 (256) 328-5676</span>
+        <span>✉️ supportksc@gmail.com</span>
+        <span>📍 Gadsden, </ALABAMA-USA></span>
+        <span>📞 +1 (228) 90 07 05 73</span>
+        <span>📍 Djidjole, </LOME-TOGO></span>
+    </div>
+</footer>
+
+{% endblock %}

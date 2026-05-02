@@ -1,0 +1,72 @@
+{% extends "base_customer.html" %}
+
+{% block customer_content %}
+
+<div class="d-flex flex-column flex-md-row">
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-grow-1 p-4">
+        <h2>Welcome {{ current_user.name }}</h2>
+
+        <!-- Announcements -->
+        <div class="mt-4">
+            <h4>Announcements</h4>
+            <ul id="announcements-list" class="list-group">
+                {% if announcements %}
+                    {% for ann in announcements %}
+                        <li class="list-group-item">
+                            <div class="mb-1">
+                                <strong>{{ ann.title }}</strong>
+                                <span class="text-muted small">
+                                    {% if ann.expires_at %}
+                                        - Expires: {{ ann.expires_at.strftime('%Y-%m-%d') }}
+                                    {% else %}
+                                        - No expiration
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div>
+                                {{ ann.message|safe }}
+                            </div>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <li class="list-group-item text-muted">No current announcements.</li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <!-- Cargo Status Table -->
+        <div class="mt-4">
+            <h4>Cargo Status</h4>
+            <table class="table table-striped" id="cargo-table">
+                <thead>
+                    <tr>
+                        <th>Cargo ID</th>
+                        <th>Status</th>
+                        <th>Last Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cargo in cargos %}
+                        <tr>
+                            <td>{{ cargo.id }}</td>
+                            <td>{{ cargo.status }}</td>
+                            <td>{{ cargo.updated_at.strftime('%Y-%m-%d %H:%M') if cargo.updated_at else '' }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Socket.IO client library -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<!-- External JS for cargo updates and live announcements -->
+<script src="{{ url_for('static', filename='js/cargo_updates.js') }}"></script>
+
+{% endblock %}

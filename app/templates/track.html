@@ -1,0 +1,30 @@
+{% extends "base_customer.html" %}
+
+{% block customer_content %}
+
+<div class="d-flex">
+
+    
+    <!-- MAIN CONTENT -->
+    <div class="flex-grow-1 p-4">
+        <h2>Track a Package</h2>
+
+        <form method="POST">
+            <input class="form-control mb-2" name="tracking_number" placeholder="Enter Tracking Number">
+            <button class="btn btn-info">Track</button>
+        </form>
+
+        {% if package %}
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5>Status: {{ package.status }}</h5>
+                    <p><strong>Description:</strong> {{ package.description }}</p>
+                    <p><strong>Pickup Address:</strong> {{ package.street }}, {{ package.city }}, {{ package.state }}, {{ package.zip_code }}</p>
+                    <p><strong>Date:</strong> {{ package.pickup_date }}</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

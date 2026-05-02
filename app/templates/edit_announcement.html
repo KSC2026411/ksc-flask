@@ -1,0 +1,32 @@
+{% extends "base_admin.html" %}
+
+{% block content %}
+<div class="container announcements-admin">
+
+    <h2>Edit Announcement</h2>
+
+    <form method="POST">
+
+        <input 
+            class="form-control mb-3" 
+            name="title" 
+            value="{{ announcement.title }}" 
+            required
+        >
+
+        <textarea 
+            class="form-control mb-3" 
+            name="message" 
+            rows="8"
+            required
+        >{{ announcement.message }}</textarea>
+
+        <button class="btn btn-primary">Update</button>
+        <a href="{{ url_for('main.admin_announcements') }}" class="btn btn-secondary">
+            Cancel
+        </a>
+
+    </form>
+
+</div>
+{% endblock %}

@@ -1,0 +1,457 @@
+/* =========================
+   GLOBAL SETTINGS
+========================= */
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+body {
+    padding-top: 56px; /* Adjust this if navbar height changes */
+}
+
+/* =========================
+   NAVBAR FIXES
+========================= */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px; /* Set navbar height */
+    z-index: 1030;
+}
+
+/* Push content down so it's not hidden behind navbar */
+.page-content, .main-content {
+    padding-top: 56px; /* Ensure content isn't hidden by navbar */
+}
+
+/* =========================
+   HERO SECTION (HOMEPAGE)
+========================= */
+.hero-page {
+    position: relative;
+    width: 100%;
+    min-height: 90vh;
+    padding-top: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #fff;
+    overflow: hidden;
+    background: url("/static/images/lb9.jpg") center center / cover no-repeat fixed;
+}
+
+/* Dark overlay for readability */
+.hero-page::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 1;
+    pointer-events: none; /* ✅ FIX: allow clicks through overlay */
+}
+
+/* =========================
+   HERO CONTENT
+========================= */
+.welcome-card {
+    position: relative;
+    z-index: 2; /* ✅ FIX: ensure buttons are above overlay */
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 650px;
+    width: 90%;
+    background: rgba(255, 255, 255, 0.88);
+    color: #111;
+    border-radius: 16px;
+    padding: 40px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    animation: fadeInUp 0.8s ease;
+}
+
+.hero-content h1 {
+    font-size: 3rem;
+    font-weight: 700;
+}
+
+.hero-content p {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #7b39e6;
+}
+
+.hero-content .btn {
+    margin: 10px 8px;
+    font-size: 1.2rem;
+    padding: 12px 25px;
+    border-radius: 8px;
+    transition: all 0.25s ease;
+}
+
+.hero-content .btn:hover {
+    transform: translateY(-3px);
+}
+
+/* =========================
+   ANNOUNCEMENTS SECTION
+========================= */
+.announcement-section {
+    position: relative;
+    z-index: 2;
+    max-width: 700px;
+    width: 95%;
+    margin: 30px auto 60px auto;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 25px 30px;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2);
+    color: #111;
+    text-align: left;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.announcement-section h3 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 700;
+    font-size: 1.8rem;
+}
+
+.announcement-card {
+    background: #f9f9f9;
+    padding: 15px 20px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.announcement-card:hover {
+    transform: translateY(-4px);
+}
+
+.no-announcements {
+    color: #777;
+    font-style: italic;
+    text-align: center;
+}
+
+/* =========================
+   STATUS ICON
+========================= */
+.status-check {
+    font-size: 1.3rem;
+    vertical-align: middle;
+}
+
+/* =========================
+   SLOGAN
+========================= */
+.slogan-text {
+    color: #7b39e6;
+    font-weight: bold;
+}
+
+.slogan-text .status-check {
+    color: #cd0b7c;
+}
+
+/* =========================
+   CARD STYLING
+========================= */
+.card {
+    border-radius: 12px;
+    border: none;
+}
+
+.card.centered-card {
+    width: 100%;
+    max-width: 600px;
+    padding: 70px 50px;
+    font-size: 1.1rem;
+}
+
+/* =========================
+   LOGIN / REGISTER FORM
+========================= */
+body.auth-page {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding-top: 80px;
+    background: #f8f9fa;
+}
+
+body.auth-page .container,
+body.auth-page .mt-3,
+body.auth-page .page-content {
+    display: none !important;
+}
+
+.card.centered-card {
+    background-color: #ffffff;
+    padding: 50px 40px;
+    border-radius: 15px;
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.card.centered-card input,
+.card.centered-card select,
+.card.centered-card textarea {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 15px;
+    font-size: 1rem;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+.card.centered-card button {
+    width: 100%;
+    padding: 14px;
+    font-size: 1rem;
+    border-radius: 6px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+}
+
+.card.centered-card button:hover {
+    background-color: #218838;
+}
+
+.card.centered-card h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+/* =========================
+   FLASH MESSAGES
+========================= */
+.alert {
+    border-radius: 8px;
+}
+
+/* =========================
+   ANIMATIONS
+========================= */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================
+   UTILITIES
+========================= */
+.text-white {
+    color: #fff !important;
+}
+
+.shadow-lg {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* =========================
+   SCHEDULE PICKUP FORM
+========================= */
+.schedule-card {
+    width: 100%;
+    max-width: 1500px;
+    border-radius: 20px;
+    padding: 40px 35px;
+    background-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+
+.schedule-card h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.schedule-card .form-control,
+.schedule-card .form-select,
+.schedule-card textarea {
+    font-size: 1.25rem;
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.schedule-card .btn {
+    font-size: 1.5rem;
+    padding: 16px 0;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 768px) {
+    body {
+        padding-top: 56px;
+    }
+
+    .page-content {
+        padding-top: 56px;
+    }
+
+    .hero-content h1 {
+        font-size: 2rem;
+    }
+
+    .hero-content p {
+        font-size: 1.1rem;
+    }
+
+    .hero-content {
+        padding: 25px;
+    }
+
+    .announcement-section {
+        padding: 20px;
+    }
+
+    .announcement-card {
+        padding: 15px;
+    }
+}
+
+/* =========================
+   ADMIN ANNOUNCEMENTS
+========================= */
+.announcements-admin {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+.announcements-admin h2 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 25px;
+}
+
+.announcements-admin form input,
+.announcements-admin form textarea {
+    font-size: 1.2rem;
+    padding: 14px;
+    border-radius: 8px;
+}
+
+.announcements-admin textarea {
+    min-height: 250px;
+    resize: vertical;
+}
+
+.announcements-admin .btn {
+    font-size: 1.2rem;
+    padding: 10px 20px;
+    border-radius: 8px;
+}
+
+.announcements-admin .card {
+    border-radius: 14px;
+    padding: 10px;
+    transition: all 0.2s ease;
+}
+
+.announcements-admin .card:hover {
+    transform: translateY(-3px);
+}
+
+.announcements-admin .card h4 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.announcements-admin .card p {
+    font-size: 1.15rem;
+    line-height: 1.6;
+}
+
+.announcements-admin small {
+    font-size: 0.95rem;
+    color: #666;
+}
+
+.announcements-admin textarea:focus {
+    outline: none;
+    border: 1px solid #7b39e6;
+    box-shadow: 0 0 0 2px rgba(123,57,230,0.2);
+}
+
+/* =========================
+   STICKY FOOTER SYSTEM
+========================= */
+html, body {
+    height: 100%;
+}
+
+.page-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.flex-grow-1 {
+    flex: 1;
+}
+
+footer {
+    margin-top: auto;
+}
+
+/* Horizontal footer layout */
+.footer {
+    background: #f1f3f5;
+    color: #333;
+    border-top: 1px solid #ddd;
+    padding: 12px 20px;
+    margin-top: auto;
+}
+
+.footer-content {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.95rem;
+    padding: 0 20px;
+}
+
+/* =========================
+   FOOTER FIX
+========================= */
+.footer {
+    width: 100%;
+    background: #111;
+    color: #fff;
+    padding: 15px 0;
+    margin-top: auto;
+    position: relative;
+    left: 0;
+}

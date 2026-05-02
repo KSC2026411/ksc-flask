@@ -1,0 +1,36 @@
+{% extends "base_public.html" %}
+
+{% block content %}
+{% if current_user.is_authenticated and current_user.role == "admin" %}
+
+<div class="d-flex">
+
+    <!-- SIDEBAR -->
+    <div class="bg-dark text-white p-3" style="width: 420px; min-height: 100vh;">
+        <h4 class="mb-4">Admin Panel</h4>
+
+        <a href="{{ url_for('main.admin_dashboard') }}" class="d-block text-white mb-2 fs-4">Dashboard</a>
+        <a href="{{ url_for('main.admin_users') }}" class="d-block text-white mb-2 fs-4">Users</a>
+        <a href="{{ url_for('main.admin_announcements') }}" class="d-block text-white mb-2 fs-4">Announcements</a>
+        <a href="{{ url_for('main.admin_packages') }}" class="d-block text-white mb-2 fs-4">Packages</a>
+
+        <hr>
+
+        <a href="{{ url_for('main.logout') }}" class="btn btn-danger btn-sm w-100">Logout</a>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-grow-1 p-4">
+        {% block admin_content %}{% endblock %}
+    </div>
+
+</div>
+
+{% else %}
+<div class="container mt-5">
+    <div class="alert alert-danger">
+        Unauthorized access.
+    </div>
+</div>
+{% endif %}
+{% endblock %}

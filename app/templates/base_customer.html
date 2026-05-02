@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}KSC LOGISTICS - Customer{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+
+<div class="d-flex min-vh-100">
+
+    <!-- SIDEBAR -->
+<div class="bg-dark text-white p-3" style="width: 250px; min-height: 100vh;">
+    <h4 class="mb-4">Customer Panel</h4>
+    <a class="d-block mb-2 fs-6 p-2 {% if request.endpoint == 'main.dashboard' %}bg-secondary rounded{% endif %}" 
+       href="{{ url_for('main.dashboard') }}">Dashboard</a>
+
+    <a class="d-block mb-2 fs-6 p-2 {% if request.endpoint == 'main.schedule' %}bg-secondary rounded{% endif %}" 
+       href="{{ url_for('main.schedule') }}">Schedule Pickup</a>
+
+    <a class="d-block mb-2 fs-6 p-2 {% if request.endpoint == 'main.my_packages' %}bg-secondary rounded{% endif %}" 
+       href="{{ url_for('main.my_packages') }}">My Packages</a>
+
+    <a class="d-block mb-2 fs-6 p-2 {% if request.endpoint == 'main.track' %}bg-secondary rounded{% endif %}" 
+       href="{{ url_for('main.track') }}">Track Package</a>
+
+    <hr>
+    <a class="btn btn-danger w-100" href="{{ url_for('main.logout') }}">Logout</a>
+</div>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-grow-1 p-4">
+        {% block customer_content %}
+        <!-- Customer-specific page content goes here -->
+        {% endblock %}
+    </div>
+
+</div>
+
+</body>
+</html>

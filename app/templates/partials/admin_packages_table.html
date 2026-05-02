@@ -1,0 +1,85 @@
+<div class="container-fluid mt-5">
+
+    <h2 class="mb-4 fs-2">Packages</h2>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered align-middle fs-4" style="min-width:1400px;">
+            <thead class="table-dark fs-5">
+                <tr>
+                    <th>Tracking</th>
+                    <th>Description</th>
+                    <th>User</th>
+                    <th>Phone</th>
+                    <th>Pickup Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for p in packages %}
+                <tr class="py-3">
+
+                    <td>{{ p.tracking_number }}</td>
+
+                    <td>{{ p.description }}</td>
+
+                    <td>{{ p.user.name if p.user else "N/A" }}</td>
+
+                    <td>{{ p.user.phone if p.user else "N/A" }}</td>
+
+                    <td>
+                        {{ p.pickup_date.strftime('%Y-%m-%d') if p.pickup_date else "N/A" }}
+                    </td>
+
+                    <td>
+                        <span class="badge
+                            {% if p.status == 'Delivered' %}bg-success
+                            {% elif p.status == 'In Transit' %}bg-info
+                            {% elif p.status == 'Pending' %}bg-warning text-dark
+                            {% elif p.status == 'Cancelled' %}bg-danger
+                            {% else %}bg-secondary
+                            {% endif %} fs-6">
+                            {{ p.status or "Pending" }}
+                        </span>
+                    </td>
+
+                    <td>
+                        <!-- FIXED: POST form + correct parameter -->
+                        <form method="POST"
+                              action="{{ url_for('main.admin_update_package', package_id=p.id) }}">
+
+                            <!-- Optional: include status selector if your route expects it -->
+                            <select name="status" class="form-select mb-2">
+                                <option value="Pending">Pending</option>
+                                <option value="In Transit">In Transit</option>
+                                <option value="Delivered">Delivered</option>
+                                <option value="Cancelled">Cancelled</option>
+                                <option value="Picked up">Picked up</option>
+                                <option value="In Warehouse">In Warehouse</option>
+                                <option value="Rescheduled">Rescheduled</option>
+                            </select>
+
+                            <button type="submit"
+                                    class="btn btn-lg btn-outline-primary w-100 py-2">
+                                Update
+                            </button>
+
+                        </form>
+                    </td>
+
+                </tr>
+
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center fs-4">
+                        No packages found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+
+</div>

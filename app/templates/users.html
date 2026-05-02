@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Users</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        
+        table {
+            width: 100%; /* Make table take full width */
+            border-collapse: collapse; /* Remove spaces between cells */
+            font-size: 18px; /* Increase font size for better readability */
+        }
+
+        th, td {
+            padding: 15px; /* Increase padding inside each cell */
+            text-align: left; /* Align text to the left */
+            border: 1px solid #ddd; /* Add a light border for better separation */
+        }
+
+        th {
+            background-color: #f2f2f2; /* Light background color for headers */
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9; /* Alternate row colors for readability */
+        }
+
+        tr:hover {
+            background-color: #f1f1f1; /* Highlight rows on hover */
+        }
+
+        button {
+            font-size: 16px; /* Make button text a bit larger */
+            padding: 8px 12px; /* Add some padding inside the button */
+            cursor: pointer; /* Change cursor on hover */
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #ddd; /* Change button color on hover */
+        }
+
+        .btn-danger {
+            background-color: #e74c3c; /* Red color for demote button */
+            color: white;
+        }
+
+        .btn-success {
+            background-color: #2ecc71; /* Green color for promote button */
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>All Users</h1>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Role</th>
+            <th>Actions</th>
+        </tr>
+
+        {% for user in users %}
+        <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.name }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.phone }}</td>
+            <td>{{ user.role }}</td>
+            <td>
+                {% if user.role == 'admin' %}
+                    <!-- Demote Button for Admin Users -->
+                    <form action="{{ url_for('main.demote_user', user_id=user.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-danger">Demote to Customer</button>
+                    </form>
+                {% else %}
+                    <!-- Promote Button for Customer Users -->
+                    <form action="{{ url_for('main.promote_user', user_id=user.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-success">Promote to Admin</button>
+                    </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <br>
+    <a href="/">Back to Home</a>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{% extends "base_customer.html" %}
+
+{% block content %}
+
+<h2>Announcements</h2>
+
+{% for a in announcements %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5>{{ a.title }}</h5>
+            <div>{{ a.message|safe }}</div>
+        </div>
+    </div>
+{% endfor %}
+
+{% endblock %}

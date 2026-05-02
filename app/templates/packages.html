@@ -1,0 +1,127 @@
+{% extends "base_customer.html" %}
+
+{% block customer_content %}
+
+<h2 class="mb-4">My Packages</h2>
+
+{% if packages %}
+<div class="table-responsive">
+    <table class="table table-striped table-bordered align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Tracking #</th>
+                <th>Description</th>
+                <th>Pickup Date</th>
+                <th style="min-width:250px;">Status / Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for pkg in packages %}
+            <tr>
+                <td>{{ pkg.tracking_number }}</td>
+
+                <td>{{ pkg.description }}</td>
+
+                <td>
+                    {{ pkg.pickup_date.strftime('%Y-%m-%d') if pkg.pickup_date else "N/A" }}
+                </td>
+
+                <td>
+
+                    <!-- STATUS BADGE -->
+                    <div class="mb-2">
+                        <span class="badge
+                            {% if pkg.status == 'Delivered' %}bg-success
+                            {% elif pkg.status == 'Scheduled' %}bg-primary
+                            {% elif pkg.status == 'In Transit' %}bg-info
+                            {% elif pkg.status == 'Pending' %}bg-warning text-dark
+                            {% elif pkg.status == 'Cancelled' %}bg-danger
+                            {% else %}bg-secondary
+                            {% endif %}">
+                            {{ pkg.status or "Pending" }}
+                        </span>
+                    </div>
+
+                    <!-- CANCEL -->
+                    {% if pkg.status not in ['Delivered', 'Picked Up', 'Cancelled'] %}
+                    <form method="POST"
+                          action="{{ url_for('main.cancel_package', package_id=pkg.id) }}"
+                        <button class="btn btn-danger btn-sm w-100 mb-1">
+                            Cancel
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- RESCHEDULE REQUEST -->
+                    {% if pkg.status in ['Scheduled', 'Pending'] %}
+                    <form method="POST"
+                          action="{{ url_for('main.reschedule_package', package_id=pkg.id) }}">
+                        <input type="date"
+                               name="new_date"
+                               required
+                               class="form-control form-control-sm mb-1">
+                        <button class="btn btn-warning btn-sm w-100">
+                            Request Reschedule
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- CONFIRM PICKUP -->
+                    {% if pkg.status == 'Ready for Pickup' %}
+                    <form method="POST"
+                          action="{{ url_for('main.customer_confirm_pickup', package_id=pkg.id) }}">
+                        <button class="btn btn-success btn-sm w-100 mb-1">
+                            Mark Picked Up
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- ADMIN SUGGESTED RESCHEDULE -->
+                    {% if pkg.status == "Admin Suggested Reschedule" %}
+
+                        <div class="mt-2">
+
+                            <!-- Accept -->
+                            <form method="POST"
+                                  action="{{ url_for('main.accept_admin_reschedule', package_id=pkg.id) }}">
+                                <button class="btn btn-success btn-sm w-100 mb-1">
+                                    Accept
+                                </button>
+                            </form>
+
+                            <!-- Reject -->
+                            <form method="POST"
+                                  action="{{ url_for('main.customer_reject_admin_reschedule', package_id=pkg.id) }}">
+                                <button class="btn btn-danger btn-sm w-100 mb-1">
+                                    Reject
+                                </button>
+                            </form>
+
+                            <!-- Propose New Date -->
+                            <form method="POST"
+                                  action="{{ url_for('main.propose_reschedule', package_id=pkg.id) }}">
+                                <input type="date"
+                                       name="new_date"
+                                       required
+                                       class="form-control form-control-sm mb-1">
+                                <button class="btn btn-warning btn-sm w-100">
+                                    Propose New Date
+                                </button>
+                            </form>
+
+                        </div>
+
+                    {% endif %}
+
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+    <p>No packages scheduled.</p>
+{% endif %}
+
+{% endblock %}

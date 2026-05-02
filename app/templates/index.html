@@ -4,7 +4,7 @@
 
 {% block body_class %}home-page{% endblock %}
 
-{% block content %}
+{% block layout %}
 
 <!-- HERO SECTION -->
 <section class="hero d-flex align-items-center">
@@ -19,6 +19,12 @@
                 <span class="badge bg-success p-2">
                     ✔ System Running
                 </span>
+
+                <!-- ✅ ADDED BUTTONS -->
+                <div class="mt-4">
+                    <a href="{{ url_for('main.login') }}" class="btn btn-success btn-lg me-2">Login</a>
+                    <a href="{{ url_for('main.register') }}" class="btn btn-light btn-lg">Register</a>
+                </div>
             </div>
 
             <!-- RIGHT SIDE -->

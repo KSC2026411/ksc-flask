@@ -1,10 +1,10 @@
-from flask_sqlalchemy import SQLAlchemy
+from .extensions import db
 from flask_login import UserMixin
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-
-db = SQLAlchemy()
-
+# -------------------
+# USER MODEL
+# -------------------
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -12,12 +12,10 @@ class User(db.Model, UserMixin):
     _password = db.Column("password", db.String(200), nullable=False)  # hashed password
     phone = db.Column(db.String(50))  # optional
 
-    # OLD SYSTEM (keep for compatibility)
-    is_admin = db.Column(db.Boolean, default=False)
+    # New system (recommended going forward)
+    role = db.Column(db.String(20), default="customer")  # Default role set to 'customer'
 
-    # NEW SYSTEM (recommended going forward)
-    role = db.Column(db.String(20), default="user")  # user, admin, staff
-
+    # Relationship to packages
     packages = db.relationship('Package', back_populates='user', cascade="all, delete-orphan")
 
     # -------------------
@@ -40,11 +38,16 @@ class User(db.Model, UserMixin):
     def has_role(self, role_name):
         return self.role == role_name
 
+    @property
+    def is_admin_user(self):
+        return self.role == "admin"
+
     def make_admin(self):
         self.role = "admin"
-        self.is_admin = True  # keeps old code working
 
-
+# -------------------
+# PACKAGE MODEL
+# -------------------
 class Package(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     tracking_number = db.Column(db.String(20), unique=True, nullable=False)
@@ -60,15 +63,36 @@ class Package(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # ✅ ADD IT RIGHT HERE
+    # Tracks how many times a user attempted to reschedule
     reschedule_attempts = db.Column(db.Integer, default=0)
 
+    # Relationship to user
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', back_populates='packages')
 
 
+# -------------------
+# ANNOUNCEMENT MODEL
+# -------------------
 class Announcement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(150), nullable=False)
     message = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime)
+
+
+# -------------------
+# HELPER: Serialize models (useful for APIs)
+# -------------------
+def model_to_dict(obj):
+    """Convert SQLAlchemy model to dictionary."""
+    from sqlalchemy.inspection import inspect
+    return {c.key: getattr(obj, c.key) for c in inspect(obj).mapper.column_attrs}
+
+
+# -------------------
+# FIX FOR FLASK-LOGIN
+# -------------------
+# Flask-Login uses the current SQLAlchemy session via db. Make sure to import db
+# and do NOT create multiple SQLAlchemy instances anywhere else in app.py

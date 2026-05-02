@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SocketIO Test</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <h2>SocketIO Test Page</h2>
+    <ul id="events"></ul>
+
+    <script>
+        // Connect to the Flask-SocketIO server
+        const socket = io('http://127.0.0.1:5000', {
+            transports: ['websocket']
+        });
+
+        const eventsList = document.getElementById('events');
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            const li = document.createElement('li');
+            li.textContent = 'Connected to server';
+            eventsList.appendChild(li);
+        });
+
+        socket.on('reschedule_alert', (data) => {
+            console.log('Received reschedule_alert:', data);
+            const li = document.createElement('li');
+            li.textContent = 'reschedule_alert: ' + JSON.stringify(data);
+            eventsList.appendChild(li);
+        });
+
+        socket.on('update_packages', (data) => {
+            console.log('Received update_packages:', data);
+            const li = document.createElement('li');
+            li.textContent = 'update_packages: ' + JSON.stringify(data);
+            eventsList.appendChild(li);
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+            const li = document.createElement('li');
+            li.textContent = 'Disconnected from server';
+            eventsList.appendChild(li);
+        });
+    </script>
+</body>
+</html>

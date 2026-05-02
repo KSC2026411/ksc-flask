@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base_admin.html" %}
 
 {% block title %}Admin Dashboard{% endblock %}
 
@@ -9,13 +9,13 @@
     <!-- Quick Links -->
     <div class="row mb-4">
         <div class="col-md-4">
-            <a href="{{ url_for('admin_users') }}" class="btn btn-primary btn-lg w-100">Manage Users</a>
+            <a href="{{ url_for('main.admin_users') }}" class="btn btn-primary btn-lg w-100">Manage Users</a>
         </div>
         <div class="col-md-4">
-            <a href="{{ url_for('admin_packages_table') }}" class="btn btn-success btn-lg w-100">Manage Packages</a>
+            <a href="{{ url_for('main.admin_packages_table') }}" class="btn btn-success btn-lg w-100">Manage Packages</a>
         </div>
         <div class="col-md-4">
-            <a href="{{ url_for('admin_announcements') }}" class="btn btn-warning btn-lg w-100">Manage Announcements</a>
+            <a href="{{ url_for('main.admin_announcements') }}" class="btn btn-warning btn-lg w-100">Manage Announcements</a>
         </div>
     </div>
 
@@ -55,7 +55,7 @@
     socket.on('update_packages', (data) => {
         console.log('Update received:', data.message);
 
-        fetch("{{ url_for('admin_packages_table') }}")
+        fetch("{{ url_for('main.admin_packages_table') }}")
             .then(response => response.text())
             .then(html => {
                 document.getElementById('packages-table').innerHTML = html;
@@ -68,7 +68,7 @@
     searchInput.addEventListener('input', function() {
         const query = this.value;
 
-        fetch(`{{ url_for('admin_packages_table') }}?search=${encodeURIComponent(query)}`)
+        fetch(`{{ url_for('main.admin_packages_table') }}?search=${encodeURIComponent(query)}`)
             .then(response => response.text())
             .then(html => {
                 document.getElementById('packages-table').innerHTML = html;
