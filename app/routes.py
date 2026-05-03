@@ -6,9 +6,18 @@ from datetime import datetime, timedelta
 from flask_wtf.csrf import CSRFProtect
 from .decorators import admin_required
 from .utils import generate_tracking
+from sqlalchemy import text
 
 main = Blueprint("main", __name__)
 csrf = CSRFProtect()  # Enable in create_app()
+
+@main.route("/health")
+def health():
+    try:
+        db.session.execute(text("SELECT 1"))
+        return {"status": "ok"}, 200
+    except Exception as e:
+        return {"status": "error", "details": str(e)}, 500
 
 # -------------------
 # PUBLIC ROUTES
@@ -19,7 +28,7 @@ def test():
 
 @main.route("/")
 def home():
-    now = datetime.now()
+    now = datetime.utcnow()
     try:
         expired = Announcement.query.filter(
             Announcement.expires_at.isnot(None),
@@ -140,7 +149,7 @@ def dashboard():
         flash("Admins cannot access customer pages.", "warning")
         return redirect(url_for("main.admin_dashboard"))
 
-    now = datetime.now()
+    now = datetime.utcnow()
     announcements = Announcement.query.filter(
         Announcement.expires_at.isnot(None),
         Announcement.expires_at > now
@@ -469,8 +478,8 @@ def admin_announcements():
         new_announcement = Announcement(
             title=title,
             message=message,
-            created_at=datetime.now(),
-            expires_at=datetime.now() + timedelta(days=7)
+            created_at=datetime.utcnow(),
+            expires_at=datetime.utcnow() + timedelta(days=7)
         )
         db.session.add(new_announcement)
         db.session.commit()
@@ -486,10 +495,10 @@ def admin_announcements():
         return redirect(url_for('main.admin_announcements'))
 
     announcements = Announcement.query.filter(
-        Announcement.expires_at > datetime.now()
+        Announcement.expires_at > datetime.utcnow()
     ).order_by(Announcement.created_at.desc()).all()
 
-    return render_template("admin_announcements.html", announcements=announcements, now=datetime.now())
+    return render_template("admin_announcements.html", announcements=announcements, now = datetime.utcnow())
 
 
 @main.route("/admin/announcements/edit/<int:id>", methods=["GET","POST"])

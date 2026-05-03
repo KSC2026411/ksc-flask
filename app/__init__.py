@@ -19,7 +19,7 @@ def create_app():
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret")
     app.config["DEV_MODE"] = os.getenv("DEV_MODE", "false").lower() == "true"
 
-    # ---- DATABASE CONFIG (FIXED) ----
+    # ---- DATABASE CONFIG ----
     database_url = os.getenv("DATABASE_URL")
 
     if not database_url:
@@ -33,7 +33,7 @@ def create_app():
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    # Only apply SSL settings for Postgres
+    # Only apply SSL settings for Postgres (Railway-safe)
     if database_url.startswith("postgresql://"):
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
             "connect_args": {"sslmode": "require"},
@@ -45,7 +45,9 @@ def create_app():
     # -------------------
     db.init_app(app)
     migrate.init_app(app, db)
-    socketio.init_app(app, cors_allowed_origins="*")
+
+    # ✅ Force async mode for SocketIO (prevents Railway guessing issues)
+    socketio.init_app(app, cors_allowed_origins="*", async_mode="eventlet")
 
     # -------------------
     # IMPORT MODELS
@@ -68,16 +70,6 @@ def create_app():
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
-
-    # -------------------
-    # DATABASE CONNECTION TEST
-    # -------------------
-    with app.app_context():
-        try:
-            db.session.execute(text("SELECT 1"))
-            print("✅ Database connected successfully!")
-        except Exception as e:
-            print("❌ Database connection failed:", e)
 
     # -------------------
     # REGISTER SOCKET.IO EVENTS

@@ -22,7 +22,15 @@ app = Flask(
 # CONFIG
 # -----------------------
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-key")
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+
+# ✅ FIX: DATABASE_URL compatibility (Railway/Postgres)
+database_url = os.getenv("DATABASE_URL")
+
+if database_url:
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "connect_args": {"sslmode": "require"},
@@ -41,7 +49,7 @@ socketio.init_app(app, cors_allowed_origins="*")
 # -----------------------
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = "main.login"   # IMPORTANT (blueprint fix)
+login_manager.login_view = "main.login"
 
 # -----------------------
 # MODELS IMPORT (AFTER DB)
@@ -73,8 +81,9 @@ def inject_user():
 def debug_db():
     return "App running with DB = " + str(app.config["SQLALCHEMY_DATABASE_URI"])
 
+# ❌ REMOVE THIS BLOCK FOR RAILWAY DEPLOYMENT
 # -----------------------
 # RUN SERVER
 # -----------------------
-if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=True)
+# if __name__ == "__main__":
+#     socketio.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=True)

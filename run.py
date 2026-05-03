@@ -1,10 +1,12 @@
+import eventlet
+eventlet.monkey_patch()
+
 import os
 from app import create_app
 from app.extensions import socketio
 
 print("🚀 RUN.PY ENTRY POINT EXECUTING")
 
-# Create Flask app
 app = create_app()
 
 if __name__ == "__main__":
