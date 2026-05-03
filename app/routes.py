@@ -7,6 +7,7 @@ from flask_wtf.csrf import CSRFProtect
 from .decorators import admin_required
 from .utils import generate_tracking
 from sqlalchemy import text
+from bs4 import BeautifulSoup
 
 main = Blueprint("main", __name__)
 csrf = CSRFProtect()  # Enable in create_app()
@@ -86,7 +87,7 @@ def login():
         if user and user.check_password(password):
 
             # 🚫 BLOCK DEACTIVATED USERS
-            if not user.is_active:
+            if not user.active:
                 flash("Your account has been deactivated. Please contact support.", "danger")
                 return redirect(url_for("main.login"))
 
@@ -146,6 +147,32 @@ def demote_user(user_id):
     else:
         flash(f"{user.name} is already a customer.", "info")
     return redirect(url_for("main.admin_users"))
+
+@main.route("/admin/user/<int:user_id>/activate", methods=["POST"])
+@login_required
+@admin_required
+def activate_user(user_id):
+    user = User.query.get_or_404(user_id)
+
+    user.active = True
+    db.session.commit()
+
+    flash(f"{user.name} has been activated.", "success")
+    return redirect(url_for("main.admin_users"))
+
+@main.route("/admin/user/<int:user_id>/deactivate", methods=["POST"])
+@login_required
+@admin_required
+def deactivate_user(user_id):
+    user = User.query.get_or_404(user_id)
+
+    user.active = False
+    db.session.commit()
+
+    flash(f"{user.name} has been deactivated.", "warning")
+    return redirect(url_for("main.admin_users"))
+
+
 
 
 # -------------------
@@ -484,16 +511,20 @@ def admin_announcements():
             flash("All fields are required.", "danger")
             return redirect(url_for('main.admin_announcements'))
 
+        # ✅ STRIP HTML TAGS HERE
+        clean_message = BeautifulSoup(message, "html.parser").get_text(separator="\n")
+
         new_announcement = Announcement(
             title=title,
-            message=message,
+            message=clean_message,
             created_at=datetime.utcnow(),
             expires_at=datetime.utcnow() + timedelta(days=7)
         )
+
         db.session.add(new_announcement)
         db.session.commit()
 
-        # <--- This is where you emit the event
+        # realtime push
         socketio.emit('new_announcement', {
             'title': new_announcement.title,
             'message': new_announcement.message,
@@ -507,21 +538,11 @@ def admin_announcements():
         Announcement.expires_at > datetime.utcnow()
     ).order_by(Announcement.created_at.desc()).all()
 
-    return render_template("admin_announcements.html", announcements=announcements, now = datetime.utcnow())
-
-
-@main.route("/admin/announcements/edit/<int:id>", methods=["GET","POST"])
-@login_required
-@admin_required
-def edit_announcement(id):
-    announcement = Announcement.query.get_or_404(id)
-    if request.method == "POST":
-        announcement.title = request.form["title"]
-        announcement.message = request.form["message"]
-        db.session.commit()
-        flash("Announcement updated.", "success")
-        return redirect(url_for("main.admin_announcements"))
-    return render_template("edit_announcement.html", announcement=announcement)
+    return render_template(
+        "admin_announcements.html",
+        announcements=announcements,
+        now=datetime.utcnow()
+    )
 
 
 @main.route("/admin/announcements/delete/<int:id>", methods=["POST"])

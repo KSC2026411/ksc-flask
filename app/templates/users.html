@@ -86,7 +86,7 @@
 
             <!-- STATUS COLUMN -->
             <td>
-                {% if user.is_active %}
+                {% if user.active %}
                     <span style="color:green; font-weight:bold;">Active</span>
                 {% else %}
                     <span style="color:red; font-weight:bold;">Deactivated</span>
@@ -108,7 +108,7 @@
                 {% endif %}
 
                 <!-- ACTIVATE / DEACTIVATE -->
-                {% if user.is_active %}
+                {% if user.active %}
                     <form action="{{ url_for('main.deactivate_user', user_id=user.id) }}" method="POST" style="display:inline;">
                         <button type="submit" class="btn-danger">Deactivate</button>
                     </form>
