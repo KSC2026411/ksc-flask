@@ -82,19 +82,26 @@ def login():
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
+
+        # Normalize email (avoids login issues)
+        email = email.strip().lower() if email else None
+
         user = User.query.filter_by(email=email).first()
 
         if user and user.check_password(password):
 
-            # 🚫 BLOCK DEACTIVATED USERS
-            if not user.active:
-                flash("Your account has been deactivated. Please contact support.", "danger")
+            # 🚫 BLOCK ONLY if explicitly deactivated
+            if user.active is False:
+                flash("Your account is deactivated. Contact admin to reactivate.", "danger")
                 return redirect(url_for("main.login"))
 
             login_user(user)
             flash(f"Welcome back, {user.name}!", "success")
+
             return redirect(
-                url_for("main.admin_dashboard") if user.role == "admin" else url_for("main.dashboard")
+                url_for("main.admin_dashboard")
+                if user.role == "admin"
+                else url_for("main.dashboard")
             )
 
         flash("Invalid email or password", "danger")
