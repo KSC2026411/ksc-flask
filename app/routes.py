@@ -84,11 +84,20 @@ def login():
         user = User.query.filter_by(email=email).first()
 
         if user and user.check_password(password):
+
+            # 🚫 BLOCK DEACTIVATED USERS
+            if not user.is_active:
+                flash("Your account has been deactivated. Please contact support.", "danger")
+                return redirect(url_for("main.login"))
+
             login_user(user)
             flash(f"Welcome back, {user.name}!", "success")
-            return redirect(url_for("main.admin_dashboard") if user.role=="admin" else url_for("main.dashboard"))
+            return redirect(
+                url_for("main.admin_dashboard") if user.role == "admin" else url_for("main.dashboard")
+            )
 
         flash("Invalid email or password", "danger")
+
     return render_template("login.html")
 
 

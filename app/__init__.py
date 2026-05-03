@@ -1,11 +1,15 @@
 import os
 from flask import Flask
 from dotenv import load_dotenv
+
 from .extensions import db, migrate, socketio
 from flask_login import LoginManager
-from .models import User
+from .models import User, Announcement
 from sqlalchemy import text
-from . import events  # Import Socket.IO events
+from . import events
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime
 
 
 def create_app():
@@ -19,21 +23,20 @@ def create_app():
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret")
     app.config["DEV_MODE"] = os.getenv("DEV_MODE", "false").lower() == "true"
 
-    # ---- DATABASE CONFIG ----
+    # -------------------
+    # DATABASE CONFIG (Railway-safe)
+    # -------------------
     database_url = os.getenv("DATABASE_URL")
 
     if not database_url:
-        print("⚠️ DATABASE_URL missing - using SQLite fallback")
         database_url = "sqlite:///site.db"
 
-    # Fix deprecated postgres:// prefix
     if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
 
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    # Only apply SSL settings for Postgres (Railway-safe)
     if database_url.startswith("postgresql://"):
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
             "connect_args": {"sslmode": "require"},
@@ -45,17 +48,15 @@ def create_app():
     # -------------------
     db.init_app(app)
     migrate.init_app(app, db)
-
-    # ✅ Force async mode for SocketIO (prevents Railway guessing issues)
     socketio.init_app(app, cors_allowed_origins="*", async_mode="eventlet")
 
     # -------------------
-    # IMPORT MODELS
+    # MODELS
     # -------------------
     from . import models  # noqa: F401
 
     # -------------------
-    # REGISTER BLUEPRINTS
+    # BLUEPRINTS
     # -------------------
     from .routes import main
     app.register_blueprint(main)
@@ -72,8 +73,34 @@ def create_app():
         return User.query.get(int(user_id))
 
     # -------------------
-    # REGISTER SOCKET.IO EVENTS
+    # SOCKET EVENTS
     # -------------------
     events.register_socketio_events(app)
+
+    # =====================================================
+    # 🧹 AUTO CLEANUP: EXPIRED ANNOUNCEMENTS
+    # =====================================================
+    def cleanup_expired_announcements():
+        with app.app_context():
+            now = datetime.utcnow()
+
+            expired = Announcement.query.filter(
+                Announcement.expires_at <= now
+            ).all()
+
+            if expired:
+                for a in expired:
+                    db.session.delete(a)
+
+                db.session.commit()
+                print(f"🧹 Cleaned {len(expired)} expired announcements")
+
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(
+        func=cleanup_expired_announcements,
+        trigger="interval",
+        minutes=10
+    )
+    scheduler.start()
 
     return app

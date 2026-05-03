@@ -12,3 +12,5 @@ eventlet==0.41.0
 SQLAlchemy==2.0.48
 
 gunicorn==22.0.0
+
+beautifulsoup4
