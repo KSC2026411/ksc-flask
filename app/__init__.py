@@ -5,6 +5,8 @@ from .extensions import db, migrate, socketio
 from flask_login import LoginManager
 from .models import User
 from sqlalchemy import text
+from . import events  # Import Socket.IO events
+
 
 def create_app():
     load_dotenv()
@@ -16,15 +18,34 @@ def create_app():
     # -------------------
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret")
     app.config["DEV_MODE"] = os.getenv("DEV_MODE", "false").lower() == "true"
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+
+    # ---- DATABASE CONFIG (FIXED) ----
+    database_url = os.getenv("DATABASE_URL")
+
+    if not database_url:
+        print("⚠️ DATABASE_URL missing - using SQLite fallback")
+        database_url = "sqlite:///site.db"
+
+    # Fix deprecated postgres:// prefix
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    # Only apply SSL settings for Postgres
+    if database_url.startswith("postgresql://"):
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "connect_args": {"sslmode": "require"},
+            "pool_pre_ping": True
+        }
 
     # -------------------
     # INIT EXTENSIONS
     # -------------------
     db.init_app(app)
     migrate.init_app(app, db)
-    socketio.init_app(app, cors_allowed_origins="*")  # Threading mode works with long-polling
+    socketio.init_app(app, cors_allowed_origins="*")
 
     # -------------------
     # IMPORT MODELS
@@ -59,8 +80,8 @@ def create_app():
             print("❌ Database connection failed:", e)
 
     # -------------------
-    # IMPORT SOCKETIO EVENTS
+    # REGISTER SOCKET.IO EVENTS
     # -------------------
-    from . import events  # All SocketIO event handlers live here
+    events.register_socketio_events(app)
 
     return app
