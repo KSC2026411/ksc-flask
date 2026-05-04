@@ -7,7 +7,6 @@ Flask-WTF==1.2.2
 
 python-dotenv==1.2.2
 psycopg2-binary==2.9.11
-eventlet==0.41.0
 
 SQLAlchemy==2.0.48
 
@@ -16,3 +15,6 @@ gunicorn==22.0.0
 beautifulsoup4
 
 apscheduler
+
+gevent
+gevent-websocket

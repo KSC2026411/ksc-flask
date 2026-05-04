@@ -47,7 +47,13 @@ def create_app():
     # -------------------
     db.init_app(app)
     migrate.init_app(app, db)
-    socketio.init_app(app, cors_allowed_origins="*", async_mode="eventlet")
+
+    # ✅ GEVENT (UPDATED HERE)
+    socketio.init_app(
+        app,
+        cors_allowed_origins="*",
+        async_mode="gevent"
+    )
 
     # -------------------
     # MODELS

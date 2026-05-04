@@ -1,6 +1,3 @@
-import eventlet
-eventlet.monkey_patch()
-
 import os
 from app import create_app
 from app.extensions import socketio
@@ -12,12 +9,11 @@ app = create_app()
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
 
-    # ✅ Environment-based debug control
     debug_mode = os.getenv("FLASK_DEBUG", "false").lower() == "true"
 
     print(f"🌍 Starting server on port {port}")
     print(f"🔐 Debug mode: {debug_mode}")
-    print("🧠 Database configured")  # safer than printing URL
+    print("🧠 Database configured")
 
     socketio.run(
         app,
