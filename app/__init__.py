@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from .extensions import db, migrate, socketio
 from flask_login import LoginManager
 from .models import User, Announcement
-from sqlalchemy import text
 from . import events
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -61,6 +60,11 @@ def create_app():
     from .routes import main
     app.register_blueprint(main)
 
+    # ✅ DEBUG: PRINT ALL REGISTERED ROUTES
+    print("📌 REGISTERED ROUTES:")
+    for rule in app.url_map.iter_rules():
+        print(rule.endpoint, rule)
+
     # -------------------
     # LOGIN MANAGER
     # -------------------
@@ -96,11 +100,14 @@ def create_app():
                 print(f"🧹 Cleaned {len(expired)} expired announcements")
 
     scheduler = BackgroundScheduler()
-    scheduler.add_job(
-        func=cleanup_expired_announcements,
-        trigger="interval",
-        minutes=10
-    )
-    scheduler.start()
+
+    # ✅ Prevent double scheduler in debug / reload
+    if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        scheduler.add_job(
+            func=cleanup_expired_announcements,
+            trigger="interval",
+            minutes=10
+        )
+        scheduler.start()
 
     return app
