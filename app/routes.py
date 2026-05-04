@@ -551,6 +551,21 @@ def admin_announcements():
         now=datetime.utcnow()
     )
 
+@main.route('/admin/announcements/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_announcement(id):
+    announcement = Announcement.query.get_or_404(id)
+
+    if request.method == 'POST':
+        if current_user.role != 'admin':
+            abort(403)
+        announcement.title = request.form['title']
+        announcement.message = request.form['message']
+        db.session.commit()
+        return redirect(url_for('main.admin_announcements'))
+
+    return render_template('edit_announcement.html', announcement=announcement)
+
 
 @main.route("/admin/announcements/delete/<int:id>", methods=["POST"])
 @login_required
