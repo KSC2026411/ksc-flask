@@ -12,6 +12,8 @@ class User(db.Model, UserMixin):
     _password = db.Column("password", db.String(200), nullable=False)  # hashed password
     phone = db.Column(db.String(50))  # optional
     active = db.Column(db.Boolean, default=True, nullable=False)
+    failed_attempts = Column(Integer, default=0)
+    next_allowed_login = Column(DateTime, nullable=True)
 
     # New system (recommended going forward)
     role = db.Column(db.String(20), default="customer")  # Default role set to 'customer'

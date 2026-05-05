@@ -116,6 +116,20 @@ def logout():
     flash("Logged out.", "info")
     return redirect(url_for("main.home"))
 
+@app.route("/login", methods=["POST"])
+def login_route():
+    email = request.form["email"]
+    password = request.form["password"]
+
+    user = get_user_from_db(email)
+
+    success, message = login(user, password)
+
+    if success:
+        return redirect("/dashboard")
+    else:
+        return message, 401
+
 
 # -------------------
 # ADMIN: USERS
