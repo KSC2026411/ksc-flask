@@ -108,15 +108,7 @@ def login():
 
     return render_template("login.html")
 
-
-@main.route("/logout")
-@login_required
-def logout():
-    logout_user()
-    flash("Logged out.", "info")
-    return redirect(url_for("main.home"))
-
-@app.route("/login", methods=["POST"])
+@main.route("/login", methods=["POST"])
 def login_route():
     email = request.form["email"]
     password = request.form["password"]
@@ -129,6 +121,14 @@ def login_route():
         return redirect("/dashboard")
     else:
         return message, 401
+
+
+@main.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash("Logged out.", "info")
+    return redirect(url_for("main.home"))
 
 
 # -------------------
