@@ -3,24 +3,43 @@
 {% block content %}
 {% if current_user.is_authenticated and current_user.role == "admin" %}
 
-<div class="d-flex">
+<!-- ✅ MOBILE NAVBAR -->
+<nav class="navbar navbar-dark bg-dark d-lg-none px-3">
+    <span class="navbar-brand">Admin Panel</span>
 
-    <!-- SIDEBAR -->
-    <div class="bg-dark text-white p-3" style="width: 420px; min-height: 100vh;">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminMobileMenu">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+</nav>
+
+<!-- ✅ MOBILE MENU -->
+<div class="collapse bg-dark text-white p-3 d-lg-none" id="adminMobileMenu">
+    <a href="{{ url_for('main.admin_dashboard') }}" class="d-block mb-2 p-2">Dashboard</a>
+    <a href="{{ url_for('main.admin_users') }}" class="d-block mb-2 p-2">Users</a>
+    <a href="{{ url_for('main.admin_announcements') }}" class="d-block mb-2 p-2">Announcements</a>
+    <a href="{{ url_for('main.admin_packages') }}" class="d-block mb-2 p-2">Packages</a>
+
+    <hr>
+    <a href="{{ url_for('main.logout') }}" class="btn btn-danger w-100">Logout</a>
+</div>
+
+<div class="d-flex min-vh-100">
+
+    <!-- ✅ DESKTOP SIDEBAR -->
+    <div class="bg-dark text-white p-3 d-none d-lg-block" style="width: 260px;">
         <h4 class="mb-4">Admin Panel</h4>
 
-        <a href="{{ url_for('main.admin_dashboard') }}" class="d-block text-white mb-2 fs-4">Dashboard</a>
-        <a href="{{ url_for('main.admin_users') }}" class="d-block text-white mb-2 fs-4">Users</a>
-        <a href="{{ url_for('main.admin_announcements') }}" class="d-block text-white mb-2 fs-4">Announcements</a>
-        <a href="{{ url_for('main.admin_packages') }}" class="d-block text-white mb-2 fs-4">Packages</a>
+        <a href="{{ url_for('main.admin_dashboard') }}" class="d-block text-white mb-2 p-2">Dashboard</a>
+        <a href="{{ url_for('main.admin_users') }}" class="d-block text-white mb-2 p-2">Users</a>
+        <a href="{{ url_for('main.admin_announcements') }}" class="d-block text-white mb-2 p-2">Announcements</a>
+        <a href="{{ url_for('main.admin_packages') }}" class="d-block text-white mb-2 p-2">Packages</a>
 
         <hr>
-
-        <a href="{{ url_for('main.logout') }}" class="btn btn-danger btn-sm w-100">Logout</a>
+        <a href="{{ url_for('main.logout') }}" class="btn btn-danger w-100">Logout</a>
     </div>
 
-    <!-- MAIN CONTENT -->
-    <div class="flex-grow-1 p-4">
+    <!-- ✅ MAIN CONTENT -->
+    <div class="flex-grow-1 p-3 p-md-4">
         {% block admin_content %}{% endblock %}
     </div>
 
