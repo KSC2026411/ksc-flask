@@ -48,11 +48,11 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
 
-    # ✅ GEVENT (UPDATED HERE)
+    # ✅ FIXED: Use threading (no gevent dependency)
     socketio.init_app(
         app,
         cors_allowed_origins="*",
-        async_mode="gevent"
+        async_mode="threading"
     )
 
     # -------------------
