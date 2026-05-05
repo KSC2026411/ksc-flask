@@ -11,7 +11,7 @@ html, body {
     color: #333;
 }
 
-/* Prevent content hiding behind navbar */
+/* Prevent overlap with navbar */
 body {
     padding-top: 56px;
 }
@@ -40,7 +40,7 @@ body {
 }
 
 /* =========================
-   MAIN CONTAINER (FIXED - TOP ALIGNMENT)
+   MAIN CONTAINER (TOP FIX APPLIED)
 ========================= */
 .main-container {
     flex: 1;
@@ -49,12 +49,12 @@ body {
     display: flex;
     flex-direction: column;
 
-    justify-content: flex-start;   /* 🔥 FIX: move content to top */
+    justify-content: flex-start;   /* 🔥 KEY FIX */
     align-items: center;
 
     text-align: center;
 
-    padding: 60px 20px 20px; /* space below navbar */
+    padding: 40px 20px 20px; /* space under navbar */
 
     color: #fff;
 
@@ -72,19 +72,15 @@ body {
     pointer-events: none;
 }
 
-/* Ensure content above overlay */
+/* Ensure content is above overlay */
 .welcome-card {
     position: relative;
     z-index: 2;
-}
-
-/* Optional spacing tweak */
-.welcome-card {
-    margin-top: 20px;
+    margin-top: 10px; /* slight spacing from navbar */
 }
 
 /* =========================
-   PAGE WRAPPER
+   PAGE WRAPPER (OTHER PAGES)
 ========================= */
 .page-wrapper {
     min-height: calc(100vh - 56px);
@@ -114,13 +110,6 @@ body {
 }
 
 /* =========================
-   FLASH MESSAGES
-========================= */
-.alert {
-    border-radius: 8px;
-}
-
-/* =========================
    UTILITIES
 ========================= */
 .text-white {
@@ -128,11 +117,18 @@ body {
 }
 
 /* =========================
+   FLASH MESSAGES
+========================= */
+.alert {
+    border-radius: 8px;
+}
+
+/* =========================
    RESPONSIVE
 ========================= */
 @media (max-width: 768px) {
     .main-container {
-        padding: 40px 15px 20px;
+        padding: 30px 15px 20px;
     }
 
     .footer-content {
