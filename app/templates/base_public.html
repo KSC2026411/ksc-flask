@@ -10,11 +10,11 @@
 
     <!-- Your CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    
+
     {% block head %}{% endblock %}
 </head>
 
-<body class="d-flex flex-column min-vh-100 {% block body_class %}{% endblock %}">
+<body class="{% block body_class %}{% endblock %}">
 
     <!-- NAVBAR -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
@@ -55,12 +55,12 @@
         {% endif %}
     {% endwith %}
 
-    <!-- MAIN CONTENT -->
-    <main class="flex-grow-1 d-flex flex-column p-0">
+    <!-- MAIN CONTENT (FIXED - NO FLEX HERE) -->
+    <main class="p-0">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- BASE FOOTER (OPTIONAL) -->
+    <!-- FOOTER -->
     {% if not hide_footer %}
     <footer class="bg-dark text-white text-center py-3 mt-auto">
         <p class="mb-0">© 2026 KSC Logistics. All rights reserved.</p>
