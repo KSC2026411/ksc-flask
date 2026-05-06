@@ -66,6 +66,8 @@ class Package(db.Model):
     deposit_paid = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    delivered_at = db.Column(db.DateTime, nullable=True)
+    received_by = db.Column(db.String(120), nullable=True)
 
     # Tracks how many times a user attempted to reschedule
     reschedule_attempts = db.Column(db.Integer, default=0)
