@@ -1,8 +1,7 @@
 {% extends "base_admin.html" %}
 
-{% block title %}Admin - Packages{% endblock %}
+{% block admin_content %}
 
-{% block content %}
 <div class="container-fluid mt-4">
 
     <h2 class="mb-4">All Packages</h2>
@@ -31,13 +30,9 @@
                 <tr>
 
                     <td>{{ p.tracking_number }}</td>
-
                     <td>{{ p.user.name if p.user else "N/A" }}</td>
-
                     <td>{{ p.user.phone if p.user else "N/A" }}</td>
-
                     <td>{{ p.description or "N/A" }}</td>
-
                     <td>{{ p.notes or "-" }}</td>
 
                     <td>
@@ -139,5 +134,7 @@
 
         </table>
     </div>
+
 </div>
+
 {% endblock %}
