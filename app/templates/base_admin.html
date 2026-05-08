@@ -1,55 +1,81 @@
 {% extends "base_public.html" %}
 
 {% block content %}
+
 {% if current_user.is_authenticated and current_user.role == "admin" %}
 
-<!-- ✅ MOBILE NAVBAR -->
-<nav class="navbar navbar-dark bg-dark d-lg-none px-3">
-    <span class="navbar-brand">Admin Panel</span>
+<!-- TOP NAVBAR (LIGHT BLUE) -->
+<nav class="navbar navbar-expand-lg shadow-sm"
+     style="background-color: #87CEEB;">
 
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminMobileMenu">
-        <span class="navbar-toggler-icon"></span>
-    </button>
+    <div class="container-fluid">
+
+        <!-- BRAND -->
+        <span class="navbar-brand fw-bold text-dark">
+            KSC LOGISTICS ADMIN
+        </span>
+
+        <!-- MOBILE TOGGLE -->
+        <button class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#adminNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- NAV LINKS -->
+        <div class="collapse navbar-collapse justify-content-end" id="adminNav">
+
+            <div class="d-flex flex-wrap gap-2 mt-2 mt-lg-0">
+
+                <a href="{{ url_for('main.admin_dashboard') }}"
+                   class="btn btn-outline-dark btn-sm">
+                    Dashboard
+                </a>
+
+                <a href="{{ url_for('main.admin_users') }}"
+                   class="btn btn-outline-dark btn-sm">
+                    Users
+                </a>
+
+                <a href="{{ url_for('main.admin_packages') }}"
+                   class="btn btn-outline-dark btn-sm">
+                    Packages
+                </a>
+
+                <a href="{{ url_for('main.admin_announcements') }}"
+                   class="btn btn-outline-dark btn-sm">
+                    Announcements
+                </a>
+
+                <a href="{{ url_for('main.logout') }}"
+                   class="btn btn-danger btn-sm">
+                    Logout
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
 </nav>
 
-<!-- ✅ MOBILE MENU -->
-<div class="collapse bg-dark text-white p-3 d-lg-none" id="adminMobileMenu">
-    <a href="{{ url_for('main.admin_dashboard') }}" class="d-block mb-2 p-2">Dashboard</a>
-    <a href="{{ url_for('main.admin_users') }}" class="d-block mb-2 p-2">Users</a>
-    <a href="{{ url_for('main.admin_announcements') }}" class="d-block mb-2 p-2">Announcements</a>
-    <a href="{{ url_for('main.admin_packages') }}" class="d-block mb-2 p-2">Packages</a>
+<!-- PAGE CONTENT WRAPPER -->
+<div class="container-fluid py-4">
 
-    <hr>
-    <a href="{{ url_for('main.logout') }}" class="btn btn-danger w-100">Logout</a>
-</div>
-
-<div class="d-flex min-vh-100">
-
-    <!-- ✅ DESKTOP SIDEBAR -->
-    <div class="bg-dark text-white p-3 d-none d-lg-block" style="width: 260px;">
-        <h4 class="mb-4">Admin Panel</h4>
-
-        <a href="{{ url_for('main.admin_dashboard') }}" class="d-block text-white mb-2 p-2">Dashboard</a>
-        <a href="{{ url_for('main.admin_users') }}" class="d-block text-white mb-2 p-2">Users</a>
-        <a href="{{ url_for('main.admin_announcements') }}" class="d-block text-white mb-2 p-2">Announcements</a>
-        <a href="{{ url_for('main.admin_packages') }}" class="d-block text-white mb-2 p-2">Packages</a>
-
-        <hr>
-        <a href="{{ url_for('main.logout') }}" class="btn btn-danger w-100">Logout</a>
-    </div>
-
-    <!-- ✅ MAIN CONTENT -->
-    <div class="flex-grow-1 p-3 p-md-4">
-        {% block admin_content %}{% endblock %}
-    </div>
+    {% block admin_content %}{% endblock %}
 
 </div>
 
 {% else %}
+
 <div class="container mt-5">
     <div class="alert alert-danger">
         Unauthorized access.
     </div>
 </div>
+
 {% endif %}
+
 {% endblock %}
