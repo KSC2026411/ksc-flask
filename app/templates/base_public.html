@@ -3,7 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}KSC LOGISTICS{% endblock %}</title>
+
+    <!-- Mobile -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- PWA -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+    <meta name="theme-color" content="#0F172A">
+
+    <!-- iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="KSC Logistics">
+
+    <!-- Icons -->
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192"
+          href="{{ url_for('static', filename='icons/icon-192.png') }}">
+    <link rel="icon" type="image/png" sizes="512x512"
+          href="{{ url_for('static', filename='icons/icon-512.png') }}">
 
     <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -12,9 +30,33 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
     {% block head %}{% endblock %}
+
+    <!-- Small UX improvements -->
+    <style>
+        a, button {
+            transition: all 0.15s ease-in-out;
+        }
+        a:active, button:active {
+            transform: scale(0.97);
+        }
+    </style>
 </head>
 
 <body class="{% block body_class %}{% endblock %}">
+
+    <!-- 🔵 SPLASH / LOADING SCREEN -->
+    <div id="app-loader">
+        <div style="text-align:center;">
+            <div style="font-size:40px;">📦</div>
+            <h3>KSC Logistics</h3>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <!-- 🌐 OFFLINE TOAST -->
+    <div id="offline-toast">
+        You are offline
+    </div>
 
     <!-- NAVBAR -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
@@ -25,7 +67,15 @@
         </button>
 
         <div class="collapse navbar-collapse" id="navbarContent">
-            <div class="ms-auto d-flex flex-column flex-lg-row gap-2 mt-3 mt-lg-0">
+
+            <!-- INSTALL BUTTON -->
+            <div class="ms-auto me-2">
+                <button id="installBtn" class="btn btn-warning d-none">
+                    Install App
+                </button>
+            </div>
+
+            <div class="d-flex flex-column flex-lg-row gap-2 mt-3 mt-lg-0">
                 {% if not current_user.is_authenticated %}
                     <a href="{{ url_for('main.login') }}" class="btn btn-success w-100 w-lg-auto">Login</a>
                     <a href="{{ url_for('main.register') }}" class="btn btn-outline-light w-100 w-lg-auto">Register</a>
@@ -55,7 +105,7 @@
         {% endif %}
     {% endwith %}
 
-    <!-- MAIN CONTENT (FIXED - NO FLEX HERE) -->
+    <!-- MAIN CONTENT -->
     <main class="p-0">
         {% block content %}{% endblock %}
     </main>
@@ -67,8 +117,91 @@
     </footer>
     {% endif %}
 
-    <!-- Bootstrap JS -->
+    <!-- Bootstrap -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- SERVICE WORKER -->
+    <script>
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", () => {
+                navigator.serviceWorker.register(
+                    "{{ url_for('static', filename='service-worker.js') }}"
+                );
+            });
+        }
+    </script>
+
+    <!-- INSTALL BUTTON -->
+    <script>
+        let deferredPrompt;
+
+        window.addEventListener("beforeinstallprompt", (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            const btn = document.getElementById("installBtn");
+            btn.classList.remove("d-none");
+
+            btn.addEventListener("click", async () => {
+                btn.classList.add("d-none");
+                deferredPrompt.prompt();
+                await deferredPrompt.userChoice;
+                deferredPrompt = null;
+            });
+        });
+    </script>
+
+    <!-- SPLASH SCREEN REMOVE -->
+    <script>
+        window.addEventListener("load", () => {
+            document.getElementById("app-loader").style.display = "none";
+        });
+    </script>
+
+    <!-- OFFLINE DETECTION -->
+    <script>
+        function updateOnlineStatus() {
+            const toast = document.getElementById("offline-toast");
+
+            if (!navigator.onLine) {
+                toast.style.display = "block";
+            } else {
+                toast.style.display = "none";
+            }
+        }
+
+        window.addEventListener("online", updateOnlineStatus);
+        window.addEventListener("offline", updateOnlineStatus);
+        updateOnlineStatus();
+    </script>
+
+    <!-- INLINE STYLES FOR UX ELEMENTS -->
+    <style>
+        #app-loader {
+            position: fixed;
+            inset: 0;
+            background: #0F172A;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        #offline-toast {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ef4444;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            z-index: 9999;
+            font-size: 14px;
+        }
+    </style>
 
 </body>
 </html>

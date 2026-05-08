@@ -8,6 +8,7 @@ from .decorators import admin_required
 from .utils import generate_tracking
 from sqlalchemy import text
 from bs4 import BeautifulSoup
+from flask import render_template
 
 main = Blueprint("main", __name__)
 csrf = CSRFProtect()  # Enable in create_app()
@@ -26,6 +27,10 @@ def health():
 @main.route("/test")
 def test():
     return "TEST OK"
+
+@main.route("/offline")
+def offline():
+    return render_template("offline.html")
 
 @main.route("/")
 def home():
