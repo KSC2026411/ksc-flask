@@ -1,0 +1,78 @@
+{% extends "base_public.html" %}
+
+{% block title %}Audit Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h2 class="mb-3">🔐 System Audit Dashboard</h2>
+
+    <p class="text-muted">
+        Showing latest system activity (last 200 events)
+    </p>
+
+    <div class="table-responsive">
+
+        <table class="table table-dark table-striped table-hover">
+
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>User ID</th>
+                    <th>Action</th>
+                    <th>Details</th>
+                    <th>IP</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for log in logs %}
+
+                <tr>
+
+                    <td>{{ log.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+
+                    <td>
+                        {{ log.user_id if log.user_id else 'System' }}
+                    </td>
+
+                    <td>
+                        <span class="badge bg-primary">
+                            {{ log.action }}
+                        </span>
+                    </td>
+
+                    <td>
+                        {{ log.details }}
+                    </td>
+
+                    <td>
+                        {{ log.ip_address or 'N/A' }}
+                    </td>
+
+                    <td>
+
+                        {% if log.status == "success" %}
+                            <span class="badge bg-success">Success</span>
+                        {% else %}
+                            <span class="badge bg-danger">Failed</span>
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

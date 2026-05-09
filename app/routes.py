@@ -311,6 +311,18 @@ def admin_restore_package(package_id):
     flash("Package restored successfully.", "success")
     return redirect(url_for("main.admin_archived_packages"))
 
+@main.route("/admin/audit")
+@login_required
+def audit_dashboard():
+
+    if current_user.role != "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("main.home"))
+
+    logs = AuditLog.query.order_by(AuditLog.created_at.desc()).limit(200).all()
+
+    return render_template("admin/audit_dashboard.html", logs=logs)
+
 
 
 
@@ -394,19 +406,38 @@ def schedule():
         db.session.commit()
 
         # ======================================
-        # 🔔 NOTIFY ALL ADMINS (FIXED)
+        # 📊 AUDIT LOG (PHASE 2 UPGRADE)
+        # ======================================
+        try:
+            log = AuditLog(
+                user_id=current_user.id,
+                action="schedule_pickup",
+                details=f"Pickup scheduled: {package.tracking_number}",
+                ip_address=request.remote_addr,
+                status="success"
+            )
+            db.session.add(log)
+            db.session.commit()
+        except Exception as e:
+            print("Audit log error:", e)
+
+        # ======================================
+        # 🔔 NOTIFY ALL ADMINS (SAFE + LOGGED)
         # ======================================
         admins = User.query.filter_by(role="admin").all()
 
         for admin in admins:
+            try:
+                send_push_notification(
+                    user_id=admin.id,
+                    title="New Pickup Request",
+                    body=f"{current_user.username} submitted a pickup request",
+                    url="/admin/pickups",
+                    badge=1
+                )
 
-            send_push_notification(
-                user_id=admin.id,
-                title="New Pickup Request",
-                body=f"{current_user.username} submitted a pickup request",
-                url="/admin/pickups",
-                badge=1
-            )
+            except Exception as e:
+                print(f"Push failed for admin {admin.id}: {e}")
 
         # ======================================
         # ✅ SUCCESS RESPONSE

@@ -114,7 +114,19 @@ class PushSubscription(db.Model):
         nullable=True
     )
 
-    subscription = db.Column(db.Text, nullable=False)    
+    subscription = db.Column(db.Text, nullable=False)
+
+class AuditLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(db.Integer, nullable=True)
+    action = db.Column(db.String(255))
+    details = db.Column(db.Text)
+
+    ip_address = db.Column(db.String(100))
+    status = db.Column(db.String(50))  # success / failed
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)    
 
 
 # -------------------
