@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from flask_wtf.csrf import CSRFProtect
 from .decorators import admin_required
 from .utils import generate_tracking, send_push_notification
-from sqlalchemy import text
+from sqlalchemy import text, or_
 from bs4 import BeautifulSoup
 from flask import render_template
 import json
@@ -128,50 +128,42 @@ def register():
     return render_template("register.html")
 
 
-@main.route("/login", methods=["GET","POST"])
+@main.route("/login", methods=["GET", "POST"])
 def login():
+
     if request.method == "POST":
+
         email = request.form.get("email")
         password = request.form.get("password")
 
-        # Normalize email (avoids login issues)
+        # Normalize email
         email = email.strip().lower() if email else None
 
         user = User.query.filter_by(email=email).first()
 
+        # ======================================
+        # AUTH CHECK
+        # ======================================
         if user and user.check_password(password):
 
-            # 🚫 BLOCK ONLY if explicitly deactivated
-            if user.active is False:
-                flash("Your account is deactivated. Contact admin to reactivate.", "danger")
+            # BLOCK deactivated users
+            if not user.active:
+                flash("Your account is deactivated. Contact admin.", "danger")
                 return redirect(url_for("main.login"))
 
             login_user(user)
+
             flash(f"Welcome back, {user.name}!", "success")
 
-            return redirect(
-                url_for("main.admin_dashboard")
-                if user.role == "admin"
-                else url_for("main.dashboard")
-            )
+            # Redirect by role
+            if user.role == "admin":
+                return redirect(url_for("main.admin_dashboard"))
+            else:
+                return redirect(url_for("main.dashboard"))
 
         flash("Invalid email or password", "danger")
 
-    return render_template("login.html")
-
-@main.route("/login", methods=["POST"])
-def login_route():
-    email = request.form["email"]
-    password = request.form["password"]
-
-    user = get_user_from_db(email)
-
-    success, message = login(user, password)
-
-    if success:
-        return redirect("/dashboard")
-    else:
-        return message, 401
+    return render_template("public/login.html")
 
 
 @main.route("/logout")
@@ -352,9 +344,9 @@ def dashboard():
 def schedule():
 
     # ======================================
-    # 🔐 ONLY CUSTOMERS ALLOWED
+    # 🔐 BLOCK ADMINS FROM CUSTOMER FLOW
     # ======================================
-    if current_user.role != "customer":
+    if current_user.role == "admin":
         flash("Admins cannot access customer pages.", "warning")
         return redirect(url_for("main.admin_dashboard"))
 
@@ -403,10 +395,9 @@ def schedule():
         )
 
         db.session.add(package)
-        db.session.commit()
 
         # ======================================
-        # 📊 AUDIT LOG (PHASE 2 UPGRADE)
+        # 📊 AUDIT LOG (PHASE 2)
         # ======================================
         try:
             log = AuditLog(
@@ -417,12 +408,14 @@ def schedule():
                 status="success"
             )
             db.session.add(log)
-            db.session.commit()
+
         except Exception as e:
             print("Audit log error:", e)
 
+        db.session.commit()
+
         # ======================================
-        # 🔔 NOTIFY ALL ADMINS (SAFE + LOGGED)
+        # 🔔 NOTIFY ADMINS
         # ======================================
         admins = User.query.filter_by(role="admin").all()
 
@@ -431,16 +424,15 @@ def schedule():
                 send_push_notification(
                     user_id=admin.id,
                     title="New Pickup Request",
-                    body=f"{current_user.username} submitted a pickup request",
+                    body=f"{current_user.name} submitted a pickup request",
                     url="/admin/pickups",
                     badge=1
                 )
-
             except Exception as e:
                 print(f"Push failed for admin {admin.id}: {e}")
 
         # ======================================
-        # ✅ SUCCESS RESPONSE
+        # ✅ SUCCESS
         # ======================================
         flash(
             "Pickup scheduled! Please send $75 Zelle deposit 48H before pickup date.",
@@ -449,7 +441,7 @@ def schedule():
 
         return redirect(url_for("main.schedule"))
 
-    return render_template("schedule.html")
+    return render_template("customer/schedule.html")
 
 
 # -------------------
@@ -615,16 +607,27 @@ def track():
 @login_required
 @admin_required
 def admin_dashboard():
+
     page = request.args.get("page", 1, type=int)
-    packages = Package.query.order_by(Package.pickup_date.desc()).paginate(page=page, per_page=20)
-    announcements = Announcement.query.order_by(Announcement.created_at.desc()).limit(50).all()
-    return render_template("admin_dashboard.html", packages=packages, announcements=announcements)
+
+    packages = Package.query.order_by(
+        Package.pickup_date.desc()
+    ).paginate(page=page, per_page=20)
+
+    announcements = Announcement.query.order_by(
+        Announcement.created_at.desc()
+    ).limit(50).all()
+
+    return render_template(
+        "admin/admin_dashboard.html",
+        packages=packages,
+        announcements=announcements
+    )
 
 
 # -------------------
 # ADMIN PACKAGES
 # -------------------
-from sqlalchemy import or_
 
 @main.route("/admin/packages")
 @login_required
@@ -737,12 +740,11 @@ def admin_suggest_reschedule(package_id):
 # -------------------
 @main.route('/admin/announcements', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def admin_announcements():
-    if current_user.role != "admin":
-        flash("Access denied.", "danger")
-        return redirect(url_for('main.home'))
 
     if request.method == 'POST':
+
         title = request.form.get('title')
         message = request.form.get('message')
 
@@ -750,8 +752,13 @@ def admin_announcements():
             flash("All fields are required.", "danger")
             return redirect(url_for('main.admin_announcements'))
 
-        # ✅ STRIP HTML TAGS HERE
-        clean_message = BeautifulSoup(message, "html.parser").get_text(separator="\n")
+        # ======================================
+        # 🧼 SANITIZE INPUT
+        # ======================================
+        clean_message = BeautifulSoup(
+            message,
+            "html.parser"
+        ).get_text(separator="\n")
 
         new_announcement = Announcement(
             title=title,
@@ -763,12 +770,18 @@ def admin_announcements():
         db.session.add(new_announcement)
         db.session.commit()
 
-        # realtime push
-        socketio.emit('new_announcement', {
-            'title': new_announcement.title,
-            'message': new_announcement.message,
-            'expires_at': new_announcement.expires_at.strftime('%Y-%m-%d')
-        }, namespace='/customer')
+        # ======================================
+        # 📡 REAL-TIME UPDATE
+        # ======================================
+        socketio.emit(
+            'new_announcement',
+            {
+                'title': new_announcement.title,
+                'message': new_announcement.message,
+                'expires_at': new_announcement.expires_at.strftime('%Y-%m-%d')
+            },
+            namespace='/customer'
+        )
 
         flash("Announcement posted successfully.", "success")
         return redirect(url_for('main.admin_announcements'))
@@ -778,7 +791,7 @@ def admin_announcements():
     ).order_by(Announcement.created_at.desc()).all()
 
     return render_template(
-        "admin_announcements.html",
+        "admin/admin_announcements.html",
         announcements=announcements,
         now=datetime.utcnow()
     )
