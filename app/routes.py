@@ -58,6 +58,7 @@ def home():
     return render_template("home.html", announcements=announcements, now=now)
 
 @main.route("/save-subscription", methods=["POST"])
+@login_required
 def save_subscription():
 
     try:
@@ -72,28 +73,21 @@ def save_subscription():
 
         subscription_json = json.dumps(data)
 
-        # Prevent duplicates
+        # ======================================
+        # 🔐 ONE SUBSCRIPTION PER USER (SECURE)
+        # ======================================
         existing = PushSubscription.query.filter_by(
-            subscription=subscription_json
+            user_id=current_user.id
         ).first()
 
         if existing:
-            return jsonify({
-                "success": True,
-                "message": "Already saved"
-            })
-
-        new_subscription = PushSubscription(
-
-            user_id=current_user.id
-            if current_user.is_authenticated
-            else None,
-
-            subscription=subscription_json
-
-        )
-
-        db.session.add(new_subscription)
+            existing.subscription = subscription_json
+        else:
+            new_subscription = PushSubscription(
+                user_id=current_user.id,
+                subscription=subscription_json
+            )
+            db.session.add(new_subscription)
 
         db.session.commit()
 
@@ -103,12 +97,11 @@ def save_subscription():
 
     except Exception as e:
 
-        print("SAVE SUBSCRIPTION ERROR:", e)
+        print("❌ SAVE SUBSCRIPTION ERROR:", e)
 
         return jsonify({
             "success": False
         }), 500
-
 
 # -------------------
 # AUTHENTICATION

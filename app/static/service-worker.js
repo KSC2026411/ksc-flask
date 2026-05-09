@@ -14,6 +14,8 @@ const STATIC_ASSETS = [
 // =======================================
 self.addEventListener("install", event => {
 
+  console.log("🟢 SW: Install event fired");
+
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
   );
@@ -28,11 +30,14 @@ self.addEventListener("install", event => {
 // =======================================
 self.addEventListener("activate", event => {
 
+  console.log("🟢 SW: Activate event fired");
+
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
         keys.map(key => {
           if (key !== CACHE_NAME) {
+            console.log("🧹 Deleting old cache:", key);
             return caches.delete(key);
           }
         })
@@ -73,9 +78,7 @@ self.addEventListener("fetch", event => {
 
           return networkResponse;
         })
-        .catch(() => {
-          return cached || caches.match("/offline");
-        });
+        .catch(() => cached || caches.match("/offline"));
 
       return cached || networkFetch;
 
@@ -87,9 +90,11 @@ self.addEventListener("fetch", event => {
 
 
 // =======================================
-// PUSH NOTIFICATIONS (FIXED & RELIABLE)
+// PUSH NOTIFICATIONS + DEBUG
 // =======================================
 self.addEventListener("push", event => {
+
+  console.log("🔥 SW: PUSH EVENT RECEIVED");
 
   event.waitUntil((async () => {
 
@@ -97,8 +102,9 @@ self.addEventListener("push", event => {
 
     try {
       data = event.data ? event.data.json() : {};
+      console.log("📩 PUSH DATA:", data);
     } catch (e) {
-      console.log("Push data parse error:", e);
+      console.log("❌ Push JSON error:", e);
       data = {};
     }
 
@@ -113,18 +119,22 @@ self.addEventListener("push", event => {
       }
     };
 
-    // SHOW NOTIFICATION (CRITICAL)
+    console.log("🔔 Showing notification:", title, options);
+
     await self.registration.showNotification(title, options);
 
-    // APP BADGE (Android Chrome only)
+    console.log("✅ Notification displayed");
+
+    // APP BADGE (Android only)
     try {
 
       if (self.navigator && "setAppBadge" in self.navigator) {
         await self.navigator.setAppBadge(data.badge || 1);
+        console.log("🔴 Badge set");
       }
 
     } catch (err) {
-      console.log("Badge not supported:", err);
+      console.log("⚠️ Badge not supported:", err);
     }
 
   })());
@@ -136,6 +146,8 @@ self.addEventListener("push", event => {
 // NOTIFICATION CLICK
 // =======================================
 self.addEventListener("notificationclick", event => {
+
+  console.log("👆 Notification clicked");
 
   event.notification.close();
 
