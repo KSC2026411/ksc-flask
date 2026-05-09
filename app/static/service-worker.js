@@ -9,19 +9,21 @@ const STATIC_ASSETS = [
 ];
 
 
-// INSTALL (pre-cache core assets)
+// =======================================
+// INSTALL - CACHE CORE ASSETS
+// =======================================
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
   );
-
   self.skipWaiting();
 });
 
 
-// ACTIVATE (remove old caches)
+// =======================================
+// ACTIVATE - CLEAN OLD CACHE
+// =======================================
 self.addEventListener("activate", event => {
-
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
@@ -33,28 +35,25 @@ self.addEventListener("activate", event => {
       )
     )
   );
-
   self.clients.claim();
 });
 
 
-// FETCH (safe + offline-ready + production stable)
+// =======================================
+// FETCH - OFFLINE SUPPORT
+// =======================================
 self.addEventListener("fetch", event => {
 
   const request = event.request;
 
-  // Only cache GET requests
   if (request.method !== "GET") return;
 
   event.respondWith(
-
     caches.match(request).then(cached => {
 
-      const fetchPromise = fetch(request)
-
+      const networkFetch = fetch(request)
         .then(networkResponse => {
 
-          // Only cache valid responses
           if (!networkResponse || networkResponse.status !== 200) {
             return networkResponse;
           }
@@ -67,22 +66,19 @@ self.addEventListener("fetch", event => {
 
           return networkResponse;
         })
-
         .catch(() => {
           return cached || caches.match("/offline");
         });
 
-      return cached || fetchPromise;
+      return cached || networkFetch;
     })
   );
 });
 
 
-
 // =======================================
 // PUSH NOTIFICATIONS
 // =======================================
-
 self.addEventListener("push", event => {
 
   let data = {};
@@ -97,43 +93,43 @@ self.addEventListener("push", event => {
     body: data.body || "New notification",
     icon: "/static/icons/icon-192.png",
     badge: "/static/icons/icon-192.png",
-
     data: {
       url: data.url || "/"
     }
   };
 
-  event.waitUntil(
+  event.waitUntil((async () => {
 
-    (async () => {
+    // Show notification
+    await self.registration.showNotification(title, options);
 
-      // Show notification
-      await self.registration.showNotification(title, options);
+    // =======================================
+    // APP BADGE (ONLY IF SUPPORTED)
+    // =======================================
+    try {
 
-      // Set app icon badge count
-      if ("setAppBadge" in self.registration) {
-        try {
-          await self.registration.setAppBadge(data.badge || 1);
-        } catch (e) {
-          console.log("Badge not supported");
-        }
+      if (self.navigator && "setAppBadge" in self.navigator) {
+        await self.navigator.setAppBadge(data.badge || 1);
       }
 
-    })()
-  );
-});
+    } catch (err) {
+      console.log("Badge not supported:", err);
+    }
 
+  })());
+});
 
 
 // =======================================
 // NOTIFICATION CLICK
 // =======================================
-
 self.addEventListener("notificationclick", event => {
 
   event.notification.close();
 
+  const url = event.notification.data?.url || "/";
+
   event.waitUntil(
-    clients.openWindow(event.notification.data.url)
+    clients.openWindow(url)
   );
 });
