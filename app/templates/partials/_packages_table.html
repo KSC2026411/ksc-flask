@@ -1,0 +1,103 @@
+<div class="table-responsive">
+
+    <table class="table table-striped table-bordered align-middle"
+           style="min-width:1400px;">
+
+        <thead class="table-dark">
+            <tr>
+                <th>Tracking #</th>
+                <th>Customer</th>
+                <th>Phone</th>
+                <th>Description</th>
+                <th>Pickup Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+        {% for p in packages %}
+        <tr>
+
+            <td>{{ p.tracking_number }}</td>
+
+            <td>{{ p.user.name if p.user else "N/A" }}</td>
+
+            <td>{{ p.user.phone if p.user else "N/A" }}</td>
+
+            <td>{{ p.description or "N/A" }}</td>
+
+            <td>
+                {{ p.pickup_date.strftime('%Y-%m-%d') if p.pickup_date else "N/A" }}
+            </td>
+
+            <!-- STATUS -->
+            <td>
+                <span class="badge
+                    {% if p.status == 'Delivered' %}bg-success
+                    {% elif p.status == 'In Transit' %}bg-info
+                    {% elif p.status == 'Pending' %}bg-warning text-dark
+                    {% elif p.status == 'Cancelled' %}bg-danger
+                    {% elif p.status == 'Archived' %}bg-dark
+                    {% else %}bg-secondary
+                    {% endif %}">
+                    {{ p.status or "Pending" }}
+                </span>
+            </td>
+
+            <!-- ACTIONS -->
+            <td class="text-nowrap">
+
+                <form method="POST"
+                      action="{{ url_for('main.admin_update_package', package_id=p.id) }}"
+                      class="mb-2">
+
+                    <select name="status" class="form-select form-select-sm mb-2">
+
+                        {% set statuses = [
+                            'Pending',
+                            'In Warehouse',
+                            'Loaded',
+                            'Ready for Pickup',
+                            'In Transit',
+                            'Scheduled',
+                            'Shipped',
+                            'Delivered',
+                            'Picked Up',
+                            'Cancelled',
+                            'Rescheduled',
+                            'Archived'
+                        ] %}
+
+                        {% for s in statuses %}
+                            <option value="{{ s }}"
+                                {% if p.status == s %}selected{% endif %}>
+                                {{ s }}
+                            </option>
+                        {% endfor %}
+
+                    </select>
+
+                    <button class="btn btn-primary btn-sm w-100">
+                        Update
+                    </button>
+
+                </form>
+
+            </td>
+
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="7" class="text-center">
+                No packages found.
+            </td>
+        </tr>
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
