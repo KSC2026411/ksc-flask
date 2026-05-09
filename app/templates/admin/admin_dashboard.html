@@ -93,7 +93,7 @@
 
     </div>
 
-    <!-- PACKAGE SEARCH SECTION -->
+    <!-- SEARCH ONLY (NO TABLE ON LOAD) -->
     <div class="card shadow-sm border-0">
 
         <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -112,9 +112,9 @@
         <div class="card-body">
 
             <div id="packages-table">
-
-                {% include 'partials/admin_packages_table.html' %}
-
+                <p class="text-muted mb-0">
+                    Type to search for packages...
+                </p>
             </div>
 
         </div>
@@ -125,7 +125,6 @@
 
 <!-- LIVE SEARCH SCRIPT -->
 <script>
-
 const searchInput = document.getElementById('package-search');
 
 searchInput.addEventListener('input', function () {
@@ -133,7 +132,6 @@ searchInput.addEventListener('input', function () {
     const query = this.value;
 
     fetch(`{{ url_for('main.admin_packages_table') }}?search=${encodeURIComponent(query)}`)
-
         .then(response => response.text())
         .then(html => {
             document.getElementById('packages-table').innerHTML = html;
@@ -141,7 +139,6 @@ searchInput.addEventListener('input', function () {
         .catch(err => console.error('Search error:', err));
 
 });
-
 </script>
 
 {% endblock %}
