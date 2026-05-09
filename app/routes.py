@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify
 from flask_login import login_required, login_user, logout_user, current_user
-from .models import User, Package, Announcement, PushSubscription
+from .models import User, Package, Announcement, PushSubscription, AuditLog
 from .extensions import db, socketio
 from datetime import datetime, timedelta
 from flask_wtf.csrf import CSRFProtect
@@ -31,7 +31,7 @@ def test():
 
 @main.route("/offline")
 def offline():
-    return render_template("offline.html")
+    return render_template("public/offline.html")
 
 @main.route("/")
 def home():
@@ -133,7 +133,7 @@ def register():
         flash("Account created! Please login.", "success")
         return redirect(url_for("main.login"))
 
-    return render_template("register.html")
+    return render_template("public/register.html")
 
 
 @main.route("/login", methods=["GET", "POST"])
@@ -195,9 +195,19 @@ def admin_users():
     users = User.query.order_by(User.id.desc()).all()
 
     return render_template(
-        "users.html",
+        "admin/users.html",
         users=users
     )
+
+@main.route("/admin/packages/archived")
+@login_required
+def admin_archived_packages():
+    if current_user.role != "admin":
+        return "Unauthorized", 403
+
+    archived = Package.query.filter_by(status="Archived").order_by(Package.id.desc()).all()
+
+    return render_template("admin/admin_archived_packages.html", packages=archived)
 
 @main.route("/admin/clear-packages", methods=["POST"])
 @login_required
@@ -287,15 +297,7 @@ def deactivate_user(user_id):
     flash(f"{user.name} has been deactivated.", "warning")
     return redirect(url_for("main.admin_users"))
 
-@main.route("/admin/packages/archived")
-@login_required
-def admin_archived_packages():
-    if current_user.role != "admin":
-        return "Unauthorized", 403
 
-    archived = Package.query.filter_by(status="Archived").order_by(Package.id.desc()).all()
-
-    return render_template("admin_archived_packages.html", packages=archived)
 
 @main.route("/admin/package/<int:package_id>/restore", methods=["POST"])
 @login_required
@@ -341,7 +343,7 @@ def dashboard():
         Announcement.expires_at.isnot(None),
         Announcement.expires_at > now
     ).order_by(Announcement.created_at.desc()).all()
-    return render_template("customer_dashboard.html", announcements=announcements)
+    return render_template("customer/customer_dashboard.html", announcements=announcements)
 
 
 # -------------------
@@ -463,7 +465,7 @@ def my_packages():
         return redirect(url_for("main.admin_dashboard"))
 
     packages = Package.query.filter_by(user_id=current_user.id).all()
-    return render_template("packages.html", packages=packages)
+    return render_template("customer/packages.html", packages=packages)
 
 
 # -------------------
@@ -606,7 +608,7 @@ def track():
             package = Package.query.filter_by(tracking_number=tracking_number).first()
             if not package:
                 flash(f"No package found with tracking number {tracking_number}", "warning")
-    return render_template("track.html", package=package)
+    return render_template("customer/track.htm", package=package)
 
 # -------------------
 # ADMIN DASHBOARD
@@ -670,7 +672,7 @@ def admin_packages():
         return render_template("partials/admin_packages_table.html", packages=packages)
     
     # Full page render
-    return render_template("admin_packages.html", packages=packages)
+    return render_template("admin/admin_packages.html", packages=packages)
 
 
 @main.route("/admin/package/<int:package_id>/update", methods=["POST"])
@@ -817,7 +819,7 @@ def edit_announcement(id):
         db.session.commit()
         return redirect(url_for('main.admin_announcements'))
 
-    return render_template('edit_announcement.html', announcement=announcement)
+    return render_template("admin/edit_announcement.html", announcement=announcement)
 
 
 @main.route("/admin/announcements/delete/<int:id>", methods=["POST"])
