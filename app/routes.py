@@ -140,15 +140,6 @@ def logout():
 # ADMIN: USERS
 # -------------------
 
-@main.route("/admin")
-@login_required
-@admin_required
-def admin_dashboard():
-    packages = Package.query.order_by(Package.pickup_date.desc()).all()
-    announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
-    return render_template("admin_dashboard.html", packages=packages, announcements=announcements)
-
-
 @main.route("/admin/users")
 @login_required
 @admin_required
