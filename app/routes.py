@@ -500,19 +500,50 @@ def track():
 @login_required
 @admin_required
 def admin_dashboard():
-    packages = Package.query.order_by(Package.pickup_date.desc()).all()
-    announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
+    page = request.args.get("page", 1, type=int)
+    packages = Package.query.order_by(Package.pickup_date.desc()).paginate(page=page, per_page=20)
+    announcements = Announcement.query.order_by(Announcement.created_at.desc()).limit(50).all()
     return render_template("admin_dashboard.html", packages=packages, announcements=announcements)
 
 
 # -------------------
 # ADMIN PACKAGES
 # -------------------
+from sqlalchemy import or_
+
 @main.route("/admin/packages")
 @login_required
 @admin_required
 def admin_packages():
-    packages = Package.query.order_by(Package.created_at.desc()).all()
+    # Get current page number
+    page = request.args.get("page", 1, type=int)
+    
+    # Get search query
+    search_query = request.args.get("search", "").strip()
+    
+    # Base query with optional join to User
+    query = Package.query.join(Package.user, isouter=True)
+    
+    # Apply search filter if query exists
+    if search_query:
+        search_filter = or_(
+            Package.tracking_number.ilike(f"%{search_query}%"),
+            Package.description.ilike(f"%{search_query}%"),
+            Package.status.ilike(f"%{search_query}%"),
+            Package.notes.ilike(f"%{search_query}%"),
+            User.name.ilike(f"%{search_query}%"),
+            User.phone.ilike(f"%{search_query}%")
+        )
+        query = query.filter(search_filter)
+    
+    # Paginate results
+    packages = query.order_by(Package.created_at.desc()).paginate(page=page, per_page=20)
+    
+    # If AJAX request, render only the table rows
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return render_template("partials/admin_packages_table.html", packages=packages)
+    
+    # Full page render
     return render_template("admin_packages.html", packages=packages)
 
 
