@@ -335,14 +335,19 @@ def dashboard():
 # -------------------
 # SCHEDULE PICKUP
 # -------------------
-@main.route("/schedule", methods=["GET","POST"])
+@main.route("/schedule", methods=["GET", "POST"])
 @login_required
 def schedule():
+
+    # ======================================
+    # 🔐 ONLY CUSTOMERS ALLOWED
+    # ======================================
     if current_user.role != "customer":
         flash("Admins cannot access customer pages.", "warning")
         return redirect(url_for("main.admin_dashboard"))
 
     if request.method == "POST":
+
         description = request.form.get("description")
         street = request.form.get("street")
         city = request.form.get("city")
@@ -351,20 +356,29 @@ def schedule():
         phone = request.form.get("phone")
         pickup_date_str = request.form.get("date")
 
+        # ======================================
+        # 🔐 INPUT VALIDATION
+        # ======================================
         if not all([description, street, city, state, zip_code, phone, pickup_date_str]):
             flash("All fields are required!", "warning")
             return redirect(url_for("main.schedule"))
 
         try:
-            pickup_datetime = datetime.strptime(pickup_date_str,"%Y-%m-%d")
+            pickup_datetime = datetime.strptime(pickup_date_str, "%Y-%m-%d")
         except ValueError:
             flash("Invalid pickup date!", "danger")
             return redirect(url_for("main.schedule"))
 
+        # ======================================
+        # 🔐 BUSINESS RULE (72 HOURS RULE)
+        # ======================================
         if pickup_datetime < datetime.now() + timedelta(hours=72):
             flash("Pickup must be at least 72 hours from now.", "warning")
             return redirect(url_for("main.schedule"))
 
+        # ======================================
+        # 🔐 CREATE PACKAGE
+        # ======================================
         package = Package(
             tracking_number=generate_tracking(),
             description=description,
@@ -375,23 +389,33 @@ def schedule():
             user_id=current_user.id,
             pickup_date=pickup_datetime.date()
         )
+
         db.session.add(package)
         db.session.commit()
 
-        send_push_notification(
+        # ======================================
+        # 🔔 NOTIFY ALL ADMINS (FIXED)
+        # ======================================
+        admins = User.query.filter_by(role="admin").all()
 
-            title="New Pickup Request",
+        for admin in admins:
 
-            body=f"{current_user.name} submitted a pickup request",
+            send_push_notification(
+                user_id=admin.id,
+                title="New Pickup Request",
+                body=f"{current_user.username} submitted a pickup request",
+                url="/admin/pickups",
+                badge=1
+            )
 
-            url="/admin/pickups",
+        # ======================================
+        # ✅ SUCCESS RESPONSE
+        # ======================================
+        flash(
+            "Pickup scheduled! Please send $75 Zelle deposit 48H before pickup date.",
+            "success"
+        )
 
-            badge=1,
-
-            role="admin"
-
-)
-        flash("Pickup scheduled! Please send $75 Zelle deposit 48H before pickup date.", "success")
         return redirect(url_for("main.schedule"))
 
     return render_template("schedule.html")
