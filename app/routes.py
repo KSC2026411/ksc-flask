@@ -35,14 +35,18 @@ def offline():
 
 @main.route("/")
 def home():
+
     now = datetime.utcnow()
+
     try:
         expired = Announcement.query.filter(
             Announcement.expires_at.isnot(None),
             Announcement.expires_at <= now
         ).all()
+
         for a in expired:
             db.session.delete(a)
+
         db.session.commit()
 
         announcements = Announcement.query.filter(
@@ -55,7 +59,11 @@ def home():
         print("DB ERROR:", e)
         announcements = []
 
-    return render_template("home.html", announcements=announcements, now=now)
+    return render_template(
+        "public/home.html",
+        announcements=announcements,
+        now=now
+    )
 
 @main.route("/save-subscription", methods=["POST"])
 @login_required
