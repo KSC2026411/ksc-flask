@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify
 from flask_login import login_required, login_user, logout_user, current_user
-from .models import User, Package, Announcement
+from .models import User, Package, Announcement, PushSubscription
 from .extensions import db, socketio
 from datetime import datetime, timedelta
 from flask_wtf.csrf import CSRFProtect
@@ -9,6 +9,7 @@ from .utils import generate_tracking
 from sqlalchemy import text
 from bs4 import BeautifulSoup
 from flask import render_template
+import json
 
 main = Blueprint("main", __name__)
 csrf = CSRFProtect()  # Enable in create_app()
@@ -55,6 +56,58 @@ def home():
         announcements = []
 
     return render_template("home.html", announcements=announcements, now=now)
+
+@main.route("/save-subscription", methods=["POST"])
+def save_subscription():
+
+    try:
+
+        data = request.get_json()
+
+        if not data:
+            return jsonify({
+                "success": False,
+                "error": "No data"
+            }), 400
+
+        subscription_json = json.dumps(data)
+
+        # Prevent duplicates
+        existing = PushSubscription.query.filter_by(
+            subscription=subscription_json
+        ).first()
+
+        if existing:
+            return jsonify({
+                "success": True,
+                "message": "Already saved"
+            })
+
+        new_subscription = PushSubscription(
+
+            user_id=current_user.id
+            if current_user.is_authenticated
+            else None,
+
+            subscription=subscription_json
+
+        )
+
+        db.session.add(new_subscription)
+
+        db.session.commit()
+
+        return jsonify({
+            "success": True
+        })
+
+    except Exception as e:
+
+        print("SAVE SUBSCRIPTION ERROR:", e)
+
+        return jsonify({
+            "success": False
+        }), 500
 
 
 # -------------------

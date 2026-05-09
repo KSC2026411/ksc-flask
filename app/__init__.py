@@ -23,6 +23,12 @@ def create_app():
     app.config["DEV_MODE"] = os.getenv("DEV_MODE", "false").lower() == "true"
 
     # -------------------
+# PUSH NOTIFICATIONS
+# -------------------
+    app.config["VAPID_PUBLIC_KEY"] = os.getenv("VAPID_PUBLIC_KEY")
+    app.config["VAPID_PRIVATE_KEY"] = os.getenv("VAPID_PRIVATE_KEY")
+
+    # -------------------
     # DATABASE CONFIG (Railway-safe)
     # -------------------
     database_url = os.getenv("DATABASE_URL")
