@@ -143,8 +143,14 @@ def logout():
 @login_required
 @admin_required
 def admin_users():
-    users = User.query.all()
-    return render_template("users.html", users=users)
+
+    # newest users first
+    users = User.query.order_by(User.id.desc()).all()
+
+    return render_template(
+        "users.html",
+        users=users
+    )
 
 @main.route("/admin/clear-packages", methods=["POST"])
 @login_required
