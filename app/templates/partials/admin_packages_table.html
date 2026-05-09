@@ -1,7 +1,48 @@
-<div class="container-fluid mt-5">
+{% extends "base_admin.html" %}
 
+{% block admin_content %}
+
+<div class="container-fluid mt-4">
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <h2 class="mb-0">Packages</h2>
+
+        <!-- ACTION BUTTONS -->
+        <div class="d-flex gap-2">
+
+            <!-- ARCHIVE DELIVERED -->
+            <form method="POST"
+                  action="{{ url_for('main.admin_archive_delivered') }}"
+                  onsubmit="return confirm('Archive all delivered packages?');">
+
+                <button type="submit" class="btn btn-success">
+                    Archive Delivered
+                </button>
+
+            </form>
+
+            <!-- CLEAR ALL (DANGER) -->
+            <form method="POST"
+                  action="{{ url_for('main.admin_clear_packages') }}"
+                  onsubmit="return confirm('⚠️ This will delete ALL packages permanently. Continue?');">
+
+                <button type="submit" class="btn btn-danger">
+                    Clear All
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- TABLE -->
     <div class="table-responsive">
-        <table class="table table-striped table-bordered align-middle fs-5" style="min-width:1400px;">
+
+        <table class="table table-striped table-bordered align-middle fs-5"
+               style="min-width:1400px;">
 
             <thead class="table-dark">
                 <tr>
@@ -38,17 +79,20 @@
                             {% elif p.status == 'In Transit' %}bg-info
                             {% elif p.status == 'Pending' %}bg-warning text-dark
                             {% elif p.status == 'Cancelled' %}bg-danger
+                            {% elif p.status == 'Archived' %}bg-secondary
                             {% else %}bg-secondary
                             {% endif %}">
                             {{ p.status or "Pending" }}
                         </span>
                     </td>
 
+                    <!-- UPDATE STATUS -->
                     <td>
                         <form method="POST"
                               action="{{ url_for('main.admin_update_package', package_id=p.id) }}">
 
                             <select name="status" class="form-select mb-2">
+
                                 <option value="Pending">Pending</option>
                                 <option value="In Warehouse">In Warehouse</option>
                                 <option value="Loaded">Loaded</option>
@@ -57,9 +101,11 @@
                                 <option value="Scheduled">Scheduled</option>
                                 <option value="Shipped">Shipped</option>
                                 <option value="Delivered">Delivered</option>
+                                <option value="Archived">Archived</option>
                                 <option value="Picked Up">Picked Up</option>
                                 <option value="Cancelled">Cancelled</option>
                                 <option value="Rescheduled">Rescheduled</option>
+
                             </select>
 
                             <button type="submit"
@@ -83,6 +129,9 @@
             </tbody>
 
         </table>
+
     </div>
 
 </div>
+
+{% endblock %}

@@ -146,6 +146,42 @@ def admin_users():
     users = User.query.all()
     return render_template("users.html", users=users)
 
+@main.route("/admin/clear-packages", methods=["POST"])
+@login_required
+def admin_clear_packages():
+    if current_user.role != "admin":
+        return "Unauthorized", 403
+
+    confirm = request.form.get("confirm_text")
+
+    if confirm != "DELETE":
+        flash("You must type DELETE to confirm.", "danger")
+        return redirect(url_for("main.admin_packages_table"))
+
+    # (optional backup step could go here)
+
+    Package.query.delete()
+    db.session.commit()
+
+    flash("All pickup schedules deleted successfully.", "success")
+    return redirect(url_for("main.admin_packages_table"))
+
+@main.route("/admin/archive-delivered", methods=["POST"])
+@login_required
+def admin_archive_delivered():
+    if current_user.role != "admin":
+        return "Unauthorized", 403
+
+    delivered_packages = Package.query.filter_by(status="Delivered").all()
+
+    for p in delivered_packages:
+        p.status = "Archived"
+
+    db.session.commit()
+
+    flash("Delivered packages archived successfully.", "success")
+    return redirect(url_for("main.admin_packages"))
+
 
 @main.route("/admin/user/<int:user_id>/promote", methods=["POST"])
 @login_required
@@ -197,6 +233,30 @@ def deactivate_user(user_id):
 
     flash(f"{user.name} has been deactivated.", "warning")
     return redirect(url_for("main.admin_users"))
+
+@main.route("/admin/packages/archived")
+@login_required
+def admin_archived_packages():
+    if current_user.role != "admin":
+        return "Unauthorized", 403
+
+    archived = Package.query.filter_by(status="Archived").order_by(Package.id.desc()).all()
+
+    return render_template("admin_archived_packages.html", packages=archived)
+
+@main.route("/admin/package/<int:package_id>/restore", methods=["POST"])
+@login_required
+def admin_restore_package(package_id):
+    if current_user.role != "admin":
+        return "Unauthorized", 403
+
+    package = Package.query.get_or_404(package_id)
+    package.status = "Delivered"  # or "Pending" depending on your workflow
+
+    db.session.commit()
+
+    flash("Package restored successfully.", "success")
+    return redirect(url_for("main.admin_archived_packages"))
 
 
 

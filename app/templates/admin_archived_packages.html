@@ -1,0 +1,76 @@
+{% extends "base_admin.html" %}
+
+{% block admin_content %}
+
+<div class="container-fluid mt-4">
+
+    <h2 class="mb-4">Archived Packages</h2>
+
+    <div class="table-responsive">
+
+        <table class="table table-striped table-bordered align-middle">
+
+            <thead class="table-dark">
+                <tr>
+                    <th>Tracking</th>
+                    <th>Description</th>
+                    <th>User</th>
+                    <th>Phone</th>
+                    <th>Pickup Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for p in packages %}
+                <tr>
+
+                    <td>{{ p.tracking_number }}</td>
+                    <td>{{ p.description }}</td>
+                    <td>{{ p.user.name if p.user else "N/A" }}</td>
+                    <td>{{ p.user.phone if p.user else "N/A" }}</td>
+
+                    <td>
+                        {{ p.pickup_date.strftime('%Y-%m-%d') if p.pickup_date else "N/A" }}
+                    </td>
+
+                    <td>
+                        <span class="badge bg-secondary">
+                            Archived
+                        </span>
+                    </td>
+
+                    <td>
+
+                        <form method="POST"
+                              action="{{ url_for('main.admin_restore_package', package_id=p.id) }}"
+                              onsubmit="return confirm('Restore this package?');">
+
+                            <button class="btn btn-success btn-sm">
+                                Restore
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center">
+                        No archived packages found.
+                    </td>
+                </tr>
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}
