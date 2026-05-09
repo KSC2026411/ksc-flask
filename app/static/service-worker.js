@@ -13,10 +13,13 @@ const STATIC_ASSETS = [
 // INSTALL - CACHE CORE ASSETS
 // =======================================
 self.addEventListener("install", event => {
+
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
   );
+
   self.skipWaiting();
+
 });
 
 
@@ -24,6 +27,7 @@ self.addEventListener("install", event => {
 // ACTIVATE - CLEAN OLD CACHE
 // =======================================
 self.addEventListener("activate", event => {
+
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
@@ -35,7 +39,9 @@ self.addEventListener("activate", event => {
       )
     )
   );
+
   self.clients.claim();
+
 });
 
 
@@ -49,6 +55,7 @@ self.addEventListener("fetch", event => {
   if (request.method !== "GET") return;
 
   event.respondWith(
+
     caches.match(request).then(cached => {
 
       const networkFetch = fetch(request)
@@ -71,41 +78,45 @@ self.addEventListener("fetch", event => {
         });
 
       return cached || networkFetch;
+
     })
+
   );
+
 });
 
 
 // =======================================
-// PUSH NOTIFICATIONS
+// PUSH NOTIFICATIONS (FIXED & RELIABLE)
 // =======================================
 self.addEventListener("push", event => {
 
-  let data = {};
-
-  if (event.data) {
-    data = event.data.json();
-  }
-
-  const title = data.title || "KSC Logistics";
-
-  const options = {
-    body: data.body || "New notification",
-    icon: "/static/icons/icon-192.png",
-    badge: "/static/icons/icon-192.png",
-    data: {
-      url: data.url || "/"
-    }
-  };
-
   event.waitUntil((async () => {
 
-    // Show notification
+    let data = {};
+
+    try {
+      data = event.data ? event.data.json() : {};
+    } catch (e) {
+      console.log("Push data parse error:", e);
+      data = {};
+    }
+
+    const title = data.title || "KSC Logistics";
+
+    const options = {
+      body: data.body || "New notification",
+      icon: "/static/icons/icon-192.png",
+      badge: "/static/icons/icon-192.png",
+      data: {
+        url: data.url || "/"
+      }
+    };
+
+    // SHOW NOTIFICATION (CRITICAL)
     await self.registration.showNotification(title, options);
 
-    // =======================================
-    // APP BADGE (ONLY IF SUPPORTED)
-    // =======================================
+    // APP BADGE (Android Chrome only)
     try {
 
       if (self.navigator && "setAppBadge" in self.navigator) {
@@ -117,6 +128,7 @@ self.addEventListener("push", event => {
     }
 
   })());
+
 });
 
 
@@ -132,4 +144,5 @@ self.addEventListener("notificationclick", event => {
   event.waitUntil(
     clients.openWindow(url)
   );
+
 });
