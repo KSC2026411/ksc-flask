@@ -8,14 +8,17 @@ from flask import current_app
 from app.models import PushSubscription, User
 
 
-def generate_tracking(length=10):
+# ==========================================
+# TRACKING NUMBER GENERATOR (IMPROVED)
+# ==========================================
 
-    return "TRK" + ''.join(
-        random.choices(
-            string.ascii_uppercase + string.digits,
-            k=length
-        )
-    )
+def generate_tracking():
+    """
+    Generates short, readable, unique tracking number:
+    Example: KSC-48291
+    """
+
+    return f"KSC-{random.randint(10000, 99999)}"
 
 
 # ==========================================
@@ -36,10 +39,7 @@ def send_push_notification(
 
         # Filter by role if specified
         if role:
-
-            query = query.join(User).filter(
-                User.role == role
-            )
+            query = query.join(User).filter(User.role == role)
 
         subscriptions = query.all()
 
@@ -54,12 +54,10 @@ def send_push_notification(
                     subscription_info=json.loads(sub.subscription),
 
                     data=json.dumps({
-
                         "title": title,
                         "body": body,
                         "url": url,
                         "badge": badge
-
                     }),
 
                     vapid_private_key=current_app.config["VAPID_PRIVATE_KEY"],
@@ -73,9 +71,7 @@ def send_push_notification(
                 print(f"✅ Push sent to user {sub.user_id}")
 
             except Exception as e:
-
-                print("❌ Push failed:", e)
+                print(f"❌ Push failed for user {sub.user_id}:", e)
 
     except Exception as e:
-
         print("❌ Global push error:", e)
