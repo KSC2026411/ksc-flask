@@ -20,7 +20,9 @@
                 type="button"
                 data-bs-toggle="collapse"
                 data-bs-target="#adminNav">
+
             <span class="navbar-toggler-icon"></span>
+
         </button>
 
         <!-- NAV LINKS -->
@@ -28,31 +30,43 @@
 
             <div class="d-flex flex-wrap gap-2 mt-2 mt-lg-0">
 
+                <!-- DASHBOARD -->
                 <a href="{{ url_for('main.admin_dashboard') }}"
-                   class="btn btn-outline-dark btn-sm">
+                   class="btn btn-sm {% if request.endpoint == 'main.admin_dashboard' %}btn-dark text-white{% else %}btn-outline-dark{% endif %}">
                     Dashboard
                 </a>
 
+                <!-- USERS -->
                 <a href="{{ url_for('main.admin_users') }}"
-                   class="btn btn-outline-dark btn-sm">
+                   class="btn btn-sm {% if request.endpoint == 'main.admin_users' %}btn-dark text-white{% else %}btn-outline-dark{% endif %}">
                     Users
                 </a>
 
+                <!-- PACKAGES -->
                 <a href="{{ url_for('main.admin_packages') }}"
-                   class="btn btn-outline-dark btn-sm">
+                   class="btn btn-sm {% if request.endpoint == 'main.admin_packages' %}btn-dark text-white{% else %}btn-outline-dark{% endif %}">
                     Packages
                 </a>
 
+                <!-- ARCHIVED -->
                 <a href="{{ url_for('main.admin_archived_packages') }}"
-                   class="btn btn-outline-dark btn-sm">
+                   class="btn btn-sm {% if request.endpoint == 'main.admin_archived_packages' %}btn-dark text-white{% else %}btn-outline-dark{% endif %}">
                     Archived
                 </a>
 
+                <!-- ANNOUNCEMENTS -->
                 <a href="{{ url_for('main.admin_announcements') }}"
-                   class="btn btn-outline-dark btn-sm">
+                   class="btn btn-sm {% if request.endpoint == 'main.admin_announcements' %}btn-dark text-white{% else %}btn-outline-dark{% endif %}">
                     Announcements
                 </a>
 
+                <!-- AUDIT LOGS -->
+                <a href="{{ url_for('main.audit_dashboard') }}"
+                   class="btn btn-sm {% if request.endpoint == 'main.audit_dashboard' %}btn-dark text-white{% else %}btn-outline-dark{% endif %}">
+                    Audit Logs
+                </a>
+
+                <!-- LOGOUT -->
                 <a href="{{ url_for('main.logout') }}"
                    class="btn btn-danger btn-sm">
                     Logout
@@ -76,9 +90,11 @@
 {% else %}
 
 <div class="container mt-5">
+
     <div class="alert alert-danger">
         Unauthorized access.
     </div>
+
 </div>
 
 {% endif %}
