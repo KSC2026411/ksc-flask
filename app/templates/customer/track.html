@@ -2,29 +2,63 @@
 
 {% block customer_content %}
 
-<div class="d-flex">
+<div class="container py-4">
 
-    
-    <!-- MAIN CONTENT -->
-    <div class="flex-grow-1 p-4">
-        <h2>Track a Package</h2>
+    <h2 class="mb-4">Track a Package</h2>
 
-        <form method="POST">
-            <input class="form-control mb-2" name="tracking_number" placeholder="Enter Tracking Number">
-            <button class="btn btn-info">Track</button>
-        </form>
+    <!-- TRACK FORM -->
+    <form method="POST" class="mb-3">
 
-        {% if package %}
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h5>Status: {{ package.status }}</h5>
-                    <p><strong>Description:</strong> {{ package.description }}</p>
-                    <p><strong>Pickup Address:</strong> {{ package.street }}, {{ package.city }}, {{ package.state }}, {{ package.zip_code }}</p>
-                    <p><strong>Date:</strong> {{ package.pickup_date }}</p>
-                </div>
+        <input class="form-control mb-2"
+               name="tracking_number"
+               placeholder="Enter Tracking Number (e.g. KSC-48291)"
+               value="{{ tracking_number or '' }}"
+               required>
+
+        <button class="btn btn-info w-100">
+            Track Package
+        </button>
+
+    </form>
+
+    <!-- RESULT SECTION -->
+    {% if package %}
+
+        <div class="card shadow-sm border-0 mt-3">
+
+            <div class="card-body">
+
+                <h5 class="mb-3">
+                    Status: <span class="badge bg-primary">{{ package.status }}</span>
+                </h5>
+
+                <p class="mb-2">
+                    <strong>Description:</strong>
+                    {{ package.description }}
+                </p>
+
+                <p class="mb-2">
+                    <strong>Pickup Address:</strong><br>
+                    {{ package.street }}, {{ package.city }}, {{ package.state }} {{ package.zip_code }}
+                </p>
+
+                <p class="mb-0">
+                    <strong>Pickup Date:</strong>
+                    {{ package.pickup_date }}
+                </p>
+
             </div>
-        {% endif %}
-    </div>
+
+        </div>
+
+    {% elif tracking_number %}
+
+        <div class="alert alert-warning mt-3">
+            No package found for <strong>{{ tracking_number }}</strong>
+        </div>
+
+    {% endif %}
 
 </div>
+
 {% endblock %}

@@ -594,21 +594,44 @@ def propose_reschedule(package_id):
 # -------------------
 # TRACK PACKAGE
 # -------------------
-@main.route("/track", methods=["GET","POST"])
-@login_required
+@main.route("/track", methods=["GET", "POST"])
 def track():
-    if current_user.role != "customer":
-        flash("Admins cannot access customer pages.", "warning")
-        return redirect(url_for("main.admin_dashboard"))
 
     package = None
+    tracking_number = None
+
     if request.method == "POST":
         tracking_number = request.form.get("tracking_number")
+
         if tracking_number:
-            package = Package.query.filter_by(tracking_number=tracking_number).first()
+            package = Package.query.filter_by(
+                tracking_number=tracking_number.strip().upper()
+            ).first()
+
             if not package:
-                flash(f"No package found with tracking number {tracking_number}", "warning")
-    return render_template("customer/track.htm", package=package)
+                flash("No package found with that tracking number.", "warning")
+
+    return render_template(
+        "customer/track.html",
+        package=package,
+        tracking_number=tracking_number
+    )
+
+@main.route("/track/<tracking_number>")
+def track_public(tracking_number):
+
+    package = Package.query.filter_by(
+        tracking_number=tracking_number.strip().upper()
+    ).first()
+
+    if not package:
+        return render_template("track.html", package=None, tracking_number=tracking_number)
+
+    return render_template(
+        "customer/track.html",
+        package=package,
+        tracking_number=tracking_number
+    )
 
 # -------------------
 # ADMIN DASHBOARD
