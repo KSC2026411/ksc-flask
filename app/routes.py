@@ -5,7 +5,7 @@ from .extensions import db, socketio
 from datetime import datetime, timedelta
 from flask_wtf.csrf import CSRFProtect
 from .decorators import admin_required
-from .utils import generate_tracking
+from .utils import generate_tracking, send_push_notification
 from sqlalchemy import text
 from bs4 import BeautifulSoup
 from flask import render_template
@@ -384,6 +384,20 @@ def schedule():
         )
         db.session.add(package)
         db.session.commit()
+
+        send_push_notification(
+
+            title="New Pickup Request",
+
+            body=f"{current_user.name} submitted a pickup request",
+
+            url="/admin/pickups",
+
+            badge=1,
+
+            role="admin"
+
+)
         flash("Pickup scheduled! Please send $75 Zelle deposit 48H before pickup date.", "success")
         return redirect(url_for("main.schedule"))
 
