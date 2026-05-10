@@ -208,3 +208,36 @@ input, textarea {
         text-align: center;
     }
 }
+
+/* =========================
+   DASHBOARD INTERACTIONS & HOVER EFFECTS
+========================= */
+
+/* Quick action buttons hover effect */
+.btn-lg:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease-in-out;
+}
+
+/* Analytics cards hover effect */
+.card.shadow-sm:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    transition: all 0.25s ease-in-out;
+}
+
+/* Table row hover effect */
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05); /* subtle highlight */
+}
+
+/* Quick action buttons icon spacing */
+.btn.d-flex i {
+    margin-right: 8px;
+}
+
+/* Smooth transition for all hover effects */
+.btn, .card, .table-hover tbody tr {
+    transition: all 0.25s ease-in-out;
+}
