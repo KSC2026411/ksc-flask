@@ -15,9 +15,9 @@
 <body class="{% block body_class %}{% endblock %}">
 
 <!-- =========================
-     TOP NAVIGATION BAR (FULL WIDTH, DARK BLUE)
+     FIXED TOP NAVIGATION BAR (DARK BLUE)
 ========================= -->
-<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 p-3 rounded shadow-sm top-action-bar bg-dark-blue">
+<div class="d-flex flex-wrap align-items-center justify-content-between p-3 rounded shadow-sm top-action-bar bg-dark-blue fixed-top">
     <div class="d-flex flex-wrap gap-2">
         <a href="{{ url_for('main.schedule') }}" class="btn btn-primary btn-lg shadow-sm d-flex align-items-center gap-2">
             <i class="bi bi-calendar-plus fs-4"></i>
@@ -41,6 +41,9 @@
         Logout
     </a>
 </div>
+
+<!-- Spacer to prevent overlap with fixed top bar -->
+<div style="height: 80px;"></div>
 
 <!-- =========================
      MOBILE NAVBAR (optional, small screens)
