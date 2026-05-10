@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}KSC LOGISTICS - Customer{% endblock %}</title>
+
+    <title>
+        {% block title %}
+            KSC LOGISTICS - Customer
+        {% endblock %}
+    </title>
 
     <!-- Mobile Responsive -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,49 +19,85 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- Custom Styling -->
+    <style>
+
+        /* ==============================
+           DARK BLUE TOP NAVIGATION
+        ============================== */
+        .top-action-bar {
+            background-color: #0b1f3a;
+            z-index: 1050;
+        }
+
+        /* Prevent button wrapping */
+        .top-nav-buttons {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .top-nav-buttons::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Smooth button look */
+        .top-action-bar .btn {
+            white-space: nowrap;
+            border-radius: 10px;
+        }
+
+    </style>
+
 </head>
 
 <body class="{% block body_class %}{% endblock %}">
 
 <!-- =====================================
      DESKTOP TOP NAVIGATION
-     Visible only on lg and above
+     Visible only on lg+
 ===================================== -->
-<div class="d-none d-lg-flex flex-wrap align-items-center justify-content-between p-3 shadow-sm top-action-bar bg-dark-blue fixed-top">
+<div class="d-none d-lg-flex align-items-center justify-content-between px-3 py-2 shadow-sm top-action-bar fixed-top">
 
     <!-- LEFT SIDE NAVIGATION -->
-    <div class="d-flex flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2 top-nav-buttons">
 
+        <!-- Schedule -->
         <a href="{{ url_for('main.schedule') }}"
-           class="btn btn-primary btn-lg shadow-sm d-flex align-items-center gap-2">
+           class="btn btn-primary btn-sm shadow-sm d-flex align-items-center gap-1 px-3 py-2">
 
-            <i class="bi bi-calendar-plus fs-4"></i>
-            Schedule Pickup
+            <i class="bi bi-calendar-plus"></i>
+            <span>Schedule</span>
 
         </a>
 
+        <!-- Track -->
         <a href="{{ url_for('main.track') }}"
-           class="btn btn-success btn-lg shadow-sm d-flex align-items-center gap-2">
+           class="btn btn-success btn-sm shadow-sm d-flex align-items-center gap-1 px-3 py-2">
 
-            <i class="bi bi-truck fs-4"></i>
-            Track a Package
+            <i class="bi bi-truck"></i>
+            <span>Track</span>
 
         </a>
 
+        <!-- Packages -->
         <a href="{{ url_for('main.my_packages') }}"
-           class="btn btn-info btn-lg shadow-sm d-flex align-items-center gap-2">
+           class="btn btn-info btn-sm shadow-sm d-flex align-items-center gap-1 px-3 py-2">
 
-            <i class="bi bi-box-seam fs-4"></i>
-            View All Packages
+            <i class="bi bi-box-seam"></i>
+            <span>Packages</span>
 
         </a>
 
+        <!-- Analytics -->
         <a href="{{ url_for('main.customer_analytics') }}"
-           class="btn btn-secondary btn-lg shadow-sm d-flex align-items-center gap-2">
+           class="btn btn-secondary btn-sm shadow-sm d-flex align-items-center gap-1 px-3 py-2">
 
-            <i class="bi bi-bar-chart fs-4"></i>
-            Analytics
+            <i class="bi bi-bar-chart"></i>
+            <span>Analytics</span>
 
         </a>
 
@@ -65,21 +106,21 @@
     <!-- RIGHT SIDE ACTIONS -->
     <div class="d-flex align-items-center gap-2">
 
-        <!-- REFRESH BUTTON -->
+        <!-- Refresh -->
         <button onclick="window.location.reload();"
-                class="btn btn-warning btn-lg shadow-sm d-flex align-items-center gap-2">
+                class="btn btn-warning btn-sm shadow-sm d-flex align-items-center gap-1 px-3 py-2">
 
-            <i class="bi bi-arrow-clockwise fs-4"></i>
-            Refresh
+            <i class="bi bi-arrow-clockwise"></i>
+            <span>Refresh</span>
 
         </button>
 
-        <!-- LOGOUT BUTTON -->
+        <!-- Logout -->
         <a href="{{ url_for('main.logout') }}"
-           class="btn btn-danger btn-lg shadow-sm d-flex align-items-center gap-2">
+           class="btn btn-danger btn-sm shadow-sm d-flex align-items-center gap-1 px-3 py-2">
 
-            <i class="bi bi-box-arrow-right fs-4"></i>
-            Logout
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Logout</span>
 
         </a>
 
@@ -87,14 +128,15 @@
 
 </div>
 
-<!-- Spacer for Fixed Desktop Navbar -->
-<div class="d-none d-lg-block" style="height: 95px;"></div>
+<!-- Spacer for fixed desktop navbar -->
+<div class="d-none d-lg-block" style="height: 70px;"></div>
 
 <!-- =====================================
      MOBILE NAVBAR
      Visible only below lg
 ===================================== -->
-<nav class="navbar navbar-dark bg-dark d-lg-none sticky-top shadow-sm px-3">
+<nav class="navbar navbar-dark d-lg-none sticky-top shadow-sm px-3"
+     style="background-color: #0b1f3a;">
 
     <span class="navbar-brand mb-0 h1">
         KSC Logistics
@@ -117,12 +159,15 @@
 <!-- =====================================
      MOBILE COLLAPSIBLE MENU
 ===================================== -->
-<div class="collapse bg-dark text-white d-lg-none shadow-sm" id="mobileMenu">
+<div class="collapse text-white d-lg-none shadow-sm"
+     id="mobileMenu"
+     style="background-color: #0b1f3a;">
 
     <div class="p-3">
 
-        <!-- DASHBOARD -->
-        <a class="d-block mb-2 p-2 text-white text-decoration-none rounded {% if request.endpoint == 'main.dashboard' %}bg-secondary{% endif %}"
+        <!-- Dashboard -->
+        <a class="d-block mb-2 p-2 text-white text-decoration-none rounded
+           {% if request.endpoint == 'main.dashboard' %}bg-secondary{% endif %}"
            href="{{ url_for('main.dashboard') }}">
 
             <i class="bi bi-house-door me-2"></i>
@@ -130,8 +175,9 @@
 
         </a>
 
-        <!-- SCHEDULE -->
-        <a class="d-block mb-2 p-2 text-white text-decoration-none rounded {% if request.endpoint == 'main.schedule' %}bg-secondary{% endif %}"
+        <!-- Schedule -->
+        <a class="d-block mb-2 p-2 text-white text-decoration-none rounded
+           {% if request.endpoint == 'main.schedule' %}bg-secondary{% endif %}"
            href="{{ url_for('main.schedule') }}">
 
             <i class="bi bi-calendar-plus me-2"></i>
@@ -139,8 +185,9 @@
 
         </a>
 
-        <!-- PACKAGES -->
-        <a class="d-block mb-2 p-2 text-white text-decoration-none rounded {% if request.endpoint == 'main.my_packages' %}bg-secondary{% endif %}"
+        <!-- Packages -->
+        <a class="d-block mb-2 p-2 text-white text-decoration-none rounded
+           {% if request.endpoint == 'main.my_packages' %}bg-secondary{% endif %}"
            href="{{ url_for('main.my_packages') }}">
 
             <i class="bi bi-box-seam me-2"></i>
@@ -148,8 +195,9 @@
 
         </a>
 
-        <!-- TRACK -->
-        <a class="d-block mb-2 p-2 text-white text-decoration-none rounded {% if request.endpoint == 'main.track' %}bg-secondary{% endif %}"
+        <!-- Track -->
+        <a class="d-block mb-2 p-2 text-white text-decoration-none rounded
+           {% if request.endpoint == 'main.track' %}bg-secondary{% endif %}"
            href="{{ url_for('main.track') }}">
 
             <i class="bi bi-truck me-2"></i>
@@ -157,8 +205,9 @@
 
         </a>
 
-        <!-- ANALYTICS -->
-        <a class="d-block mb-3 p-2 text-white text-decoration-none rounded {% if request.endpoint == 'main.customer_analytics' %}bg-secondary{% endif %}"
+        <!-- Analytics -->
+        <a class="d-block mb-3 p-2 text-white text-decoration-none rounded
+           {% if request.endpoint == 'main.customer_analytics' %}bg-secondary{% endif %}"
            href="{{ url_for('main.customer_analytics') }}">
 
             <i class="bi bi-bar-chart me-2"></i>
@@ -168,7 +217,7 @@
 
         <hr class="border-light">
 
-        <!-- REFRESH BUTTON -->
+        <!-- Refresh -->
         <button onclick="window.location.reload();"
                 class="btn btn-warning w-100 mb-3">
 
@@ -177,7 +226,7 @@
 
         </button>
 
-        <!-- LOGOUT -->
+        <!-- Logout -->
         <a class="btn btn-danger w-100"
            href="{{ url_for('main.logout') }}">
 
