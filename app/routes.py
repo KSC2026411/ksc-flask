@@ -338,12 +338,32 @@ def dashboard():
         flash("Admins cannot access customer pages.", "warning")
         return redirect(url_for("main.admin_dashboard"))
 
+    # --- Fetch announcements ---
     now = datetime.utcnow()
     announcements = Announcement.query.filter(
         Announcement.expires_at.isnot(None),
         Announcement.expires_at > now
     ).order_by(Announcement.created_at.desc()).all()
-    return render_template("customer/customer_dashboard.html", announcements=announcements)
+
+    # --- Fetch packages for current customer ---
+    packages = Package.query.filter_by(user_id=current_user.id).order_by(Package.created_at.desc()).all()
+
+    # --- Analytics numbers ---
+    total_packages = len(packages)
+    pending_deliveries = sum(1 for p in packages if p.status == 'pending')
+    delivered_packages = sum(1 for p in packages if p.status == 'delivered')
+    in_transit_packages = sum(1 for p in packages if p.status == 'in_transit')
+
+    # --- Render template with all data ---
+    return render_template(
+        "customer/customer_dashboard.html",
+        announcements=announcements,
+        packages=packages,
+        total_packages=total_packages,
+        pending_deliveries=pending_deliveries,
+        delivered_packages=delivered_packages,
+        in_transit_packages=in_transit_packages
+    )
 
 
 # -------------------
