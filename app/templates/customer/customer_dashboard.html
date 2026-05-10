@@ -4,7 +4,9 @@
 
 {% block customer_content %}
 
-<!-- ANNOUNCEMENTS -->
+<!-- =========================
+     ANNOUNCEMENTS
+========================= -->
 <div class="card shadow-sm border-0 mb-5">
     <div class="card-header bg-secondary text-white">
         <h4 class="mb-0">Active Announcements</h4>
@@ -24,43 +26,9 @@
     </div>
 </div>
 
-<!-- CUSTOMER ANALYTICS CARDS -->
-<div class="row g-3 mb-5">
-    <div class="col-md-3">
-        <div class="card text-white bg-primary text-center shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">Total Packages</h5>
-                <p class="card-text fs-3 fw-bold">{{ total_packages }}</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-dark bg-warning text-center shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">Pending Deliveries</h5>
-                <p class="card-text fs-3 fw-bold">{{ pending_deliveries }}</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-success text-center shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">Delivered Packages</h5>
-                <p class="card-text fs-3 fw-bold">{{ delivered_packages }}</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-info text-center shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">In Transit</h5>
-                <p class="card-text fs-3 fw-bold">{{ in_transit_packages }}</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- RECENT PACKAGES TABLE -->
+<!-- =========================
+     RECENT PACKAGES TABLE
+========================= -->
 <div class="card shadow-sm border-0 mb-5">
     <div class="card-header bg-secondary text-white">
         <h4 class="mb-0">Your Recent Packages</h4>

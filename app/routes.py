@@ -653,6 +653,30 @@ def track_public(tracking_number):
         tracking_number=tracking_number
     )
 
+@main.route("/analytics")
+@login_required
+def customer_analytics():
+    if current_user.role != "customer":
+        flash("Admins cannot access customer pages.", "warning")
+        return redirect(url_for("main.admin_dashboard"))
+
+    # Fetch all packages for the current customer
+    packages = Package.query.filter_by(user_id=current_user.id).order_by(Package.created_at.desc()).all()
+
+    # Compute analytics
+    total_packages = len(packages)
+    pending_deliveries = sum(1 for p in packages if p.status == "Pending")
+    delivered_packages = sum(1 for p in packages if p.status == "Delivered")
+    in_transit_packages = sum(1 for p in packages if p.status == "In Transit")
+
+    return render_template(
+        "customer/analytics.html",
+        total_packages=total_packages,
+        pending_deliveries=pending_deliveries,
+        delivered_packages=delivered_packages,
+        in_transit_packages=in_transit_packages
+    )
+
 # -------------------
 # ADMIN DASHBOARD
 # -------------------

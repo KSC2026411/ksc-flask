@@ -1,0 +1,54 @@
+{% extends "customer/base_customer.html" %}
+
+{% block title %}Customer Analytics{% endblock %}
+
+{% block customer_content %}
+
+<div class="container-fluid mt-4">
+
+    <!-- =========================
+         ANALYTICS CARDS
+    ========================= -->
+    <div class="row g-3 mb-5">
+
+        <div class="col-md-3">
+            <div class="card text-white bg-primary text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Total Packages</h5>
+                    <p class="card-text fs-3 fw-bold">{{ total_packages }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-dark bg-warning text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Deliveries</h5>
+                    <p class="card-text fs-3 fw-bold">{{ pending_deliveries }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-white bg-success text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Delivered Packages</h5>
+                    <p class="card-text fs-3 fw-bold">{{ delivered_packages }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-white bg-info text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">In Transit</h5>
+                    <p class="card-text fs-3 fw-bold">{{ in_transit_packages }}</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
