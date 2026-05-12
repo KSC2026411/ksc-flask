@@ -907,9 +907,29 @@ def delete_announcement(id):
 @login_required
 @admin_required
 def admin_packages_table():
+
     search_query = request.args.get("search", "").strip()
+
+    query = Package.query.join(Package.user, isouter=True)
+
     if search_query:
-        packages = Package.query.filter(Package.tracking_number.ilike(f"%{search_query}%")).all()
-    else:
-        packages = Package.query.order_by(Package.created_at.desc()).all()
-    return render_template("partials/admin_packages_table.html", packages=packages)
+
+        search_filter = or_(
+            Package.tracking_number.ilike(f"%{search_query}%"),
+            Package.description.ilike(f"%{search_query}%"),
+            Package.status.ilike(f"%{search_query}%"),
+            Package.notes.ilike(f"%{search_query}%"),
+            User.name.ilike(f"%{search_query}%"),
+            User.phone.ilike(f"%{search_query}%")
+        )
+
+        query = query.filter(search_filter)
+
+    packages = query.order_by(
+        Package.created_at.desc()
+    ).all()
+
+    return render_template(
+        "partials/admin_packages_table.html",
+        packages=packages
+    )
