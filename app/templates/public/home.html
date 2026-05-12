@@ -8,63 +8,74 @@
 {% block content %}
 
 <style>
-/* =========================
-   GLOBAL LAYOUT
-========================= */
 
-.page-wrapper {
-    min-height: 100dvh; /* 👈 modern fix for mobile browsers */
-    display: flex;
-    flex-direction: column;
+/* REMOVE ALL PAGE SPACING */
+body,
+main {
+    margin: 0;
+    padding: 0;
 }
 
-/* =========================
-   HERO (MOBILE FIRST)
-========================= */
+/* FULL PAGE */
+.page-wrapper {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, #020617, #0f172a);
+}
 
+/* HERO */
 .main-container {
     flex: 1;
+    width: 100%;
     padding: 20px 16px;
     display: flex;
-    justify-content: flex-start; /* top aligned */
+    justify-content: flex-start; /* push to top */
     align-items: center;
     flex-direction: column;
-    background: linear-gradient(135deg, #0f172a, #111827);
 }
 
 /* CARD */
 .welcome-card {
     width: 100%;
     max-width: 520px;
-    margin-top: 24px;
-    padding: 24px 18px;
-    border-radius: 16px;
-    background: rgba(0,0,0,0.55);
+
+    margin-top: 20px;
+
+    padding: 28px 20px;
+
+    border-radius: 18px;
+
+    background: rgba(0, 0, 0, 0.55);
+
     backdrop-filter: blur(8px);
+
     color: white;
     text-align: center;
 }
 
-/* TEXT */
+/* TITLE */
 .welcome-card h1 {
-    font-size: 1.8rem;
+    font-size: 2rem;
     font-weight: 700;
-    margin-bottom: 8px;
+    line-height: 1.2;
+    margin-bottom: 12px;
 }
 
+/* TAGLINE */
 .tagline {
     font-size: 1rem;
     opacity: 0.9;
-    margin-bottom: 16px;
+    margin-bottom: 24px;
 }
 
 /* BUTTONS */
 .button-group {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     align-items: center;
-    margin-top: 16px;
 }
 
 .button-group a {
@@ -72,13 +83,10 @@
     max-width: 240px;
 }
 
-/* =========================
-   FOOTER
-========================= */
-
+/* FOOTER */
 .footer {
-    background: #0b0f1a;
-    color: #fff;
+    background: #020617;
+    color: white;
     padding: 16px;
     font-size: 13px;
 }
@@ -90,27 +98,16 @@
     text-align: center;
 }
 
-/* =========================
-   TABLET / DESKTOP
-========================= */
-
+/* DESKTOP */
 @media (min-width: 768px) {
 
-    .main-container {
-        justify-content: center; /* center on desktop */
-    }
-
     .welcome-card {
-        padding: 32px;
-        margin-top: 0;
+        margin-top: 30px;
+        padding: 40px;
     }
 
     .welcome-card h1 {
-        font-size: 2.4rem;
-    }
-
-    .tagline {
-        font-size: 1.1rem;
+        font-size: 3rem;
     }
 
     .button-group {
@@ -135,27 +132,37 @@
 <div class="page-wrapper">
 
     <!-- HERO -->
-    <div class="main-container text-white">
+    <div class="main-container">
 
         <div class="welcome-card">
 
             <h1>Welcome to KSC LOGISTICS</h1>
-            <p class="tagline">WE SHIP THEM CHEAP ✅</p>
+
+            <p class="tagline">
+                WE SHIP THEM CHEAP ✅
+            </p>
 
             <div class="button-group">
 
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('main.my_packages') }}" class="btn btn-primary btn-lg">
+
+                    <a href="{{ url_for('main.my_packages') }}"
+                       class="btn btn-primary btn-lg">
                         Go to Dashboard
                     </a>
+
                 {% else %}
-                    <a href="{{ url_for('main.login') }}" class="btn btn-success btn-lg">
+
+                    <a href="{{ url_for('main.login') }}"
+                       class="btn btn-success btn-lg">
                         Login
                     </a>
 
-                    <a href="{{ url_for('main.register') }}" class="btn btn-outline-light btn-lg">
+                    <a href="{{ url_for('main.register') }}"
+                       class="btn btn-outline-light btn-lg">
                         Register
                     </a>
+
                 {% endif %}
 
             </div>
@@ -166,15 +173,25 @@
 
     <!-- FOOTER -->
     <footer class="footer">
+
         <div class="footer-content">
+
             <span><strong>KSC LOGISTICS</strong></span>
+
             <span>WE SHIP THEM CHEAP ✅</span>
+
             <span>📞 +1 (256) 328-5676</span>
+
             <span>✉️ kscsupport26@gmail.com</span>
+
             <span>📍 Gadsden, ALABAMA-USA</span>
+
             <span>📞 +1 (228) 900-705-73</span>
+
             <span>📍 Djidjole, LOME-TOGO</span>
+
         </div>
+
     </footer>
 
 </div>
