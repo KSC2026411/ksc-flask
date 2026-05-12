@@ -955,7 +955,7 @@ def admin_packages_table():
 
     packages = query.order_by(
         Package.created_at.desc()
-    ).all()
+    ).paginate(page=1, per_page=100)
 
     return render_template(
         "partials/admin_packages_table.html",
