@@ -700,6 +700,31 @@ def admin_suggest_reschedule(package_id):
     flash("Reschedule suggestion sent.", "success")
     return redirect(url_for("main.admin_packages"))
 
+@main.route("/admin/package/<int:package_id>/accept-reschedule", methods=["POST"])
+@login_required
+@admin_required
+def admin_accept_reschedule(package_id):
+    package = Package.query.get_or_404(package_id)
+    if package.admin_suggested_date:
+        package.pickup_date = package.admin_suggested_date
+    package.admin_suggested_date = None
+    package.status = "Scheduled"
+    db.session.commit()
+    flash("Reschedule accepted.", "success")
+    return redirect(url_for("main.admin_packages"))
+
+
+@main.route("/admin/package/<int:package_id>/reject-reschedule", methods=["POST"])
+@login_required
+@admin_required
+def reject_admin_reschedule(package_id):
+    package = Package.query.get_or_404(package_id)
+    package.admin_suggested_date = None
+    package.status = "Pending"
+    db.session.commit()
+    flash("Reschedule rejected.", "info")
+    return redirect(url_for("main.admin_packages"))
+
 
 @main.route("/admin/users")
 @login_required
