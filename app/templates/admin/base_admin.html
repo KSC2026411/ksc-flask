@@ -74,8 +74,8 @@
 
 </nav>
 
-<!-- GLOBAL REFRESH BUTTON (ADMIN) -->
-<button onclick="window.location.reload()"
+<!-- GLOBAL REFRESH BUTTON (FIXED FOR PWA) -->
+<button onclick="forceRefresh()"
         class="btn btn-dark shadow"
         title="Refresh page"
         style="
@@ -87,9 +87,7 @@
             height: 52px;
             border-radius: 50%;
         ">
-
     🔄
-
 </button>
 
 <!-- ADMIN CONTENT AREA -->
@@ -110,5 +108,19 @@
 </div>
 
 {% endif %}
+
+<!-- FIXED REFRESH LOGIC -->
+<script>
+function forceRefresh() {
+
+    // bypass PWA/service worker cache
+    const url = new URL(window.location.href);
+
+    url.searchParams.set("_t", Date.now());
+
+    window.location.href = url.toString();
+
+}
+</script>
 
 {% endblock %}

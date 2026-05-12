@@ -689,41 +689,47 @@ def admin_dashboard():
     page = request.args.get("page", 1, type=int)
 
     packages = Package.query.order_by(
-        Package.created_at.desc()
+        Package.pickup_date.desc()
     ).paginate(page=page, per_page=20)
 
     announcements = Announcement.query.order_by(
         Announcement.created_at.desc()
     ).limit(50).all()
 
-    # =========================
-    # 📊 ANALYTICS (FIXED)
-    # =========================
+    # ======================================
+    # ⚡ LIVE SYNC MODE (AJAX REFRESH SUPPORT)
+    # ======================================
+    if request.headers.get("X-Live-Sync") == "true":
 
-    total_packages = Package.query.count()
+        return render_template(
+            "admin/admin_dashboard.html",
+            packages=packages,
+            announcements=announcements,
 
-    pending_deliveries = Package.query.filter(
-        Package.status.ilike("%pending%")
-    ).count()
+            # REAL-TIME STATS
+            total_packages=Package.query.count(),
 
-    delivered_today = Package.query.filter(
-        Package.status.ilike("%delivered%"),
-        Package.created_at >= datetime.utcnow().date()
-    ).count()
+            pending_deliveries=Package.query.filter(
+                Package.status.ilike("%pending%")
+            ).count(),
 
-    active_users = User.query.filter_by(
-        role="customer",
-        active=True
-    ).count()
+            delivered_today=Package.query.filter(
+                Package.status.ilike("%delivered%")
+            ).count(),
 
+            active_users=User.query.filter_by(
+                role="customer",
+                active=True
+            ).count()
+        )
+
+    # ======================================
+    # NORMAL PAGE LOAD
+    # ======================================
     return render_template(
         "admin/admin_dashboard.html",
         packages=packages,
-        announcements=announcements,
-        total_packages=total_packages,
-        pending_deliveries=pending_deliveries,
-        delivered_today=delivered_today,
-        active_users=active_users
+        announcements=announcements
     )
 
 

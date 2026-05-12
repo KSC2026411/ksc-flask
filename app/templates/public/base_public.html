@@ -9,7 +9,6 @@
         {% block title %}KSC LOGISTICS{% endblock %}
     </title>
 
-    <!-- MOBILE -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- PWA -->
@@ -18,19 +17,9 @@
 
     <!-- IOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="KSC Logistics">
-
-    <!-- ICONS -->
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
-    <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icons/icon-192.png') }}">
-    <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='icons/icon-512.png') }}">
 
     <!-- BOOTSTRAP -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
     {% block head %}{% endblock %}
 
@@ -51,21 +40,8 @@
             flex: 1;
         }
 
-        /* GLOBAL REFRESH BUTTON */
-        #global-refresh-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 99999;
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        /* GLOBAL REFRESH BUTTON REMOVED (replaced by live sync) */
 
-        /* SPLASH */
         #app-loader {
             position: fixed;
             inset: 0;
@@ -77,7 +53,6 @@
             z-index: 99999;
         }
 
-        /* OFFLINE */
         #offline-toast {
             display: none;
             position: fixed;
@@ -177,16 +152,6 @@
 </footer>
 {% endif %}
 
-<!-- GLOBAL REFRESH BUTTON -->
-<button id="global-refresh-btn"
-        onclick="window.location.reload()"
-        class="btn btn-primary shadow"
-        title="Refresh page">
-
-    🔄
-
-</button>
-
 <!-- BOOTSTRAP -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -221,6 +186,58 @@ function updateOnlineStatus() {
 window.addEventListener("online", updateOnlineStatus);
 window.addEventListener("offline", updateOnlineStatus);
 updateOnlineStatus();
+</script>
+
+<!-- ⚡ LIVE SYNC SYSTEM (ADMIN + CUSTOMER) -->
+<script>
+async function liveSync() {
+
+    try {
+
+        const isRelevantPage =
+            document.getElementById("totalPackages") ||
+            document.getElementById("packages-table");
+
+        if (!isRelevantPage) return;
+
+        const res = await fetch(window.location.href, {
+            headers: {
+                "X-Live-Sync": "true"
+            }
+        });
+
+        const html = await res.text();
+
+        const doc = new DOMParser().parseFromString(html, "text/html");
+
+        // UPDATE ANALYTICS
+        ["totalPackages", "pendingDeliveries", "deliveredToday", "activeUsers"]
+        .forEach(id => {
+
+            const current = document.getElementById(id);
+            const updated = doc.getElementById(id);
+
+            if (current && updated) {
+                current.innerText = updated.innerText;
+            }
+
+        });
+
+        // UPDATE TABLES
+        const currentTable = document.getElementById("packages-table");
+        const updatedTable = doc.getElementById("packages-table");
+
+        if (currentTable && updatedTable) {
+            currentTable.innerHTML = updatedTable.innerHTML;
+        }
+
+    } catch (err) {
+        console.log("Live sync error:", err);
+    }
+}
+
+// every 8 seconds
+setInterval(liveSync, 8000);
 </script>
 
 </body>
