@@ -294,6 +294,44 @@ def schedule():
 
     return render_template("customer/schedule.html")
 
+# -------------------
+# PACKAGE ACTIONS (Customer)
+# -------------------
+
+@main.route("/customer/package/<int:package_id>/reschedule", methods=["POST"])
+@login_required
+def reschedule_package(package_id):
+    package = Package.query.get_or_404(package_id)
+    if package.user_id != current_user.id:
+        flash("Unauthorized.")
+        return redirect(url_for("main.my_packages"))
+
+    new_date_str = request.form.get("new_date")
+    if not new_date_str:
+        flash("Select a new date.")
+        return redirect(url_for("main.my_packages"))
+
+    try:
+        new_date = datetime.strptime(new_date_str,"%Y-%m-%d")
+    except ValueError:
+        flash("Invalid date format.")
+        return redirect(url_for("main.my_packages"))
+
+    if new_date < datetime.now() + timedelta(hours=72):
+        flash("Rescheduled date must be at least 72 hours from now.")
+        return redirect(url_for("main.my_packages"))
+
+    package.reschedule_attempts = (package.reschedule_attempts or 0) + 1
+    if package.reschedule_attempts > 3:
+        flash("Maximum reschedules reached.")
+        return redirect(url_for("main.my_packages"))
+
+    package.pickup_date = new_date.date()
+    package.status = "Pending Reschedule"
+    db.session.commit()
+    flash("Reschedule request submitted.")
+    return redirect(url_for("main.my_packages"))
+
 
 @main.route("/customer/package/<int:package_id>/cancel", methods=["POST"], endpoint="cancel_package")
 @login_required
@@ -321,6 +359,69 @@ def cancel_package(package_id):
     flash("Package cancelled.", "success")
     return redirect(url_for("main.my_packages"))
 
+
+# -------------------
+# CUSTOMER RESCHEDULES (accept/reject/propose)
+# -------------------
+
+@main.route("/accept_admin_reschedule/<int:package_id>", methods=["POST"])
+@login_required
+def accept_admin_reschedule(package_id):
+    package = Package.query.get_or_404(package_id)
+    if package.user_id != current_user.id or package.status != "Admin Suggested Reschedule":
+        flash("Unauthorized or invalid action.")
+        return redirect(url_for("main.my_packages"))
+
+    if package.updated_at and datetime.utcnow() > package.updated_at + timedelta(hours=24):
+        flash("This reschedule offer has expired.")
+        return redirect(url_for("main.my_packages"))
+
+    if package.admin_suggested_date:
+        package.pickup_date = package.admin_suggested_date
+    package.admin_suggested_date = None
+    package.status = "Scheduled"
+    db.session.commit()
+    flash("Reschedule accepted.")
+    return redirect(url_for("main.my_packages"))
+
+@main.route("/customer/package/<int:package_id>/reject-reschedule", methods=["POST"])
+@login_required
+def customer_reject_admin_reschedule(package_id):
+    package = Package.query.get_or_404(package_id)
+    if package.user_id != current_user.id or package.status != "Admin Suggested Reschedule":
+        flash("Unauthorized or invalid action.")
+        return redirect(url_for("main.my_packages"))
+
+    if package.updated_at and package.updated_at < datetime.utcnow() - timedelta(hours=24):
+        flash("This reschedule offer has expired.")
+        return redirect(url_for("main.my_packages"))
+
+    package.admin_suggested_date = None
+    package.status = "Scheduled"
+    db.session.commit()
+    flash("Admin reschedule rejected.")
+    return redirect(url_for("main.my_packages"))
+
+@main.route("/propose_reschedule/<int:package_id>", methods=["POST"])
+@login_required
+def propose_reschedule(package_id):
+    package = Package.query.get_or_404(package_id)
+    new_date_str = request.form.get("new_date")
+    if not new_date_str:
+        flash("Select a valid date.", "danger")
+        return redirect(url_for("main.my_packages"))
+
+    try:
+        new_date = datetime.strptime(new_date_str,"%Y-%m-%d")
+    except ValueError:
+        flash("Invalid date format.", "danger")
+        return redirect(url_for("main.my_packages"))
+
+    package.pickup_date = new_date.date()
+    package.status = "Customer Proposed Reschedule"
+    db.session.commit()
+    flash("New pickup date proposed.")
+    return redirect(url_for("main.my_packages"))
 
 
 @main.route("/my-packages")
