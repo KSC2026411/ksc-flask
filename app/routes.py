@@ -584,7 +584,9 @@ def admin_dashboard():
         active_users=active_users
     )
 
-
+#
+# --------------ADMIN PACKAGES ROUTES--------------
+#
 
 @main.route("/admin/packages")
 @login_required
@@ -725,6 +727,72 @@ def reject_admin_reschedule(package_id):
     flash("Reschedule rejected.", "info")
     return redirect(url_for("main.admin_packages"))
 
+@main.route("/admin/package/<int:package_id>/restore", methods=["POST"])
+@login_required
+def admin_restore_package(package_id):
+    if current_user.role != "admin":
+        return "Unauthorized", 403
+
+    package = Package.query.get_or_404(package_id)
+    package.status = "Delivered"  # or "Pending" depending on your workflow
+
+    db.session.commit()
+
+    flash("Package restored successfully.", "success")
+    return redirect(url_for("main.admin_archived_packages"))
+
+@main.route("/admin/packages/archived")
+@login_required
+@admin_required
+def admin_archived_packages():
+
+    archived = Package.query.filter_by(
+        status="Archived"
+    ).order_by(Package.id.desc()).all()
+
+    return render_template(
+        "admin/admin_archived_packages.html",
+        packages=archived
+    )
+
+
+@main.route("/admin/archive-delivered", methods=["POST"])
+@login_required
+def admin_archive_delivered():
+    if current_user.role != "admin":
+        return "Unauthorized", 403
+
+    delivered_packages = Package.query.filter_by(status="Delivered").all()
+
+    for p in delivered_packages:
+        p.status = "Archived"
+
+    db.session.commit()
+
+    flash("Delivered packages archived successfully.", "success")
+    return redirect(url_for("main.admin_packages"))
+
+
+@main.route("/admin/clear-packages", methods=["POST"])
+@login_required
+@admin_required
+def admin_clear_packages():
+
+    confirm = request.form.get("confirm_text")
+
+    if confirm != "DELETE":
+        flash("Type DELETE to confirm.", "danger")
+        return redirect(url_for("main.admin_packages"))
+
+    Package.query.delete()
+    db.session.commit()
+
+    flash("All packages deleted.", "success")
+    return redirect(url_for("main.admin_packages"))
+
+#
+# --------------ADMIN USERS ROUTES--------------
+#
 
 @main.route("/admin/users")
 @login_required
@@ -734,6 +802,33 @@ def admin_users():
     users = User.query.order_by(User.id.desc()).all()
 
     return render_template("admin/users.html", users=users)
+
+@main.route("/admin/user/<int:user_id>/promote", methods=["POST"])
+@login_required
+@admin_required
+def promote_user(user_id):
+    user = User.query.get_or_404(user_id)
+    if user.role != "admin":
+        user.role = "admin"
+        db.session.commit()
+        flash(f"{user.name} is now an admin.", "success")
+    else:
+        flash(f"{user.name} is already an admin.", "info")
+    return redirect(url_for("main.admin_users"))
+
+
+@main.route("/admin/user/<int:user_id>/demote", methods=["POST"])
+@login_required
+@admin_required
+def demote_user(user_id):
+    user = User.query.get_or_404(user_id)
+    if user.role == "admin":
+        user.role = "customer"
+        db.session.commit()
+        flash(f"{user.name} has been demoted.", "success")
+    else:
+        flash(f"{user.name} is already a customer.", "info")
+    return redirect(url_for("main.admin_users"))
 
 
 @main.route("/admin/user/<int:user_id>/activate", methods=["POST"])
@@ -764,37 +859,7 @@ def deactivate_user(user_id):
     return redirect(url_for("main.admin_users"))
 
 
-@main.route("/admin/packages/archived")
-@login_required
-@admin_required
-def admin_archived_packages():
 
-    archived = Package.query.filter_by(
-        status="Archived"
-    ).order_by(Package.id.desc()).all()
-
-    return render_template(
-        "admin/admin_archived_packages.html",
-        packages=archived
-    )
-
-
-@main.route("/admin/clear-packages", methods=["POST"])
-@login_required
-@admin_required
-def admin_clear_packages():
-
-    confirm = request.form.get("confirm_text")
-
-    if confirm != "DELETE":
-        flash("Type DELETE to confirm.", "danger")
-        return redirect(url_for("main.admin_packages"))
-
-    Package.query.delete()
-    db.session.commit()
-
-    flash("All packages deleted.", "success")
-    return redirect(url_for("main.admin_packages"))
 
 
 
