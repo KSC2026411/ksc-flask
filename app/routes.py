@@ -697,7 +697,33 @@ def admin_dashboard():
     ).limit(50).all()
 
     # ======================================
-    # ⚡ LIVE SYNC MODE (AJAX REFRESH SUPPORT)
+    # 🧠 NORMALIZED STATUS HELPER
+    # ======================================
+    def status_count(query, keyword):
+        return query.filter(
+            Package.status.isnot(None),
+            Package.status.ilike(f"%{keyword}%")
+        ).count()
+
+    # Base query once (reused everywhere)
+    base_query = Package.query
+
+    # ======================================
+    # ⚡ ANALYTICS (ALWAYS ACCURATE)
+    # ======================================
+    total_packages = base_query.count()
+
+    pending_deliveries = status_count(base_query, "pending")
+
+    delivered_today = status_count(base_query, "delivered")
+
+    active_users = User.query.filter_by(
+        role="customer",
+        active=True
+    ).count()
+
+    # ======================================
+    # ⚡ LIVE SYNC MODE
     # ======================================
     if request.headers.get("X-Live-Sync") == "true":
 
@@ -706,21 +732,10 @@ def admin_dashboard():
             packages=packages,
             announcements=announcements,
 
-            # REAL-TIME STATS
-            total_packages=Package.query.count(),
-
-            pending_deliveries=Package.query.filter(
-                Package.status.ilike("%pending%")
-            ).count(),
-
-            delivered_today=Package.query.filter(
-                Package.status.ilike("%delivered%")
-            ).count(),
-
-            active_users=User.query.filter_by(
-                role="customer",
-                active=True
-            ).count()
+            total_packages=total_packages,
+            pending_deliveries=pending_deliveries,
+            delivered_today=delivered_today,
+            active_users=active_users
         )
 
     # ======================================
@@ -729,7 +744,12 @@ def admin_dashboard():
     return render_template(
         "admin/admin_dashboard.html",
         packages=packages,
-        announcements=announcements
+        announcements=announcements,
+
+        total_packages=total_packages,
+        pending_deliveries=pending_deliveries,
+        delivered_today=delivered_today,
+        active_users=active_users
     )
 
 

@@ -13,7 +13,9 @@
             <div class="card text-white bg-primary text-center shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">Total Packages</h5>
-                    <p class="card-text fs-3 fw-bold" id="totalPackages">0</p>
+                    <p class="card-text fs-3 fw-bold" id="totalPackages">
+                        {{ total_packages or 0 }}
+                    </p>
                 </div>
             </div>
         </div>
@@ -22,7 +24,9 @@
             <div class="card text-dark bg-warning text-center shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">Pending Deliveries</h5>
-                    <p class="card-text fs-3 fw-bold" id="pendingDeliveries">0</p>
+                    <p class="card-text fs-3 fw-bold" id="pendingDeliveries">
+                        {{ pending_deliveries or 0 }}
+                    </p>
                 </div>
             </div>
         </div>
@@ -31,7 +35,9 @@
             <div class="card text-white bg-success text-center shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">Delivered Today</h5>
-                    <p class="card-text fs-3 fw-bold" id="deliveredToday">0</p>
+                    <p class="card-text fs-3 fw-bold" id="deliveredToday">
+                        {{ delivered_today or 0 }}
+                    </p>
                 </div>
             </div>
         </div>
@@ -40,7 +46,9 @@
             <div class="card text-white bg-info text-center shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">Active Users</h5>
-                    <p class="card-text fs-3 fw-bold" id="activeUsers">0</p>
+                    <p class="card-text fs-3 fw-bold" id="activeUsers">
+                        {{ active_users or 0 }}
+                    </p>
                 </div>
             </div>
         </div>
@@ -101,9 +109,7 @@
         <div class="card-body">
 
             <div id="packages-table">
-                <p class="text-muted mb-0">
-                    Type to search for packages...
-                </p>
+                {% include "partials/admin_packages_table.html" %}
             </div>
 
         </div>
