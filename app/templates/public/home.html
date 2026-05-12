@@ -7,10 +7,99 @@
 
 {% block content %}
 
-<div class="page-wrapper d-flex flex-column w-100">
+<style>
+/* =========================
+   MOBILE-FIRST HERO STYLES
+========================= */
 
-    <!-- HERO SECTION -->
-    <div class="main-container d-flex flex-column justify-content-start align-items-center text-center text-white">
+.page-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* HERO */
+.main-container {
+    flex: 1;
+    padding: 24px 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* CARD */
+.welcome-card {
+    width: 100%;
+    max-width: 520px;
+    padding: 24px 16px;
+    border-radius: 16px;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(6px);
+}
+
+/* TEXT */
+.welcome-card h1 {
+    font-size: 1.8rem;
+    line-height: 1.2;
+}
+
+.tagline {
+    font-size: 1rem;
+    margin-top: 8px;
+}
+
+/* BUTTONS */
+.welcome-card .btn {
+    width: 100%;
+    max-width: 220px;
+}
+
+/* FOOTER */
+.footer {
+    background: #111;
+    color: #fff;
+    padding: 16px;
+    font-size: 13px;
+}
+
+.footer-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+}
+
+/* =========================
+   TABLET+
+========================= */
+@media (min-width: 768px) {
+
+    .welcome-card {
+        padding: 32px;
+    }
+
+    .welcome-card h1 {
+        font-size: 2.4rem;
+    }
+
+    .tagline {
+        font-size: 1.1rem;
+    }
+
+    .footer-content {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px 24px;
+    }
+}
+
+</style>
+
+<div class="page-wrapper">
+
+    <!-- HERO -->
+    <div class="main-container text-center text-white">
 
         <div class="welcome-card">
 
@@ -18,18 +107,18 @@
             <p class="tagline">WE SHIP THEM CHEAP ✅</p>
 
             <!-- BUTTONS -->
-            <div class="mt-4 d-flex justify-content-center gap-3 flex-wrap">
+            <div class="mt-4 d-flex flex-column align-items-center gap-2">
 
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('main.my_packages') }}" class="btn btn-primary btn-lg px-4">
+                    <a href="{{ url_for('main.my_packages') }}" class="btn btn-primary btn-lg">
                         Go to Dashboard
                     </a>
                 {% else %}
-                    <a href="{{ url_for('main.login') }}" class="btn btn-success btn-lg px-4">
+                    <a href="{{ url_for('main.login') }}" class="btn btn-success btn-lg">
                         Login
                     </a>
 
-                    <a href="{{ url_for('main.register') }}" class="btn btn-outline-light btn-lg px-4">
+                    <a href="{{ url_for('main.register') }}" class="btn btn-outline-light btn-lg">
                         Register
                     </a>
                 {% endif %}
@@ -40,8 +129,8 @@
 
     </div>
 
-    <!-- YOUR FOOTER -->
-    <footer class="footer mt-auto">
+    <!-- FOOTER -->
+    <footer class="footer">
         <div class="footer-content">
             <span><strong>KSC LOGISTICS</strong></span>
             <span>WE SHIP THEM CHEAP ✅</span>
