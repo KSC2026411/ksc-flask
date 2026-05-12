@@ -28,20 +28,43 @@
         html, body {
             height: 100%;
             margin: 0;
+            -webkit-text-size-adjust: 100%;
         }
 
         body {
             display: flex;
             flex-direction: column;
             background: #f8f9fa;
+            overflow-x: hidden;
         }
 
         main {
             flex: 1;
+            padding: 12px;
         }
 
-        /* GLOBAL REFRESH BUTTON REMOVED (replaced by live sync) */
+        /* MOBILE SAFE CONTAINER */
+        .container, .container-fluid {
+            padding-left: 12px;
+            padding-right: 12px;
+        }
 
+        /* NAVBAR MOBILE FIX */
+        .navbar {
+            padding: 10px 12px;
+        }
+
+        .navbar-brand {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .navbar .btn {
+            font-size: 14px;
+            padding: 6px 10px;
+        }
+
+        /* SPLASH SCREEN */
         #app-loader {
             position: fixed;
             inset: 0;
@@ -51,20 +74,57 @@
             justify-content: center;
             align-items: center;
             z-index: 99999;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #app-loader h3 {
+            font-size: 20px;
         }
 
         #offline-toast {
             display: none;
             position: fixed;
-            bottom: 20px;
+            bottom: 15px;
             left: 50%;
             transform: translateX(-50%);
             background: #ef4444;
             color: white;
-            padding: 10px 16px;
+            padding: 10px 14px;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 13px;
             z-index: 99999;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        /* FLASH MOBILE SPACING */
+        .alert {
+            font-size: 14px;
+            padding: 10px 12px;
+        }
+
+        /* TABLE RESPONSIVENESS FIX */
+        table {
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+
+            .navbar {
+                flex-wrap: wrap;
+            }
+
+            .navbar .ms-auto {
+                width: 100%;
+                justify-content: flex-start;
+                margin-top: 8px;
+            }
+
+            .btn {
+                width: auto;
+            }
+
         }
 
     </style>
@@ -75,10 +135,10 @@
 
 <!-- SPLASH -->
 <div id="app-loader">
-    <div class="text-center">
-        <div style="font-size:48px;">📦</div>
+    <div>
+        <div style="font-size:42px;">📦</div>
         <h3 class="mt-2">KSC Logistics</h3>
-        <p>Loading...</p>
+        <p class="mb-0">Loading...</p>
     </div>
 </div>
 
@@ -90,35 +150,43 @@
 <!-- NAVBAR -->
 {% if not (current_user.is_authenticated and current_user.role == "admin") %}
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
 
     <a class="navbar-brand" href="{{ url_for('main.home') }}">
         KSC LOGISTICS
     </a>
 
-    <div class="ms-auto d-flex gap-2">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+        <span class="navbar-toggler-icon"></span>
+    </button>
 
-        {% if not current_user.is_authenticated %}
+    <div class="collapse navbar-collapse" id="navMenu">
 
-            <a href="{{ url_for('main.login') }}" class="btn btn-success">
-                Login
-            </a>
+        <div class="ms-auto d-flex flex-wrap gap-2 mt-2 mt-lg-0">
 
-            <a href="{{ url_for('main.register') }}" class="btn btn-outline-light">
-                Register
-            </a>
+            {% if not current_user.is_authenticated %}
 
-        {% else %}
+                <a href="{{ url_for('main.login') }}" class="btn btn-success btn-sm">
+                    Login
+                </a>
 
-            <a href="{{ url_for('main.dashboard') }}" class="btn btn-dark">
-                Dashboard
-            </a>
+                <a href="{{ url_for('main.register') }}" class="btn btn-outline-light btn-sm">
+                    Register
+                </a>
 
-            <a href="{{ url_for('main.logout') }}" class="btn btn-danger">
-                Logout
-            </a>
+            {% else %}
 
-        {% endif %}
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary btn-sm">
+                    Dashboard
+                </a>
+
+                <a href="{{ url_for('main.logout') }}" class="btn btn-danger btn-sm">
+                    Logout
+                </a>
+
+            {% endif %}
+
+        </div>
 
     </div>
 
@@ -148,7 +216,7 @@
 <!-- FOOTER -->
 {% if not hide_footer %}
 <footer class="bg-dark text-white text-center py-3 mt-auto">
-    <p class="mb-0">© 2026 KSC Logistics. All rights reserved.</p>
+    <p class="mb-0 small">© 2026 KSC Logistics</p>
 </footer>
 {% endif %}
 
@@ -188,9 +256,12 @@ window.addEventListener("offline", updateOnlineStatus);
 updateOnlineStatus();
 </script>
 
-<!-- ⚡ LIVE SYNC SYSTEM (ADMIN + CUSTOMER) -->
+<!-- ⚡ LIVE SYNC (OPTIMIZED FOR MOBILE) -->
 <script>
 async function liveSync() {
+
+    // reduce mobile battery usage
+    if (window.innerWidth < 768) return;
 
     try {
 
@@ -201,16 +272,12 @@ async function liveSync() {
         if (!isRelevantPage) return;
 
         const res = await fetch(window.location.href, {
-            headers: {
-                "X-Live-Sync": "true"
-            }
+            headers: { "X-Live-Sync": "true" }
         });
 
         const html = await res.text();
-
         const doc = new DOMParser().parseFromString(html, "text/html");
 
-        // UPDATE ANALYTICS
         ["totalPackages", "pendingDeliveries", "deliveredToday", "activeUsers"]
         .forEach(id => {
 
@@ -223,7 +290,6 @@ async function liveSync() {
 
         });
 
-        // UPDATE TABLES
         const currentTable = document.getElementById("packages-table");
         const updatedTable = doc.getElementById("packages-table");
 
@@ -236,8 +302,8 @@ async function liveSync() {
     }
 }
 
-// every 8 seconds
-setInterval(liveSync, 8000);
+// slower interval = better mobile performance
+setInterval(liveSync, 12000);
 </script>
 
 </body>

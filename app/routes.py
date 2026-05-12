@@ -295,7 +295,7 @@ def schedule():
     return render_template("customer/schedule.html")
 
 
-@main.route("/customer/package/<int:package_id>/cancel", methods=["POST"])
+@main.route("/customer/package/<int:package_id>/cancel", methods=["POST"], endpoint="cancel_package")
 @login_required
 def cancel_package(package_id):
 
@@ -309,9 +309,11 @@ def cancel_package(package_id):
         flash("Cannot cancel this package.", "warning")
         return redirect(url_for("main.my_packages"))
 
-    if package.pickup_date and (package.pickup_date - datetime.utcnow().date()).days < 3:
-        flash("Must cancel at least 72 hours before pickup.", "warning")
-        return redirect(url_for("main.my_packages"))
+    if package.pickup_date:
+        days_left = (package.pickup_date - datetime.utcnow().date()).days
+        if days_left < 3:
+            flash("Must cancel at least 72 hours before pickup.", "warning")
+            return redirect(url_for("main.my_packages"))
 
     package.status = "Cancelled"
     db.session.commit()

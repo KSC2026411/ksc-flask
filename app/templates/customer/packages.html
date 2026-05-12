@@ -6,40 +6,22 @@
 
 {% if packages %}
 
-<div class="table-responsive">
+<div class="row g-3">
 
-<table class="table table-hover table-bordered align-middle">
+    {% for pkg in packages %}
 
-    <thead class="table-dark">
-        <tr>
-            <th>Tracking #</th>
-            <th>Description</th>
-            <th>Pickup Date</th>
-            <th>Status / Action</th>
-        </tr>
-    </thead>
+    <div class="col-12 col-md-6 col-lg-4">
 
-    <tbody>
+        <div class="card shadow-sm package-card h-100">
 
-        {% for pkg in packages %}
-        <tr class="package-row"
-            onclick="togglePackage(this)">
+            <!-- HEADER -->
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
 
-            <!-- Tracking -->
-            <td>{{ pkg.tracking_number }}</td>
+                <div>
+                    <small class="d-block text-light">Tracking</small>
+                    <strong>{{ pkg.tracking_number or "Pending" }}</strong>
+                </div>
 
-            <!-- Description -->
-            <td>{{ pkg.description }}</td>
-
-            <!-- Pickup Date -->
-            <td>
-                {{ pkg.pickup_date.strftime('%Y-%m-%d') if pkg.pickup_date else "N/A" }}
-            </td>
-
-            <!-- STATUS + ACTIONS -->
-            <td>
-
-                <!-- STATUS -->
                 <span class="badge
                     {% if pkg.status == 'Delivered' %}bg-success
                     {% elif pkg.status == 'Scheduled' %}bg-primary
@@ -51,7 +33,26 @@
                     {{ pkg.status or "Pending" }}
                 </span>
 
-                <!-- ACTIONS (hidden by default) -->
+            </div>
+
+            <!-- BODY -->
+            <div class="card-body">
+
+                <p class="mb-2">
+                    <strong>Description:</strong><br>
+                    {{ pkg.description or "N/A" }}
+                </p>
+
+                <p class="mb-3">
+                    <strong>Pickup Date:</strong><br>
+                    {{ pkg.pickup_date.strftime('%Y-%m-%d') if pkg.pickup_date else "N/A" }}
+                </p>
+
+                <!-- ACTIONS -->
+                <button class="btn btn-outline-dark btn-sm w-100 toggle-btn">
+                    View Actions
+                </button>
+
                 <div class="package-actions d-none mt-3">
 
                     <!-- CANCEL -->
@@ -59,7 +60,7 @@
                     <form method="POST"
                           action="{{ url_for('main.cancel_package', package_id=pkg.id) }}">
                         <button class="btn btn-danger btn-sm w-100 mb-2">
-                            Cancel
+                            Cancel Package
                         </button>
                     </form>
                     {% endif %}
@@ -86,7 +87,7 @@
                     <form method="POST"
                           action="{{ url_for('main.customer_confirm_pickup', package_id=pkg.id) }}">
                         <button class="btn btn-success btn-sm w-100">
-                            Mark Picked Up
+                            Mark as Picked Up
                         </button>
                     </form>
                     {% endif %}
@@ -97,7 +98,7 @@
                         <form method="POST"
                               action="{{ url_for('main.accept_admin_reschedule', package_id=pkg.id) }}">
                             <button class="btn btn-success btn-sm w-100 mb-2">
-                                Accept
+                                Accept New Date
                             </button>
                         </form>
 
@@ -126,14 +127,13 @@
 
                 </div>
 
-            </td>
+            </div>
 
-        </tr>
-        {% endfor %}
+        </div>
 
-    </tbody>
+    </div>
 
-</table>
+    {% endfor %}
 
 </div>
 
@@ -142,27 +142,29 @@
 {% endif %}
 
 <!-- ==============================
-     TOGGLE SCRIPT
+     MOBILE-FRIENDLY TOGGLE SCRIPT
 ============================== -->
 <script>
-function togglePackage(row) {
+document.querySelectorAll('.toggle-btn').forEach(btn => {
 
-    const actions = row.querySelector('.package-actions');
-    const isOpen = !actions.classList.contains('d-none');
+    btn.addEventListener('click', function () {
 
-    // close all rows first
-    document.querySelectorAll('.package-row').forEach(r => {
-        r.classList.remove('table-primary');
-        const a = r.querySelector('.package-actions');
-        if (a) a.classList.add('d-none');
+        const card = this.closest('.package-card');
+        const actions = card.querySelector('.package-actions');
+
+        const isOpen = !actions.classList.contains('d-none');
+
+        // close all
+        document.querySelectorAll('.package-actions').forEach(a => a.classList.add('d-none'));
+
+        // toggle current
+        if (!isOpen) {
+            actions.classList.remove('d-none');
+        }
+
     });
 
-    // toggle current row
-    if (!isOpen) {
-        row.classList.add('table-primary');
-        actions.classList.remove('d-none');
-    }
-}
+});
 </script>
 
 {% endblock %}
