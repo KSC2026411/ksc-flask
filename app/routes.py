@@ -645,7 +645,6 @@ def admin_clear_packages():
 
 
 
-
 @main.route('/admin/announcements', methods=['GET', 'POST'])
 @login_required
 @admin_required
@@ -759,6 +758,24 @@ def admin_packages_table():
         "partials/admin_packages_table.html",
         packages=packages
     )
+
+@main.route("/admin/audit")
+@login_required
+@admin_required
+def audit_dashboard():
+
+    logs = AuditLog.query.order_by(
+        AuditLog.created_at.desc()
+    ).limit(200).all()
+
+    return render_template(
+        "admin/audit_dashboard.html",
+        logs=logs
+    )
+
+#
+# -------------UTILITIES---------------
+#
 
 @main.route("/track", methods=["GET", "POST"])
 def track():
