@@ -1,91 +1,229 @@
 {% if packages.items %}
+
     {% for p in packages.items %}
     <tr>
+
         <!-- TRACKING -->
-        <td class="fw-bold">{{ p.tracking_number }}</td>
+        <td class="fw-bold">
+            {{ p.tracking_number or "Pending Approval" }}
+        </td>
 
         <!-- DESCRIPTION -->
-        <td>{{ p.description or "N/A" }}</td>
+        <td>
+            {{ p.description or "N/A" }}
+        </td>
 
         <!-- CUSTOMER -->
-        <td>{{ p.user.name if p.user else "N/A" }}</td>
+        <td>
+            {{ p.user.name if p.user else "N/A" }}
+        </td>
 
         <!-- PHONE -->
-        <td>{{ p.user.phone if p.user else "N/A" }}</td>
+        <td>
+            {{ p.user.phone if p.user else "N/A" }}
+        </td>
 
         <!-- PICKUP DATE -->
-        <td>{{ p.pickup_date.strftime('%Y-%m-%d') if p.pickup_date else "N/A" }}</td>
+        <td>
+            {{ p.pickup_date.strftime('%Y-%m-%d') if p.pickup_date else "N/A" }}
+        </td>
 
         <!-- STATUS -->
         <td>
+
             <span class="badge
-                {% if p.status == 'Delivered' %}bg-success
-                {% elif p.status == 'In Transit' %}bg-info
-                {% elif p.status == 'Pending' %}bg-warning text-dark
-                {% elif p.status == 'Cancelled' %}bg-danger
-                {% elif p.status == 'Archived' %}bg-secondary
-                {% elif p.status == 'In Warehouse' %}bg-primary
-                {% else %}bg-secondary
-                {% endif %}">
-                {{ p.status or "Pending" }}
+
+                {% if p.status == 'Delivered' %}
+                    bg-success
+
+                {% elif p.status == 'In Transit' %}
+                    bg-info
+
+                {% elif p.status == 'Pending' %}
+                    bg-warning text-dark
+
+                {% elif p.status == 'Pending Approval' %}
+                    bg-warning text-dark
+
+                {% elif p.status == 'Cancelled' %}
+                    bg-danger
+
+                {% elif p.status == 'Archived' %}
+                    bg-secondary
+
+                {% elif p.status == 'In Warehouse' %}
+                    bg-primary
+
+                {% elif p.status == 'Scheduled' %}
+                    bg-success
+
+                {% else %}
+                    bg-secondary
+                {% endif %}
+
+            ">
+                {{ p.status or "Pending Approval" }}
             </span>
+
         </td>
 
         <!-- UPDATE STATUS -->
         <td>
-            <form method="POST" action="{{ url_for('main.admin_update_package', package_id=p.id) }}">
+
+            <form method="POST"
+                  action="{{ url_for('main.admin_update_package', package_id=p.id) }}">
+
                 <select name="status" class="form-select mb-2">
+
                     {% set statuses = [
-                        'Pending','In Warehouse','Loaded','Ready for Pickup','In Transit','Scheduled',
-                        'Shipped','Delivered','Archived','Picked Up','Cancelled','Rescheduled'
+                        'Pending Approval',
+                        'Pending',
+                        'Scheduled',
+                        'In Warehouse',
+                        'Loaded',
+                        'Ready for Pickup',
+                        'Picked Up',
+                        'In Transit',
+                        'Shipped',
+                        'Delivered',
+                        'Archived',
+                        'Cancelled',
+                        'Rescheduled'
                     ] %}
+
                     {% for s in statuses %}
-                        <option value="{{ s }}" {% if p.status == s %}selected{% endif %}>
+                        <option value="{{ s }}"
+                            {% if p.status == s %}selected{% endif %}>
                             {{ s }}
                         </option>
                     {% endfor %}
+
                 </select>
-                <button type="submit" class="btn btn-outline-primary w-100">Update</button>
+
+                <button type="submit"
+                        class="btn btn-outline-primary w-100">
+                    Update
+                </button>
+
             </form>
+
         </td>
 
         <!-- SUGGEST RESCHEDULE -->
         <td>
-            <form method="POST" action="{{ url_for('main.admin_suggest_reschedule', package_id=p.id) }}">
-                <input type="date" name="new_date" class="form-control mb-2" required>
-                <button type="submit" class="btn btn-warning w-100">Suggest</button>
+
+            <form method="POST"
+                  action="{{ url_for('main.admin_suggest_reschedule', package_id=p.id) }}">
+
+                <input type="date"
+                       name="new_date"
+                       class="form-control mb-2"
+                       required>
+
+                <button type="submit"
+                        class="btn btn-warning w-100">
+                    Suggest
+                </button>
+
             </form>
+
         </td>
 
         <!-- ACTIONS -->
         <td class="text-nowrap">
-            {% if p.status == "Pending Reschedule" and p.admin_suggested_date %}
-                <div class="small text-muted mb-2">
-                    Suggested: {{ p.admin_suggested_date.strftime('%Y-%m-%d') }}
-                </div>
-                <div class="d-flex gap-2">
-                    <!-- ACCEPT -->
-                    <form method="POST" action="{{ url_for('main.admin_accept_reschedule', package_id=p.id) }}"
-                          onsubmit="return confirm('Accept this reschedule?');">
-                        <button type="submit" class="btn btn-success btn-sm">Accept</button>
-                    </form>
-                    <!-- REJECT -->
-                    <form method="POST" action="{{ url_for('main.reject_admin_reschedule', package_id=p.id) }}"
-                          onsubmit="return confirm('Reject this reschedule?');">
-                        <button type="submit" class="btn btn-danger btn-sm">Reject</button>
-                    </form>
-                </div>
-            {% else %}
-                <span class="text-muted">N/A</span>
+
+            <!-- APPROVE PICKUP -->
+            {% if not p.tracking_number %}
+
+                <form method="POST"
+                      action="{{ url_for('main.approve_package', package_id=p.id) }}"
+                      class="mb-2"
+                      onsubmit="return confirm('Approve this pickup request?');">
+
+                    <button type="submit"
+                            class="btn btn-success btn-sm w-100">
+
+                        Approve Pickup
+
+                    </button>
+
+                </form>
+
             {% endif %}
+
+            <!-- RESCHEDULE ACTIONS -->
+            {% if p.status == "Pending Reschedule" and p.admin_suggested_date %}
+
+                <div class="small text-muted mb-2">
+
+                    Suggested:
+                    {{ p.admin_suggested_date.strftime('%Y-%m-%d') }}
+
+                </div>
+
+                <div class="d-flex gap-2">
+
+                    <!-- ACCEPT -->
+                    <form method="POST"
+                          action="{{ url_for('main.admin_accept_reschedule', package_id=p.id) }}"
+                          onsubmit="return confirm('Accept this reschedule?');">
+
+                        <button type="submit"
+                                class="btn btn-success btn-sm">
+
+                            Accept
+
+                        </button>
+
+                    </form>
+
+                    <!-- REJECT -->
+                    <form method="POST"
+                          action="{{ url_for('main.reject_admin_reschedule', package_id=p.id) }}"
+                          onsubmit="return confirm('Reject this reschedule?');">
+
+                        <button type="submit"
+                                class="btn btn-danger btn-sm">
+
+                            Reject
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+            {% elif p.tracking_number %}
+
+                <span class="text-success fw-bold">
+                    Approved
+                </span>
+
+            {% else %}
+
+                <span class="text-muted">
+                    Awaiting Approval
+                </span>
+
+            {% endif %}
+
         </td>
 
     </tr>
+
     {% endfor %}
+
 {% else %}
+
 <tr>
-    <td colspan="7" class="text-center py-4 text-muted">
+
+    <td colspan="8"
+        class="text-center py-4 text-muted">
+
         No packages found.
+
     </td>
+
 </tr>
+
 {% endif %}

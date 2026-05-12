@@ -414,7 +414,8 @@ def schedule():
         # 🔐 CREATE PACKAGE
         # ======================================
         package = Package(
-            tracking_number=generate_tracking(),
+            tracking_number=None,
+            status="Pending Approval",
             description=description,
             street=street,
             city=city,
@@ -422,7 +423,7 @@ def schedule():
             zip_code=zip_code,
             user_id=current_user.id,
             pickup_date=pickup_datetime.date()
-        )
+    )
 
         db.session.add(package)
 
@@ -752,6 +753,33 @@ def admin_update_package(package_id):
         package.status = new_status
         db.session.commit()
         flash(f"Package {package.tracking_number} updated.", "success")
+    return redirect(url_for("main.admin_packages"))
+
+@main.route("/admin/package/<int:package_id>/approve", methods=["POST"])
+@login_required
+@admin_required
+def approve_package(package_id):
+
+    package = Package.query.get_or_404(package_id)
+
+    # Prevent duplicate approvals
+    if package.tracking_number:
+        flash("Package already approved.", "warning")
+        return redirect(url_for("main.admin_packages"))
+
+    # Generate tracking number only now
+    package.tracking_number = generate_tracking()
+
+    # Update status
+    package.status = "Scheduled"
+
+    db.session.commit()
+
+    flash(
+        f"Pickup approved. Tracking #: {package.tracking_number}",
+        "success"
+    )
+
     return redirect(url_for("main.admin_packages"))
 
 
