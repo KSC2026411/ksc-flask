@@ -311,8 +311,11 @@ def my_packages():
     return render_template("customer/packages.html", packages=packages)
 
 
+# -------------------
+# TRACK PACKAGE (CUSTOMER SEARCH FORM)
+# -------------------
 @main.route("/track", methods=["GET", "POST"])
-def track():
+def track_package():
 
     package = None
     tracking_number = None
@@ -326,7 +329,7 @@ def track():
             ).first()
 
             if not package:
-                flash("No package found.", "warning")
+                flash("No package found with that tracking number.", "warning")
 
     return render_template(
         "customer/track.html",
@@ -335,6 +338,9 @@ def track():
     )
 
 
+# -------------------
+# PUBLIC TRACKING LINK
+# -------------------
 @main.route("/track/<tracking_number>")
 def track_public(tracking_number):
 
@@ -342,11 +348,19 @@ def track_public(tracking_number):
         tracking_number=tracking_number.strip().upper()
     ).first()
 
+    if not package:
+        return render_template(
+            "customer/track.html",
+            package=None,
+            tracking_number=tracking_number
+        )
+
     return render_template(
         "customer/track.html",
         package=package,
         tracking_number=tracking_number
     )
+
 
 @main.route("/analytics")
 @login_required
