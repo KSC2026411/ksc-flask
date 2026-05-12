@@ -6,47 +6,47 @@
 
 <div class="container-fluid mt-4">
 
-    <!-- DASHBOARD ANALYTICS CARDS -->
-    <div class="row g-3 mb-5">
+    <!-- ANALYTICS -->
+    <div class="row g-3 mb-4">
 
-        <div class="col-md-3">
-            <div class="card text-white bg-primary text-center shadow-sm">
+        <div class="col-6 col-md-3">
+            <div class="card text-white bg-primary text-center shadow-sm h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Total Packages</h5>
-                    <p class="card-text fs-3 fw-bold" id="totalPackages">
+                    <h6 class="card-title">Total Packages</h6>
+                    <p class="card-text fs-3 fw-bold mb-0" id="totalPackages">
                         {{ total_packages or 0 }}
                     </p>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card text-dark bg-warning text-center shadow-sm">
+        <div class="col-6 col-md-3">
+            <div class="card text-dark bg-warning text-center shadow-sm h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Pending Deliveries</h5>
-                    <p class="card-text fs-3 fw-bold" id="pendingDeliveries">
+                    <h6 class="card-title">Pending</h6>
+                    <p class="card-text fs-3 fw-bold mb-0" id="pendingDeliveries">
                         {{ pending_deliveries or 0 }}
                     </p>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card text-white bg-success text-center shadow-sm">
+        <div class="col-6 col-md-3">
+            <div class="card text-white bg-success text-center shadow-sm h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Delivered Today</h5>
-                    <p class="card-text fs-3 fw-bold" id="deliveredToday">
+                    <h6 class="card-title">Delivered Today</h6>
+                    <p class="card-text fs-3 fw-bold mb-0" id="deliveredToday">
                         {{ delivered_today or 0 }}
                     </p>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card text-white bg-info text-center shadow-sm">
+        <div class="col-6 col-md-3">
+            <div class="card text-white bg-info text-center shadow-sm h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Active Users</h5>
-                    <p class="card-text fs-3 fw-bold" id="activeUsers">
+                    <h6 class="card-title">Active Users</h6>
+                    <p class="card-text fs-3 fw-bold mb-0" id="activeUsers">
                         {{ active_users or 0 }}
                     </p>
                 </div>
@@ -55,11 +55,11 @@
 
     </div>
 
-    <!-- RECENT ANNOUNCEMENTS -->
+    <!-- ANNOUNCEMENTS -->
     <div class="card shadow-sm border-0 mb-4">
 
         <div class="card-header bg-dark text-white">
-            <h4 class="mb-0">Recent Announcements</h4>
+            <h5 class="mb-0">Recent Announcements</h5>
         </div>
 
         <div class="card-body">
@@ -69,7 +69,9 @@
                 {% for a in announcements %}
                 <div class="border rounded p-3 mb-3">
 
-                    <h5 class="mb-2">{{ a.title }}</h5>
+                    <h6 class="fw-bold mb-2">
+                        {{ a.title }}
+                    </h6>
 
                     <div class="mb-2">
                         {{ a.message|safe }}
@@ -83,34 +85,57 @@
                 {% endfor %}
 
             {% else %}
-                <p class="mb-0 text-muted">No announcements yet.</p>
+
+                <p class="text-muted mb-0">
+                    No announcements yet.
+                </p>
+
             {% endif %}
 
         </div>
 
     </div>
 
-    <!-- SEARCH PACKAGES -->
+    <!-- SEARCH SECTION -->
     <div class="card shadow-sm border-0">
 
-        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="card-header bg-dark text-white">
 
-            <h4 class="mb-0">Search Packages</h4>
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
 
-            <div style="max-width:300px; width:100%;">
-                <input type="text"
-                       id="package-search"
-                       class="form-control"
-                       placeholder="Search tracking, user, status...">
+                <h5 class="mb-0">
+                    Search Packages
+                </h5>
+
+                <input
+                    type="text"
+                    id="package-search"
+                    class="form-control"
+                    placeholder="Search tracking number, customer, status..."
+                    style="max-width: 400px;"
+                >
+
             </div>
 
         </div>
 
         <div class="card-body">
 
-            <div id="packages-table">
-                {% include "partials/admin_packages_table.html" %}
+            <!-- EMPTY STATE FIRST -->
+            <div id="empty-search-state" class="text-center py-5">
+
+                <h5 class="fw-bold mb-3">
+                    Search for a Package
+                </h5>
+
+                <p class="text-muted mb-0">
+                    No packages are shown until you search.
+                </p>
+
             </div>
+
+            <!-- RESULTS -->
+            <div id="packages-table" class="d-none"></div>
 
         </div>
 
@@ -118,22 +143,49 @@
 
 </div>
 
-<!-- LIVE SEARCH SCRIPT -->
+<!-- LIVE SEARCH -->
 <script>
-const searchInput = document.getElementById('package-search');
 
-searchInput.addEventListener('input', function () {
+const searchInput = document.getElementById("package-search");
+const packagesTable = document.getElementById("packages-table");
+const emptyState = document.getElementById("empty-search-state");
 
-    const query = this.value;
+searchInput.addEventListener("input", async function () {
 
-    fetch(`{{ url_for('main.admin_packages_table') }}?search=${encodeURIComponent(query)}`)
-        .then(response => response.text())
-        .then(html => {
-            document.getElementById('packages-table').innerHTML = html;
-        })
-        .catch(err => console.error('Search error:', err));
+    const query = this.value.trim();
+
+    // hide results if empty
+    if (query.length === 0) {
+
+        packagesTable.classList.add("d-none");
+        packagesTable.innerHTML = "";
+
+        emptyState.classList.remove("d-none");
+
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            `{{ url_for('main.admin_packages_table') }}?search=${encodeURIComponent(query)}`
+        );
+
+        const html = await response.text();
+
+        packagesTable.innerHTML = html;
+
+        emptyState.classList.add("d-none");
+        packagesTable.classList.remove("d-none");
+
+    } catch (err) {
+
+        console.error("Search error:", err);
+
+    }
 
 });
+
 </script>
 
 {% endblock %}
