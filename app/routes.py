@@ -295,6 +295,31 @@ def schedule():
     return render_template("customer/schedule.html")
 
 
+@main.route("/customer/package/<int:package_id>/cancel", methods=["POST"])
+@login_required
+def cancel_package(package_id):
+
+    package = Package.query.get_or_404(package_id)
+
+    if package.user_id != current_user.id:
+        flash("Unauthorized.", "danger")
+        return redirect(url_for("main.my_packages"))
+
+    if package.status in ["Picked Up", "Delivered"]:
+        flash("Cannot cancel this package.", "warning")
+        return redirect(url_for("main.my_packages"))
+
+    if package.pickup_date and (package.pickup_date - datetime.utcnow().date()).days < 3:
+        flash("Must cancel at least 72 hours before pickup.", "warning")
+        return redirect(url_for("main.my_packages"))
+
+    package.status = "Cancelled"
+    db.session.commit()
+
+    flash("Package cancelled.", "success")
+    return redirect(url_for("main.my_packages"))
+
+
 
 @main.route("/my-packages")
 @login_required
