@@ -26,47 +26,41 @@
         </button>
 
         <!-- NAV LINKS -->
-        <div class="collapse navbar-collapse justify-content-end" id="adminNav">
+        <div class="collapse navbar-collapse justify-content-end"
+             id="adminNav">
 
             <div class="d-flex flex-wrap gap-2 mt-2 mt-lg-0">
 
-                <!-- DASHBOARD -->
                 <a href="{{ url_for('main.admin_dashboard') }}"
                    class="btn btn-sm {% if request.endpoint == 'main.admin_dashboard' %}btn-dark text-white{% else %}btn-outline-dark{% endif %}">
                     Dashboard
                 </a>
 
-                <!-- USERS -->
                 <a href="{{ url_for('main.admin_users') }}"
                    class="btn btn-sm {% if request.endpoint == 'main.admin_users' %}btn-dark text-white{% else %}btn-outline-dark{% endif %}">
                     Users
                 </a>
 
-                <!-- PACKAGES -->
                 <a href="{{ url_for('main.admin_packages') }}"
                    class="btn btn-sm {% if request.endpoint == 'main.admin_packages' %}btn-dark text-white{% else %}btn-outline-dark{% endif %}">
                     Packages
                 </a>
 
-                <!-- ARCHIVED -->
                 <a href="{{ url_for('main.admin_archived_packages') }}"
                    class="btn btn-sm {% if request.endpoint == 'main.admin_archived_packages' %}btn-dark text-white{% else %}btn-outline-dark{% endif %}">
                     Archived
                 </a>
 
-                <!-- ANNOUNCEMENTS -->
                 <a href="{{ url_for('main.admin_announcements') }}"
                    class="btn btn-sm {% if request.endpoint == 'main.admin_announcements' %}btn-dark text-white{% else %}btn-outline-dark{% endif %}">
                     Announcements
                 </a>
 
-                <!-- AUDIT LOGS -->
                 <a href="{{ url_for('main.audit_dashboard') }}"
                    class="btn btn-sm {% if request.endpoint == 'main.audit_dashboard' %}btn-dark text-white{% else %}btn-outline-dark{% endif %}">
                     Audit Logs
                 </a>
 
-                <!-- LOGOUT -->
                 <a href="{{ url_for('main.logout') }}"
                    class="btn btn-danger btn-sm">
                     Logout
@@ -79,6 +73,24 @@
     </div>
 
 </nav>
+
+<!-- GLOBAL REFRESH BUTTON (ADMIN) -->
+<button onclick="window.location.reload()"
+        class="btn btn-dark shadow"
+        title="Refresh page"
+        style="
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 99999;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+        ">
+
+    🔄
+
+</button>
 
 <!-- ADMIN CONTENT AREA -->
 <div class="container-fluid py-4">
