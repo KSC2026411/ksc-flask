@@ -314,8 +314,8 @@ def my_packages():
 # -------------------
 # TRACK PACKAGE (CUSTOMER SEARCH FORM)
 # -------------------
-@main.route("/track", methods=["GET", "POST"])
-def track_package():
+@main.route("/track", methods=["GET", "POST"], endpoint="track_page")
+def track():
 
     package = None
     tracking_number = None
@@ -338,10 +338,7 @@ def track_package():
     )
 
 
-# -------------------
-# PUBLIC TRACKING LINK
-# -------------------
-@main.route("/track/<tracking_number>")
+@main.route("/track/<tracking_number>", endpoint="track_public_page")
 def track_public(tracking_number):
 
     package = Package.query.filter_by(
