@@ -9,7 +9,7 @@
 
 <style>
 /* =========================
-   MOBILE-FIRST HERO STYLES
+   GLOBAL LAYOUT
 ========================= */
 
 .page-wrapper {
@@ -18,45 +18,66 @@
     flex-direction: column;
 }
 
-/* HERO */
+/* =========================
+   HERO (MOBILE FIRST)
+========================= */
+
 .main-container {
     flex: 1;
-    padding: 24px 16px;
+    padding: 20px 16px;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start; /* top aligned */
     align-items: center;
+    flex-direction: column;
+    background: linear-gradient(135deg, #0f172a, #111827);
 }
 
 /* CARD */
 .welcome-card {
     width: 100%;
     max-width: 520px;
-    padding: 24px 16px;
+    margin-top: 24px;
+    padding: 24px 18px;
     border-radius: 16px;
     background: rgba(0,0,0,0.55);
-    backdrop-filter: blur(6px);
+    backdrop-filter: blur(8px);
+    color: white;
+    text-align: center;
 }
 
 /* TEXT */
 .welcome-card h1 {
     font-size: 1.8rem;
-    line-height: 1.2;
+    font-weight: 700;
+    margin-bottom: 8px;
 }
 
 .tagline {
     font-size: 1rem;
-    margin-top: 8px;
+    opacity: 0.9;
+    margin-bottom: 16px;
 }
 
 /* BUTTONS */
-.welcome-card .btn {
-    width: 100%;
-    max-width: 220px;
+.button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    margin-top: 16px;
 }
 
-/* FOOTER */
+.button-group a {
+    width: 100%;
+    max-width: 240px;
+}
+
+/* =========================
+   FOOTER
+========================= */
+
 .footer {
-    background: #111;
+    background: #0b0f1a;
     color: #fff;
     padding: 16px;
     font-size: 13px;
@@ -70,12 +91,18 @@
 }
 
 /* =========================
-   TABLET+
+   TABLET / DESKTOP
 ========================= */
+
 @media (min-width: 768px) {
+
+    .main-container {
+        justify-content: center; /* center on desktop */
+    }
 
     .welcome-card {
         padding: 32px;
+        margin-top: 0;
     }
 
     .welcome-card h1 {
@@ -84,6 +111,15 @@
 
     .tagline {
         font-size: 1.1rem;
+    }
+
+    .button-group {
+        flex-direction: row;
+        justify-content: center;
+    }
+
+    .button-group a {
+        width: auto;
     }
 
     .footer-content {
@@ -99,15 +135,14 @@
 <div class="page-wrapper">
 
     <!-- HERO -->
-    <div class="main-container text-center text-white">
+    <div class="main-container text-white">
 
         <div class="welcome-card">
 
-            <h1 class="fw-bold">Welcome to KSC LOGISTICS</h1>
+            <h1>Welcome to KSC LOGISTICS</h1>
             <p class="tagline">WE SHIP THEM CHEAP ✅</p>
 
-            <!-- BUTTONS -->
-            <div class="mt-4 d-flex flex-column align-items-center gap-2">
+            <div class="button-group">
 
                 {% if current_user.is_authenticated %}
                     <a href="{{ url_for('main.my_packages') }}" class="btn btn-primary btn-lg">
