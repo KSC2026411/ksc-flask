@@ -689,17 +689,41 @@ def admin_dashboard():
     page = request.args.get("page", 1, type=int)
 
     packages = Package.query.order_by(
-        Package.pickup_date.desc()
+        Package.created_at.desc()
     ).paginate(page=page, per_page=20)
 
     announcements = Announcement.query.order_by(
         Announcement.created_at.desc()
     ).limit(50).all()
 
+    # =========================
+    # 📊 ANALYTICS (FIXED)
+    # =========================
+
+    total_packages = Package.query.count()
+
+    pending_deliveries = Package.query.filter(
+        Package.status.ilike("%pending%")
+    ).count()
+
+    delivered_today = Package.query.filter(
+        Package.status.ilike("%delivered%"),
+        Package.created_at >= datetime.utcnow().date()
+    ).count()
+
+    active_users = User.query.filter_by(
+        role="customer",
+        active=True
+    ).count()
+
     return render_template(
         "admin/admin_dashboard.html",
         packages=packages,
-        announcements=announcements
+        announcements=announcements,
+        total_packages=total_packages,
+        pending_deliveries=pending_deliveries,
+        delivered_today=delivered_today,
+        active_users=active_users
     )
 
 
