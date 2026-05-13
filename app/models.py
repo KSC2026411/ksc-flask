@@ -65,7 +65,7 @@ class User(db.Model, UserMixin):
 class Package(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
-    tracking_number = db.Column(db.String(20), unique=True, nullable=False)
+    tracking_number = db.Column(db.String(20), unique=True, nullable=True)
     description = db.Column(db.String(255), nullable=False)
 
     street = db.Column(db.String(255), nullable=False)

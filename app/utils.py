@@ -75,3 +75,11 @@ def send_push_notification(
 
     except Exception as e:
         print("❌ Global push error:", e)
+        
+
+def generate_tracking_number():
+    prefix = "PKG"
+    random_part = ''.join(
+        random.choices(string.ascii_uppercase + string.digits, k=8)
+    )
+    return f"{prefix}-{random_part}"
