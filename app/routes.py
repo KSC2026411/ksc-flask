@@ -628,20 +628,32 @@ def admin_packages():
 @admin_required
 def approve_package(package_id):
 
+    print("APPROVE ROUTE HIT")
+
     package = Package.query.get_or_404(package_id)
 
-    # prevent double approval
+    print("PACKAGE FOUND:", package.id)
+
     if package.tracking_number:
+        print("ALREADY HAS TRACKING")
         flash("Package already approved.", "warning")
         return redirect(url_for("main.admin_packages"))
 
-    # ONLY HERE tracking number is generated
-    package.tracking_number = generate_tracking()
+    tracking = generate_tracking()
+
+    print("GENERATED TRACKING:", tracking)
+
+    package.tracking_number = tracking
 
     package.status = "Scheduled"
     package.updated_at = datetime.utcnow()
 
-    db.session.commit()
+    try:
+        db.session.commit()
+        print("COMMIT SUCCESS")
+    except Exception as e:
+        db.session.rollback()
+        print("COMMIT FAILED:", e)
 
     flash(
         f"Pickup approved. Tracking #: {package.tracking_number}",
