@@ -255,8 +255,9 @@ def login():
 
             # ----------------------------
             # Check if account is active
+            # Treat NULL (old accounts) as active
             # ----------------------------
-            if not user.is_active:
+            if user.is_active is not None and not user.is_active:
                 flash("Your account is not activated. Please contact the admin.", "danger")
                 return redirect(url_for("main.login"))
 
