@@ -8,8 +8,6 @@ from datetime import datetime, timedelta
 import json
 import re
 
-# For email activation
-from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer
 
 from .models import User, Package, Announcement, PushSubscription, AuditLog
