@@ -10,7 +10,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from .extensions import db, migrate, socketio, mail
+from .extensions import db, migrate, socketio
 from .models import User, Announcement
 from . import events
 
