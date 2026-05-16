@@ -670,19 +670,8 @@ def admin_dashboard():
 
     active_users = User.query.filter_by(
         role="customer",
-        active=True
+        is_active=True  # <- updated
     ).count()
-
-    if request.headers.get("X-Live-Sync") == "true":
-        return render_template(
-            "admin/admin_dashboard.html",
-            packages=packages,
-            announcements=announcements,
-            total_packages=total_packages,
-            pending_deliveries=pending_deliveries,
-            delivered_today=delivered_today,
-            active_users=active_users
-        )
 
     return render_template(
         "admin/admin_dashboard.html",
