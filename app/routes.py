@@ -11,7 +11,7 @@ import re
 from itsdangerous import URLSafeTimedSerializer
 
 from .models import User, Package, Announcement, PushSubscription, AuditLog
-from .extensions import db, socketio, mail
+from .extensions import db, socketio
 from .decorators import admin_required
 from .utils import generate_tracking, send_push_notification
 
