@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify, current_app
 from flask_login import login_required, login_user, logout_user, current_user
 from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import text, or_
@@ -6,15 +6,59 @@ from bs4 import BeautifulSoup
 
 from datetime import datetime, timedelta
 import json
+import re
+
+# For email activation
+from flask_mail import Message
+from itsdangerous import URLSafeTimedSerializer
 
 from .models import User, Package, Announcement, PushSubscription, AuditLog
-from .extensions import db, socketio
+from .extensions import db, socketio, mail
 from .decorators import admin_required
 from .utils import generate_tracking, send_push_notification
 
 main = Blueprint("main", __name__)
 csrf = CSRFProtect()
 
+# -------------------------
+# Email validation regex
+# -------------------------
+EMAIL_REGEX = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+
+# -------------------------
+# Minimum password length
+# -------------------------
+MIN_PASSWORD_LENGTH = 8
+
+# -------------------------
+# Generate activation token
+# -------------------------
+def generate_activation_token(email, secret_key, salt='email-confirm'):
+    serializer = URLSafeTimedSerializer(secret_key)
+    return serializer.dumps(email, salt=salt)
+
+def confirm_activation_token(token, secret_key, expiration=3600, salt='email-confirm'):
+    serializer = URLSafeTimedSerializer(secret_key)
+    try:
+        email = serializer.loads(token, salt=salt, max_age=expiration)
+    except Exception:
+        return None
+    return email
+
+# US Federal Holidays dictionary
+US_FEDERAL_HOLIDAYS = {
+    "01-01": "Happy New Year! 🎉",
+    "01-20": "Happy Martin Luther King Jr. Day! ✊",
+    "02-17": "Happy Presidents' Day! 🇺🇸",
+    "05-25": "Happy Memorial Day! 🇺🇸",
+    "06-19": "Happy Juneteenth! ✊",
+    "07-04": "Happy Independence Day! 🎆",
+    "09-07": "Happy Labor Day! 🛠️",
+    "10-12": "Happy Columbus Day! ⛵",
+    "11-11": "Happy Veterans Day! 🇺🇸",
+    "11-26": "Happy Thanksgiving! 🦃",
+    "12-25": "Merry Christmas! 🎄"
+}
 
 ######                        #######
 ###### PUBLIC ROUTES #######
@@ -46,6 +90,7 @@ def home():
     now = datetime.utcnow()
 
     try:
+        # Delete expired announcements
         expired = Announcement.query.filter(
             Announcement.expires_at.isnot(None),
             Announcement.expires_at <= now
@@ -56,6 +101,7 @@ def home():
 
         db.session.commit()
 
+        # Fetch active announcements
         announcements = Announcement.query.filter(
             Announcement.expires_at.isnot(None),
             Announcement.expires_at > now
@@ -66,10 +112,17 @@ def home():
         print("DB ERROR:", e)
         announcements = []
 
+    # ------------------------------
+    # Check for US federal holiday
+    # ------------------------------
+    today_str = datetime.now().strftime("%m-%d")  # "MM-DD"
+    holiday_message = US_FEDERAL_HOLIDAYS.get(today_str)
+
     return render_template(
         "public/home.html",
         announcements=announcements,
-        now=now
+        now=now,
+        holiday_message=holiday_message  # <-- pass to template
     )
 
 
@@ -111,33 +164,81 @@ def save_subscription():
 def register():
     if request.method == "POST":
 
-        name = request.form.get("name")
-        email = request.form.get("email")
-        phone = request.form.get("phone")
-        password = request.form.get("password")
+        # -------------------------
+        # Get form data
+        # -------------------------
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        phone = request.form.get("phone", "").strip()
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
 
-        email = email.strip().lower() if email else None
+        # -------------------------
+        # Validate name
+        # -------------------------
+        if not name or any(char.isdigit() for char in name):
+            flash("Name cannot contain numbers and cannot be empty.", "warning")
+            return redirect(url_for("main.register"))
 
+        # -------------------------
+        # Validate email format
+        # -------------------------
+        EMAIL_REGEX = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        if not email or not re.match(EMAIL_REGEX, email):
+            flash("Please provide a valid email address.", "warning")
+            return redirect(url_for("main.register"))
+
+        # Optional: validate domain exists
+        domain = email.split("@")[1]
+        try:
+            import socket
+            socket.gethostbyname(domain)
+        except Exception:
+            flash("Email domain does not exist.", "warning")
+            return redirect(url_for("main.register"))
+
+        # -------------------------
+        # Check if email already exists
+        # -------------------------
         if User.query.filter_by(email=email).first():
             flash("Email already registered", "warning")
             return redirect(url_for("main.register"))
 
+        # -------------------------
+        # Validate password
+        # -------------------------
+        MIN_PASSWORD_LENGTH = 8
+        if not password or password != confirm_password:
+            flash("Passwords do not match or are empty.", "warning")
+            return redirect(url_for("main.register"))
+
+        if len(password) < MIN_PASSWORD_LENGTH:
+            flash(f"Password must be at least {MIN_PASSWORD_LENGTH} characters long.", "warning")
+            return redirect(url_for("main.register"))
+
+        # -------------------------
+        # Create user (inactive, pending admin approval)
+        # -------------------------
         user = User(
             name=name,
             email=email,
             phone=phone,
-            role="customer"
+            role="customer",
+            is_active=False  # account pending activation
         )
-        user.password = password
+        user.password = password  # hashes password internally
 
         db.session.add(user)
         db.session.commit()
 
-        flash("Account created! Please login.", "success")
+        flash(
+            "Account created! Your account is pending admin approval.",
+            "success"
+        )
         return redirect(url_for("main.login"))
 
+    # GET request
     return render_template("public/register.html")
-
 
 
 @main.route("/login", methods=["GET", "POST"])
@@ -154,23 +255,33 @@ def login():
 
         if user and user.check_password(password):
 
-            if not user.active:
-                flash("Your account is deactivated. Contact admin.", "danger")
+            # ----------------------------
+            # Check if account is active
+            # ----------------------------
+            if not user.is_active:
+                flash("Your account is not activated. Please contact the admin.", "danger")
                 return redirect(url_for("main.login"))
 
+            # ----------------------------
+            # Log the user in
+            # ----------------------------
             login_user(user)
-
             flash(f"Welcome back, {user.name}!", "success")
 
+            # ----------------------------
+            # Redirect based on role
+            # ----------------------------
             if user.role == "admin":
                 return redirect(url_for("main.admin_dashboard"))
             else:
                 return redirect(url_for("main.dashboard"))
 
+        # ----------------------------
+        # Invalid credentials
+        # ----------------------------
         flash("Invalid email or password", "danger")
 
     return render_template("public/login.html")
-
 
 
 @main.route("/logout")
@@ -1043,6 +1154,7 @@ def track_public(tracking_number):
         package=package,
         tracking_number=tracking_number
     )
+
 
 
 

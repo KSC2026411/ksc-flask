@@ -7,7 +7,6 @@ from flask import current_app
 
 from app.models import PushSubscription, User
 
-
 # ==========================================
 # TRACKING NUMBER GENERATOR (IMPROVED)
 # ==========================================
@@ -17,8 +16,19 @@ def generate_tracking():
     Generates short, readable, unique tracking number:
     Example: KSC-48291
     """
-
     return f"KSC-{random.randint(10000, 99999)}"
+
+
+def generate_tracking_number():
+    """
+    Generates longer alphanumeric tracking number:
+    Example: PKG-1A2B3C4D
+    """
+    prefix = "PKG"
+    random_part = ''.join(
+        random.choices(string.ascii_uppercase + string.digits, k=8)
+    )
+    return f"{prefix}-{random_part}"
 
 
 # ==========================================
@@ -32,42 +42,33 @@ def send_push_notification(
     badge=1,
     role=None
 ):
-
+    """
+    Sends web push notifications to all users or filtered by role
+    """
     try:
-
         query = PushSubscription.query
 
-        # Filter by role if specified
         if role:
             query = query.join(User).filter(User.role == role)
 
         subscriptions = query.all()
-
         print(f"📦 Sending push to {len(subscriptions)} users")
 
         for sub in subscriptions:
-
             try:
-
                 webpush(
-
                     subscription_info=json.loads(sub.subscription),
-
                     data=json.dumps({
                         "title": title,
                         "body": body,
                         "url": url,
                         "badge": badge
                     }),
-
                     vapid_private_key=current_app.config["VAPID_PRIVATE_KEY"],
-
                     vapid_claims={
                         "sub": "mailto:admin@ksclogistics.com"
                     }
-
                 )
-
                 print(f"✅ Push sent to user {sub.user_id}")
 
             except Exception as e:
@@ -75,11 +76,8 @@ def send_push_notification(
 
     except Exception as e:
         print("❌ Global push error:", e)
-        
 
-def generate_tracking_number():
-    prefix = "PKG"
-    random_part = ''.join(
-        random.choices(string.ascii_uppercase + string.digits, k=8)
-    )
-    return f"{prefix}-{random_part}"
+# -------------------------
+# EMAIL ACTIVATION FUNCTIONS
+# -------------------------
+# Removed since we no longer send activation emails

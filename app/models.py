@@ -15,7 +15,7 @@ class User(db.Model, UserMixin):
     _password = db.Column("password", db.String(200), nullable=False)
 
     phone = db.Column(db.String(50))
-    active = db.Column(db.Boolean, default=True, nullable=False)
+    is_active = db.Column(db.Boolean, default=False, nullable=False)  # account activation
 
     # login security
     failed_attempts = db.Column(db.Integer, default=0)
@@ -57,6 +57,17 @@ class User(db.Model, UserMixin):
 
     def make_admin(self):
         self.role = "admin"
+
+    # -------------------
+    # ACCOUNT ACTIVATION
+    # -------------------
+    @property
+    def is_active_user(self):
+        return self.is_active
+
+    def activate_account(self):
+        self.is_active = True
+        db.session.commit()
 
 
 # -------------------
