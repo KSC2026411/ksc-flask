@@ -83,7 +83,11 @@ def offline():
 
 
 
-@main.route("/")
+from flask import request, render_template
+from sqlalchemy import or_
+from datetime import datetime
+
+@main.route("/", methods=["GET", "POST"])
 def home():
     now = datetime.utcnow()
 
@@ -111,18 +115,36 @@ def home():
         announcements = []
 
     # ------------------------------
+    # Package Search Logic
+    # ------------------------------
+    packages = []
+    search_query = ""
+
+    if request.method == "POST":
+        search_query = request.form.get("search", "").strip()
+
+        if search_query:
+            packages = Package.query.filter(
+                or_(
+                    Package.tracking_number.ilike(f"%{search_query}%"),
+                    Package.last_name.ilike(f"%{search_query}%")
+                )
+            ).all()
+
+    # ------------------------------
     # Check for US federal holiday
     # ------------------------------
-    today_str = datetime.now().strftime("%m-%d")  # "MM-DD"
+    today_str = datetime.now().strftime("%m-%d")
     holiday_message = US_FEDERAL_HOLIDAYS.get(today_str)
 
     return render_template(
         "public/home.html",
         announcements=announcements,
         now=now,
-        holiday_message=holiday_message  # <-- pass to template
+        holiday_message=holiday_message,
+        packages=packages,
+        search_query=search_query
     )
-
 
 
 @main.route("/save-subscription", methods=["POST"])
