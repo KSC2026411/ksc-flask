@@ -328,7 +328,7 @@ def login():
             # Log the user in
             # ----------------------------
             login_user(user)
-            flash(f"Welcome back, {user.name}!", "success")
+            flash(f"Welcome back, {user.full_name}!", "success")
 
             # ----------------------------
             # Redirect based on role
