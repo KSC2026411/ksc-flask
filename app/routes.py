@@ -182,43 +182,74 @@ def save_subscription():
     
 @main.route("/register", methods=["GET", "POST"])
 def register():
+
     if request.method == "POST":
 
         # -------------------------
         # Get form data
         # -------------------------
-        name = request.form.get("name", "").strip()
+        first_name = request.form.get("first_name", "").strip()
+        last_name = request.form.get("last_name", "").strip()
+
         email = request.form.get("email", "").strip().lower()
         phone = request.form.get("phone", "").strip()
+
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
 
         # -------------------------
-        # Validate name
+        # Validate names
         # -------------------------
-        if not name or any(char.isdigit() for char in name):
-            flash("Name cannot contain numbers and cannot be empty.", "warning")
+        if (
+            not first_name
+            or any(char.isdigit() for char in first_name)
+        ):
+            flash(
+                "First name cannot contain numbers and cannot be empty.",
+                "warning"
+            )
+            return redirect(url_for("main.register"))
+
+        if (
+            not last_name
+            or any(char.isdigit() for char in last_name)
+        ):
+            flash(
+                "Last name cannot contain numbers and cannot be empty.",
+                "warning"
+            )
             return redirect(url_for("main.register"))
 
         # -------------------------
         # Validate email format
         # -------------------------
         EMAIL_REGEX = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-        if not email or not re.match(EMAIL_REGEX, email):
-            flash("Please provide a valid email address.", "warning")
-            return redirect(url_for("main.register"))
 
-        # Optional: validate domain exists
-        domain = email.split("@")[1]
-        try:
-            import socket
-            socket.gethostbyname(domain)
-        except Exception:
-            flash("Email domain does not exist.", "warning")
+        if not email or not re.match(EMAIL_REGEX, email):
+            flash(
+                "Please provide a valid email address.",
+                "warning"
+            )
             return redirect(url_for("main.register"))
 
         # -------------------------
-        # Check if email already exists
+        # Optional domain validation
+        # -------------------------
+        domain = email.split("@")[1]
+
+        try:
+            import socket
+            socket.gethostbyname(domain)
+
+        except Exception:
+            flash(
+                "Email domain does not exist.",
+                "warning"
+            )
+            return redirect(url_for("main.register"))
+
+        # -------------------------
+        # Check if email exists
         # -------------------------
         if User.query.filter_by(email=email).first():
             flash("Email already registered", "warning")
@@ -228,25 +259,35 @@ def register():
         # Validate password
         # -------------------------
         MIN_PASSWORD_LENGTH = 8
+
         if not password or password != confirm_password:
-            flash("Passwords do not match or are empty.", "warning")
+            flash(
+                "Passwords do not match or are empty.",
+                "warning"
+            )
             return redirect(url_for("main.register"))
 
         if len(password) < MIN_PASSWORD_LENGTH:
-            flash(f"Password must be at least {MIN_PASSWORD_LENGTH} characters long.", "warning")
+            flash(
+                f"Password must be at least "
+                f"{MIN_PASSWORD_LENGTH} characters long.",
+                "warning"
+            )
             return redirect(url_for("main.register"))
 
         # -------------------------
-        # Create user (inactive, pending admin approval)
+        # Create user
         # -------------------------
         user = User(
-            name=name,
+            first_name=first_name,
+            last_name=last_name,
             email=email,
             phone=phone,
             role="customer",
-            is_active=False  # account pending activation
+            is_active=False
         )
-        user.password = password  # hashes password internally
+
+        user.password = password
 
         db.session.add(user)
         db.session.commit()
@@ -255,9 +296,9 @@ def register():
             "Account created! Your account is pending admin approval.",
             "success"
         )
+
         return redirect(url_for("main.login"))
 
-    # GET request
     return render_template("public/register.html")
 
 

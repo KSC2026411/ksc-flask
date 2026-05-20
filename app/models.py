@@ -9,13 +9,17 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # -------------------
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
+
+    # UPDATED NAME FIELDS
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
+
     email = db.Column(db.String(150), unique=True, nullable=False)
 
     _password = db.Column("password", db.String(200), nullable=False)
 
     phone = db.Column(db.String(50))
-    is_active = db.Column(db.Boolean, default=False, nullable=False)  # account activation
+    is_active = db.Column(db.Boolean, default=False, nullable=False)
 
     # login security
     failed_attempts = db.Column(db.Integer, default=0)
@@ -68,6 +72,13 @@ class User(db.Model, UserMixin):
     def activate_account(self):
         self.is_active = True
         db.session.commit()
+
+    # -------------------
+    # FULL NAME HELPER (NEW)
+    # -------------------
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
 
 
 # -------------------
