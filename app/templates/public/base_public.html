@@ -39,8 +39,13 @@
             font-weight: 600;
         }
 
-        /* HEADER RIGHT SEARCH */
+        /* HEADER SEARCH SLOT */
         .header-search {
+            display: flex;
+            align-items: center;
+        }
+
+        .header-search form {
             display: flex;
             align-items: center;
             gap: 8px;
@@ -70,45 +75,25 @@
 
     </style>
 
+    {% block head %}{% endblock %}
+
 </head>
 
 <body>
 
-<!-- NAVBAR (SINGLE SOURCE ONLY) -->
+<!-- NAVBAR (CLEAN SINGLE SOURCE) -->
 {% if not (current_user.is_authenticated and current_user.role == "admin") %}
 
 <nav class="navbar navbar-dark bg-dark d-flex justify-content-between align-items-center">
 
+    <!-- LEFT: BRAND -->
     <a class="navbar-brand" href="{{ url_for('main.home') }}">
         KSC LOGISTICS
     </a>
 
-    <div class="d-flex align-items-center gap-2">
-
+    <!-- RIGHT: ONLY INJECTED CONTENT -->
+    <div class="d-flex align-items-center">
         {% block header_right %}{% endblock %}
-
-        {% if not current_user.is_authenticated %}
-
-            <a href="{{ url_for('main.login') }}" class="btn btn-success btn-sm">
-                Login
-            </a>
-
-            <a href="{{ url_for('main.register') }}" class="btn btn-outline-light btn-sm">
-                Register
-            </a>
-
-        {% else %}
-
-            <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary btn-sm">
-                Dashboard
-            </a>
-
-            <a href="{{ url_for('main.logout') }}" class="btn btn-danger btn-sm">
-                Logout
-            </a>
-
-        {% endif %}
-
     </div>
 
 </nav>
@@ -133,7 +118,7 @@
     {% block content %}{% endblock %}
 </main>
 
-<!-- FOOTER (RESTORED CLEAN) -->
+<!-- FOOTER -->
 {% if not hide_footer %}
 <footer class="bg-dark text-white text-center py-3 mt-auto">
     <div class="small">
@@ -141,6 +126,147 @@
     </div>
 </footer>
 {% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>{% block title %}KSC LOGISTICS{% endblock %}</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+        }
+
+        main {
+            flex: 1;
+        }
+
+        .navbar {
+            padding: 10px 14px;
+        }
+
+        .navbar-brand {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* HEADER SEARCH SLOT */
+        .header-search {
+            display: flex;
+            align-items: center;
+        }
+
+        .header-search input {
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: none;
+            outline: none;
+            width: 220px;
+        }
+
+        @media (max-width: 768px) {
+            .header-search input {
+                width: 140px;
+            }
+        }
+
+    </style>
+
+    {% block head %}{% endblock %}
+
+</head>
+
+<body>
+
+<!-- NAVBAR (CLEAN - SINGLE SOURCE ONLY) -->
+<nav class="navbar navbar-dark bg-dark d-flex justify-content-between align-items-center">
+
+    <a class="navbar-brand" href="{{ url_for('main.home') }}">
+        KSC LOGISTICS
+    </a>
+
+    <!-- RIGHT SIDE SLOT (SEARCH GOES HERE) -->
+    <div class="d-flex align-items-center">
+        {% block header_right %}{% endblock %}
+    </div>
+
+</nav>
+
+<!-- FLASH MESSAGES -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="container mt-3">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<!-- MAIN CONTENT -->
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+<!-- FOOTER (FULL RESTORED BUSINESS VERSION) -->
+<footer class="bg-dark text-white py-4 mt-auto">
+
+    <div class="container">
+
+        <div class="row text-center text-md-start gy-2">
+
+            <div class="col-12 text-center mb-2">
+                <strong>KSC LOGISTICS</strong><br>
+                <span>WE SHIP THEM CHEAP ✅</span>
+            </div>
+
+            <div class="col-md-6">
+                📞 +1 (256) 328-5676<br>
+                ✉️ kscsupport26@gmail.com
+            </div>
+
+            <div class="col-md-6">
+                📍 Gadsden, Alabama USA<br>
+                📞 +1 (228) 900-705-73
+            </div>
+
+            <div class="col-12 text-center mt-2">
+                📍 Djidjole, Lome-Togo
+            </div>
+
+        </div>
+
+        <hr class="border-secondary my-3">
+
+        <div class="text-center small text-muted">
+            © 2026 KSC Logistics. All rights reserved.
+        </div>
+
+    </div>
+
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 

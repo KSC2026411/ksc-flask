@@ -1,83 +1,68 @@
 {% extends "public/base_public.html" %}
 
 {% block title %}Home{% endblock %}
-{% block body_class %}hero-page{% endblock %}
 
 {% block header_right %}
-<form method="GET" action="{{ url_for('main.home') }}" class="header-search">
-    <input
-        type="text"
-        name="search"
-        placeholder="Track package..."
-        value="{{ search_query }}"
-    >
-    <button type="submit">Search</button>
-</form>
+
+<div class="header-search">
+
+    <form method="GET" action="{{ url_for('main.home') }}" class="d-flex gap-2">
+
+        <input
+            type="text"
+            name="search"
+            placeholder="Track package..."
+            value="{{ search_query }}"
+        >
+
+    </form>
+
+</div>
+
 {% endblock %}
 
 {% block content %}
 
 <style>
 
-body {
-    margin: 0;
-}
-
-/* MAIN PAGE */
 .page-wrapper {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     background: linear-gradient(135deg, #020617, #0f172a);
+    padding: 20px;
 }
 
-.main-container {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 30px 16px;
-}
-
-/* CARD */
 .welcome-card {
-    width: 100%;
-    max-width: 620px;
-    padding: 32px 24px;
-    border-radius: 22px;
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 30px;
+    border-radius: 20px;
     background: rgba(0,0,0,0.55);
-    backdrop-filter: blur(10px);
     color: white;
     text-align: center;
-}
-
-.welcome-card h1 {
-    font-size: 2.2rem;
-    margin-bottom: 10px;
 }
 
 .tagline {
     opacity: 0.9;
 }
 
-/* BUTTONS */
 .button-group {
-    margin-top: 18px;
+    margin-top: 20px;
     display: flex;
-    gap: 12px;
+    gap: 10px;
     justify-content: center;
     flex-wrap: wrap;
 }
 
-/* RESULTS */
 .search-results {
-    margin-top: 20px;
+    margin-top: 25px;
     color: white;
 }
 
 .package-card {
     background: rgba(255,255,255,0.08);
-    padding: 14px;
+    padding: 15px;
     border-radius: 12px;
     margin-bottom: 10px;
 }
@@ -86,106 +71,55 @@ body {
     background: #22c55e;
     padding: 5px 10px;
     border-radius: 999px;
+    font-size: 12px;
 }
 
-/* FOOTER */
-.footer {
-    background: #020617;
-    color: white;
-    padding: 18px;
+.no-results {
+    color: #ffb4b4;
     text-align: center;
-    margin-top: auto;
-}
-
-.footer-content {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px 20px;
+    margin-top: 20px;
 }
 
 </style>
 
-<div class="page-wrapper">
+<div class="welcome-card">
 
-    <div class="main-container">
+    <h1>Welcome to KSC LOGISTICS</h1>
+    <p class="tagline">WE SHIP THEM CHEAP ✅</p>
 
-        <div>
+    <div class="button-group">
 
-            <!-- WELCOME CARD -->
-            <div class="welcome-card">
-
-                {% if holiday_message %}
-                    <div style="margin-bottom:10px;">
-                        🎉 {{ holiday_message }} 🎉
-                    </div>
-                {% endif %}
-
-                <h1>Welcome to KSC LOGISTICS</h1>
-                <p class="tagline">WE SHIP THEM CHEAP ✅</p>
-
-                <div class="button-group">
-
-                    {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('main.my_packages') }}" class="btn btn-primary btn-lg">
-                            Go to Dashboard
-                        </a>
-                    {% else %}
-                        <a href="{{ url_for('main.login') }}" class="btn btn-success btn-lg">
-                            Login
-                        </a>
-                        <a href="{{ url_for('main.register') }}" class="btn btn-outline-light btn-lg">
-                            Register
-                        </a>
-                    {% endif %}
-
-                </div>
-
-            </div>
-
-            <!-- RESULTS BELOW CARD -->
-            {% if packages %}
-
-                <div class="search-results">
-
-                    {% for package in packages %}
-                        <div class="package-card">
-                            <p><strong>Tracking:</strong> {{ package.tracking_number }}</p>
-                            <p><strong>Last Name:</strong> {{ package.last_name }}</p>
-                            <p>
-                                <strong>Status:</strong>
-                                <span class="status-badge">{{ package.status }}</span>
-                            </p>
-                        </div>
-                    {% endfor %}
-
-                </div>
-
-            {% elif search_query %}
-
-                <div style="color:#ffb4b4; text-align:center; margin-top:15px;">
-                    No package found.
-                </div>
-
-            {% endif %}
-
-        </div>
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('main.my_packages') }}" class="btn btn-primary">Dashboard</a>
+        {% else %}
+            <a href="{{ url_for('main.login') }}" class="btn btn-success">Login</a>
+            <a href="{{ url_for('main.register') }}" class="btn btn-outline-light">Register</a>
+        {% endif %}
 
     </div>
 
-    <!-- FOOTER (WORKING FULL RESTORED) -->
-    <footer class="footer">
-        <div class="footer-content">
-            <span><strong>KSC LOGISTICS</strong></span>
-            <span>WE SHIP THEM CHEAP ✅</span>
-            <span>📞 +1 (256) 328-5676</span>
-            <span>✉️ kscsupport26@gmail.com</span>
-            <span>📍 Gadsden, Alabama USA</span>
-            <span>📞 +1 (228) 900-705-73</span>
-            <span>📍 Djidjole, Lome-Togo</span>
-        </div>
-    </footer>
-
 </div>
+
+{% if packages %}
+
+    <div class="search-results">
+
+        {% for package in packages %}
+            <div class="package-card">
+                <p><strong>Tracking:</strong> {{ package.tracking_number }}</p>
+                <p><strong>Name:</strong> {{ package.last_name }}</p>
+                <p><span class="status-badge">{{ package.status }}</span></p>
+            </div>
+        {% endfor %}
+
+    </div>
+
+{% elif search_query %}
+
+    <div class="no-results">
+        No package found.
+    </div>
+
+{% endif %}
 
 {% endblock %}
