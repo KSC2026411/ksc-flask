@@ -29,9 +29,9 @@ main {
 .main-container {
     flex: 1;
     width: 100%;
-    padding: 20px 16px;
+    padding: 24px 16px;
     display: flex;
-    justify-content: flex-start;
+    justify-content: center;
     align-items: center;
     flex-direction: column;
 }
@@ -39,30 +39,29 @@ main {
 /* CARD */
 .welcome-card {
     width: 100%;
-    max-width: 560px;
-    margin-top: 20px;
-    padding: 28px 20px;
-    border-radius: 20px;
+    max-width: 620px;
+    padding: 32px 24px;
+    border-radius: 22px;
     background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(10px);
     color: white;
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.35);
 }
 
 /* TITLE */
 .welcome-card h1 {
-    font-size: 2rem;
+    font-size: 2.3rem;
     font-weight: 700;
     line-height: 1.2;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 /* TAGLINE */
 .tagline {
     font-size: 1rem;
-    opacity: 0.9;
-    margin-bottom: 24px;
+    opacity: 0.92;
+    margin-bottom: 28px;
 }
 
 /* HOLIDAY */
@@ -70,38 +69,37 @@ main {
     background: linear-gradient(90deg, #ffdd57, #ff8c00);
     color: #000;
     font-weight: 700;
-    padding: 10px 16px;
+    padding: 12px 16px;
     border-radius: 12px;
-    margin-bottom: 20px;
-    font-size: 1.05rem;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    margin-bottom: 22px;
+    font-size: 1rem;
     animation: pulse 1.5s infinite alternate;
 }
 
 @keyframes pulse {
     0% { transform: scale(1); }
-    100% { transform: scale(1.03); }
+    100% { transform: scale(1.02); }
 }
 
-/* PACKAGE SEARCH */
+/* SEARCH */
 .package-search {
     width: 100%;
-    max-width: 560px;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .package-search form {
     display: flex;
-    flex-direction: column;
     gap: 12px;
+    flex-wrap: wrap;
 }
 
 /* INPUT */
 .search-input {
-    width: 100%;
+    flex: 1;
+    min-width: 220px;
     padding: 14px 16px;
     border: none;
-    border-radius: 12px;
+    border-radius: 14px;
     outline: none;
     font-size: 1rem;
     background: rgba(255,255,255,0.95);
@@ -109,121 +107,127 @@ main {
 }
 
 .search-input::placeholder {
-    color: #555;
+    color: #666;
 }
 
 /* BUTTON */
 .search-btn {
-    width: 100%;
-    border-radius: 12px;
+    border-radius: 14px;
     font-weight: 700;
+    padding: 12px 22px;
+    min-width: 160px;
 }
 
 /* RESULTS */
 .search-results {
+    margin-top: 10px;
     margin-bottom: 24px;
     text-align: left;
 }
 
 .search-results h4 {
     text-align: center;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
+    font-weight: 700;
 }
 
 /* PACKAGE CARD */
 .package-card {
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 14px;
-    padding: 16px;
-    margin-bottom: 14px;
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 16px;
+    transition: 0.2s ease;
+}
+
+.package-card:hover {
+    transform: translateY(-2px);
+    background: rgba(255,255,255,0.10);
 }
 
 .package-card p {
-    margin: 6px 0;
+    margin: 8px 0;
     font-size: 0.95rem;
+    line-height: 1.5;
 }
 
+/* STATUS */
 .status-badge {
     display: inline-block;
-    padding: 6px 12px;
+    padding: 6px 14px;
     border-radius: 999px;
     background: #22c55e;
     color: white;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 700;
 }
 
 /* NO RESULTS */
 .no-results {
     margin-bottom: 24px;
+    padding: 14px;
+    border-radius: 12px;
+    background: rgba(255, 0, 0, 0.12);
     color: #ffb4b4;
     font-weight: 600;
 }
 
-/* BUTTONS */
+/* BUTTON GROUP */
 .button-group {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
-    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 10px;
 }
 
 .button-group a {
-    width: 100%;
-    max-width: 240px;
+    min-width: 180px;
 }
 
 /* FOOTER */
 .footer {
     background: #020617;
     color: white;
-    padding: 16px;
+    padding: 18px;
     font-size: 13px;
 }
 
 .footer-content {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px 22px;
     text-align: center;
 }
 
-/* DESKTOP */
-@media (min-width: 768px) {
+/* MOBILE */
+@media (max-width: 768px) {
 
     .welcome-card {
-        margin-top: 30px;
-        padding: 40px;
+        padding: 28px 20px;
     }
 
     .welcome-card h1 {
-        font-size: 3rem;
+        font-size: 2rem;
     }
 
     .package-search form {
-        flex-direction: row;
+        flex-direction: column;
     }
 
     .search-btn {
-        width: auto;
-        min-width: 160px;
+        width: 100%;
     }
 
     .button-group {
-        flex-direction: row;
-        justify-content: center;
+        flex-direction: column;
+        align-items: center;
     }
 
     .button-group a {
-        width: auto;
-    }
-
-    .footer-content {
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 12px 24px;
+        width: 100%;
     }
 }
 
@@ -234,26 +238,7 @@ main {
     <!-- MAIN -->
     <div class="main-container">
 
-        <!-- PACKAGE SEARCH ABOVE CARD -->
-        <div class="package-search">
-            <form method="GET" action="{{ url_for('main.home') }}">
-                <input
-                    type="text"
-                    name="search"
-                    class="search-input"
-                    placeholder="Enter Tracking Number or Last Name"
-                    value="{{ search_query }}"
-                >
-                <button
-                    type="submit"
-                    class="btn btn-warning search-btn"
-                >
-                    Track Package
-                </button>
-            </form>
-        </div>
-
-        <!-- WELCOME CARD -->
+        <!-- CARD -->
         <div class="welcome-card">
 
             {% if holiday_message %}
@@ -263,44 +248,109 @@ main {
             {% endif %}
 
             <h1>Welcome to KSC LOGISTICS</h1>
+
             <p class="tagline">
                 WE SHIP THEM CHEAP ✅
             </p>
 
+            <!-- SEARCH -->
+            <div class="package-search">
+
+                <form method="GET" action="{{ url_for('main.home') }}">
+
+                    <input
+                        type="text"
+                        name="search"
+                        class="search-input"
+                        placeholder="Enter Tracking Number or Last Name"
+                        value="{{ search_query }}"
+                    >
+
+                    <button
+                        type="submit"
+                        class="btn btn-warning search-btn"
+                    >
+                        Track Package
+                    </button>
+
+                </form>
+
+            </div>
+
             <!-- RESULTS -->
             {% if packages %}
+
                 <div class="search-results">
+
                     <h4>Package Results</h4>
+
                     {% for package in packages %}
+
                         <div class="package-card">
-                            <p><strong>Tracking Number:</strong><br>{{ package.tracking_number }}</p>
-                            <p><strong>Last Name:</strong><br>{{ package.last_name }}</p>
-                            <p><strong>Status:</strong><br>
-                                <span class="status-badge">{{ package.status }}</span>
+
+                            <p>
+                                <strong>Tracking Number:</strong><br>
+                                {{ package.tracking_number }}
                             </p>
+
+                            <p>
+                                <strong>Last Name:</strong><br>
+                                {{ package.last_name }}
+                            </p>
+
+                            <p>
+                                <strong>Status:</strong><br>
+
+                                <span class="status-badge">
+                                    {{ package.status }}
+                                </span>
+
+                            </p>
+
                         </div>
+
                     {% endfor %}
+
                 </div>
+
             {% elif search_query %}
+
                 <div class="no-results">
                     No package found.
                 </div>
+
             {% endif %}
 
             <!-- BUTTONS -->
             <div class="button-group">
+
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('main.my_packages') }}" class="btn btn-primary btn-lg">
+
+                    <a
+                        href="{{ url_for('main.my_packages') }}"
+                        class="btn btn-primary btn-lg"
+                    >
                         Go to Dashboard
                     </a>
+
                 {% else %}
-                    <a href="{{ url_for('main.login') }}" class="btn btn-success btn-lg">
+
+                    <a
+                        href="{{ url_for('main.login') }}"
+                        class="btn btn-success btn-lg"
+                    >
                         Login
                     </a>
-                    <a href="{{ url_for('main.register') }}" class="btn btn-outline-light btn-lg">
+
+                    <a
+                        href="{{ url_for('main.register') }}"
+                        class="btn btn-outline-light btn-lg"
+                    >
                         Register
                     </a>
+
                 {% endif %}
+
             </div>
 
         </div>
@@ -309,15 +359,19 @@ main {
 
     <!-- FOOTER -->
     <footer class="footer">
+
         <div class="footer-content">
+
             <span><strong>KSC LOGISTICS</strong></span>
             <span>WE SHIP THEM CHEAP ✅</span>
             <span>📞 +1 (256) 328-5676</span>
             <span>✉️ kscsupport26@gmail.com</span>
-            <span>📍 Gadsden, ALABAMA-USA</span>
+            <span>📍 Gadsden, Alabama USA</span>
             <span>📞 +1 (228) 900-705-73</span>
-            <span>📍 Djidjole, LOME-TOGO</span>
+            <span>📍 Djidjole, Lome-Togo</span>
+
         </div>
+
     </footer>
 
 </div>

@@ -82,17 +82,14 @@ def offline():
     return render_template("public/offline.html")
 
 
-
-from flask import request, render_template
-from sqlalchemy import or_
-from datetime import datetime
-
 @main.route("/", methods=["GET", "POST"])
 def home():
     now = datetime.utcnow()
 
     try:
+        # -----------------------------------
         # Delete expired announcements
+        # -----------------------------------
         expired = Announcement.query.filter(
             Announcement.expires_at.isnot(None),
             Announcement.expires_at <= now
@@ -103,40 +100,71 @@ def home():
 
         db.session.commit()
 
+        # -----------------------------------
         # Fetch active announcements
+        # -----------------------------------
         announcements = Announcement.query.filter(
             Announcement.expires_at.isnot(None),
             Announcement.expires_at > now
-        ).order_by(Announcement.created_at.desc()).all()
+        ).order_by(
+            Announcement.created_at.desc()
+        ).all()
 
     except Exception as e:
         db.session.rollback()
         print("DB ERROR:", e)
         announcements = []
 
-    # ------------------------------
+    # -----------------------------------
     # Package Search Logic
-    # ------------------------------
+    # -----------------------------------
     packages = []
     search_query = ""
 
-    if request.method == "POST":
-        search_query = request.form.get("search", "").strip()
+    # Handle GET search
+    if request.method == "GET":
+        search_query = request.args.get(
+            "search", ""
+        ).strip()
 
-        if search_query:
+    # Handle POST search
+    elif request.method == "POST":
+        search_query = request.form.get(
+            "search", ""
+        ).strip()
+
+    # Run package search
+    if search_query:
+        try:
             packages = Package.query.filter(
                 or_(
-                    Package.tracking_number.ilike(f"%{search_query}%"),
-                    Package.last_name.ilike(f"%{search_query}%")
+                    Package.tracking_number.ilike(
+                        f"%{search_query}%"
+                    ),
+                    Package.last_name.ilike(
+                        f"%{search_query}%"
+                    )
                 )
+            ).order_by(
+                Package.id.desc()
             ).all()
 
-    # ------------------------------
-    # Check for US federal holiday
-    # ------------------------------
+            print(f"SEARCH QUERY: {search_query}")
+            print(f"PACKAGES FOUND: {len(packages)}")
+
+        except Exception as e:
+            print("PACKAGE SEARCH ERROR:", e)
+            packages = []
+
+    # -----------------------------------
+    # Holiday Logic
+    # -----------------------------------
     today_str = datetime.now().strftime("%m-%d")
     holiday_message = US_FEDERAL_HOLIDAYS.get(today_str)
 
+    # -----------------------------------
+    # Render Page
+    # -----------------------------------
     return render_template(
         "public/home.html",
         announcements=announcements,
