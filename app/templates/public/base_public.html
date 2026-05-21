@@ -13,19 +13,32 @@
 
     <style>
 
+        /* =========================
+           FULL HEIGHT LAYOUT FIX
+        ========================== */
+
         html, body {
             height: 100%;
             margin: 0;
         }
 
         body {
-            background: url("{{ url_for('static', filename='images/lb9.jpg') }}")
-            center/cover no-repeat fixed;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         main {
-            flex: 1;
+            flex: 1 0 auto;
         }
+
+        footer {
+            margin-top: auto;
+        }
+
+        /* =========================
+           NAVBAR
+        ========================== */
 
         .navbar {
             padding: 10px 14px;
@@ -36,7 +49,10 @@
             font-weight: 600;
         }
 
-        /* HEADER SEARCH SLOT */
+        /* =========================
+           HEADER SEARCH SLOT
+        ========================== */
+
         .header-search {
             display: flex;
             align-items: center;
@@ -62,7 +78,10 @@
             }
         }
 
-        /* FOOTER (ONE LINE CLEAN VERSION) */
+        /* =========================
+           FOOTER ONE LINE STYLE
+        ========================== */
+
         footer {
             font-size: 13px;
         }
@@ -74,6 +93,7 @@
             align-items: center;
             gap: 18px;
             text-align: center;
+            padding: 6px 10px;
         }
 
         .footer-row span {
@@ -88,7 +108,7 @@
 
 <body>
 
-<!-- NAVBAR -->
+<!-- ================= NAVBAR ================= -->
 <nav class="navbar navbar-dark bg-dark d-flex justify-content-between align-items-center">
 
     <a class="navbar-brand" href="{{ url_for('main.home') }}">
@@ -101,7 +121,7 @@
 
 </nav>
 
-<!-- FLASH -->
+<!-- ================= FLASH ================= -->
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         <div class="container mt-3">
@@ -115,13 +135,13 @@
     {% endif %}
 {% endwith %}
 
-<!-- MAIN -->
+<!-- ================= MAIN ================= -->
 <main>
     {% block content %}{% endblock %}
 </main>
 
-<!-- FOOTER (FULL WIDTH ONE LINE) -->
-<footer class="bg-dark text-white py-2 mt-auto">
+<!-- ================= FOOTER ================= -->
+<footer class="bg-dark text-white py-2">
 
     <div class="container-fluid">
 
@@ -137,7 +157,7 @@
 
         </div>
 
-        <div class="text-center small text-muted mt-1">
+        <div class="text-center small text-muted">
             © 2026 KSC Logistics. All rights reserved.
         </div>
 
