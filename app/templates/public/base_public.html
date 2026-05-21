@@ -39,15 +39,42 @@
             font-weight: 600;
         }
 
-    </style>
+        /* HEADER RIGHT SEARCH */
+        .header-search {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-    {% block head %}{% endblock %}
+        .header-search input {
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: none;
+            outline: none;
+            width: 220px;
+        }
+
+        .header-search button {
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: none;
+            background: #ffbf00;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .header-search input {
+                width: 140px;
+            }
+        }
+
+    </style>
 
 </head>
 
-<body class="{% block body_class %}{% endblock %}">
+<body>
 
-<!-- NAVBAR (FIXED SINGLE SOURCE) -->
+<!-- NAVBAR (SINGLE SOURCE ONLY) -->
 {% if not (current_user.is_authenticated and current_user.role == "admin") %}
 
 <nav class="navbar navbar-dark bg-dark d-flex justify-content-between align-items-center">
@@ -56,9 +83,32 @@
         KSC LOGISTICS
     </a>
 
-    <!-- RIGHT SIDE SLOT (PAGE INJECTS CONTENT HERE) -->
     <div class="d-flex align-items-center gap-2">
+
         {% block header_right %}{% endblock %}
+
+        {% if not current_user.is_authenticated %}
+
+            <a href="{{ url_for('main.login') }}" class="btn btn-success btn-sm">
+                Login
+            </a>
+
+            <a href="{{ url_for('main.register') }}" class="btn btn-outline-light btn-sm">
+                Register
+            </a>
+
+        {% else %}
+
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary btn-sm">
+                Dashboard
+            </a>
+
+            <a href="{{ url_for('main.logout') }}" class="btn btn-danger btn-sm">
+                Logout
+            </a>
+
+        {% endif %}
+
     </div>
 
 </nav>
@@ -83,10 +133,12 @@
     {% block content %}{% endblock %}
 </main>
 
-<!-- FOOTER -->
+<!-- FOOTER (RESTORED CLEAN) -->
 {% if not hide_footer %}
 <footer class="bg-dark text-white text-center py-3 mt-auto">
-    <p class="mb-0 small">© 2026 KSC Logistics</p>
+    <div class="small">
+        © 2026 KSC Logistics
+    </div>
 </footer>
 {% endif %}
 
