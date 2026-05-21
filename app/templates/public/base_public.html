@@ -14,7 +14,7 @@
     <style>
 
         /* =========================
-           FULL HEIGHT LAYOUT FIX
+           FULL HEIGHT FIX
         ========================== */
 
         html, body {
@@ -26,6 +26,19 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+
+            /* ✅ RESTORED BACKGROUND IMAGE */
+            background: url("{{ url_for('static', filename='images/lb9.jpg') }}")
+                center/cover no-repeat fixed;
+        }
+
+        /* optional dark overlay for readability */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: -1;
         }
 
         main {
@@ -50,7 +63,7 @@
         }
 
         /* =========================
-           HEADER SEARCH SLOT
+           HEADER SEARCH
         ========================== */
 
         .header-search {
@@ -79,7 +92,7 @@
         }
 
         /* =========================
-           FOOTER ONE LINE STYLE
+           FOOTER (ONE LINE)
         ========================== */
 
         footer {
@@ -108,7 +121,7 @@
 
 <body>
 
-<!-- ================= NAVBAR ================= -->
+<!-- NAVBAR -->
 <nav class="navbar navbar-dark bg-dark d-flex justify-content-between align-items-center">
 
     <a class="navbar-brand" href="{{ url_for('main.home') }}">
@@ -121,7 +134,7 @@
 
 </nav>
 
-<!-- ================= FLASH ================= -->
+<!-- FLASH -->
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         <div class="container mt-3">
@@ -135,12 +148,12 @@
     {% endif %}
 {% endwith %}
 
-<!-- ================= MAIN ================= -->
+<!-- MAIN -->
 <main>
     {% block content %}{% endblock %}
 </main>
 
-<!-- ================= FOOTER ================= -->
+<!-- FOOTER -->
 <footer class="bg-dark text-white py-2">
 
     <div class="container-fluid">
