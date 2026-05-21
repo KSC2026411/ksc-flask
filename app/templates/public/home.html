@@ -15,6 +15,11 @@
             value="{{ search_query }}"
         >
 
+        <!-- optional submit button (safe fallback for mobile) -->
+        <button type="submit" class="btn btn-warning btn-sm">
+            Go
+        </button>
+
     </form>
 
 </div>
@@ -25,14 +30,7 @@
 
 <style>
 
-.page-wrapper {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background: linear-gradient(135deg, #020617, #0f172a);
-    padding: 20px;
-}
-
+/* PAGE WRAPPER NOT NEEDED (handled by base), KEEP SIMPLE */
 .welcome-card {
     max-width: 600px;
     margin: 40px auto;
@@ -55,9 +53,13 @@
     flex-wrap: wrap;
 }
 
+/* RESULTS */
 .search-results {
     margin-top: 25px;
     color: white;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .package-card {
