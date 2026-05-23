@@ -13,12 +13,14 @@
         <h2 class="fw-bold mb-1">
             Welcome, {{ current_user.first_name }}
         </h2>
+
         <p class="text-muted mb-0">
             Here is an overview of your shipments and account activity.
         </p>
     </div>
 
-    <a href="{{ url_for('main.schedule') }}" class="btn btn-primary mt-3 mt-md-0">
+    <a href="{{ url_for('main.schedule') }}"
+       class="btn btn-primary mt-3 mt-md-0">
         + Schedule Package
     </a>
 
@@ -32,10 +34,15 @@
     <div class="col-md-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
-                <h6 class="text-muted">Total Packages</h6>
+
+                <h6 class="text-muted">
+                    Total Packages
+                </h6>
+
                 <h2 class="fw-bold mb-0">
                     {{ total_packages }}
                 </h2>
+
             </div>
         </div>
     </div>
@@ -43,10 +50,15 @@
     <div class="col-md-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
-                <h6 class="text-muted">Pending Deliveries</h6>
+
+                <h6 class="text-muted">
+                    Pending Deliveries
+                </h6>
+
                 <h2 class="fw-bold text-warning mb-0">
                     {{ pending_deliveries }}
                 </h2>
+
             </div>
         </div>
     </div>
@@ -54,10 +66,15 @@
     <div class="col-md-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
-                <h6 class="text-muted">Delivered Packages</h6>
+
+                <h6 class="text-muted">
+                    Delivered Packages
+                </h6>
+
                 <h2 class="fw-bold text-success mb-0">
                     {{ delivered_packages }}
                 </h2>
+
             </div>
         </div>
     </div>
@@ -70,7 +87,9 @@
 <div class="card shadow-sm border-0 mb-5">
 
     <div class="card-header bg-secondary text-white">
-        <h4 class="mb-0">Active Announcements</h4>
+        <h4 class="mb-0">
+            Active Announcements
+        </h4>
     </div>
 
     <div class="card-body">
@@ -176,8 +195,13 @@
                                         {{ p.status }}
                                     </span>
 
-                                {% else %}
+                                {% elif p.status == "Scheduled" %}
                                     <span class="badge bg-secondary">
+                                        {{ p.status }}
+                                    </span>
+
+                                {% else %}
+                                    <span class="badge bg-dark">
                                         {{ p.status }}
                                     </span>
 
@@ -190,7 +214,43 @@
                             </td>
 
                             <td>
-                                {{ p.expected_delivery.strftime('%Y-%m-%d') if p.expected_delivery else '-' }}
+
+                                {% if p.expected_delivery %}
+
+                                    {{ p.expected_delivery.strftime('%Y-%m-%d') }}
+
+                                {% elif p.status in ["Pending", "Scheduled"] %}
+
+                                    <span class="text-muted">
+                                        Awaiting shipment
+                                    </span>
+
+                                {% elif p.status == "In Transit" %}
+
+                                    <span class="text-primary">
+                                        Estimating delivery...
+                                    </span>
+
+                                {% elif p.status == "Delivered" %}
+
+                                    <span class="text-success">
+                                        Delivered
+                                    </span>
+
+                                {% elif p.status == "Cancelled" %}
+
+                                    <span class="text-danger">
+                                        Cancelled
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="text-muted">
+                                        Not available
+                                    </span>
+
+                                {% endif %}
+
                             </td>
 
                         </tr>
