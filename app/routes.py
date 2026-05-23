@@ -820,27 +820,72 @@ def admin_packages():
     page = request.args.get("page", 1, type=int)
     search_query = request.args.get("search", "").strip()
 
-    query = Package.query.join(Package.user, isouter=True)
+    # --------------------------------
+    # ONLY ACTIVE PACKAGES
+    # EXCLUDE:
+    # - Delivered
+    # - Archived
+    # --------------------------------
+    query = Package.query.join(
+        Package.user,
+        isouter=True
+    ).filter(
+        Package.status != "Delivered",
+        Package.status != "Archived"
+    )
 
+    # --------------------------------
+    # SEARCH FILTER
+    # --------------------------------
     if search_query:
+
         query = query.filter(or_(
-            Package.tracking_number.ilike(f"%{search_query}%"),
-            Package.description.ilike(f"%{search_query}%"),
-            Package.status.ilike(f"%{search_query}%"),
-            User.name.ilike(f"%{search_query}%"),
-            User.phone.ilike(f"%{search_query}%")
+
+            Package.tracking_number.ilike(
+                f"%{search_query}%"
+            ),
+
+            Package.description.ilike(
+                f"%{search_query}%"
+            ),
+
+            Package.status.ilike(
+                f"%{search_query}%"
+            ),
+
+            User.name.ilike(
+                f"%{search_query}%"
+            ),
+
+            User.phone.ilike(
+                f"%{search_query}%"
+            )
+
         ))
 
+    # --------------------------------
+    # PAGINATION
+    # --------------------------------
     packages = query.order_by(
         Package.created_at.desc()
-    ).paginate(page=page, per_page=20)
+    ).paginate(
+        page=page,
+        per_page=20
+    )
 
+    # --------------------------------
+    # AJAX TABLE RESPONSE
+    # --------------------------------
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+
         return render_template(
             "partials/admin_packages_table.html",
             packages=packages
         )
 
+    # --------------------------------
+    # FULL PAGE
+    # --------------------------------
     return render_template(
         "admin/admin_packages.html",
         packages=packages
