@@ -889,18 +889,55 @@ def approve_package(package_id):
 
 @main.route("/admin/package/<int:package_id>/update", methods=["POST"])
 @login_required
-@admin_required
 def admin_update_package(package_id):
 
+    # -------------------
+    # ADMIN ONLY
+    # -------------------
+    if current_user.role != "admin":
+        flash("Access denied.", "danger")
+        return redirect(url_for("main.dashboard"))
+
     package = Package.query.get_or_404(package_id)
+
+    # -------------------
+    # UPDATE STATUS
+    # -------------------
     new_status = request.form.get("status")
 
     if new_status:
         package.status = new_status
-        package.updated_at = datetime.utcnow()
-        db.session.commit()
 
-        flash(f"Package {package.tracking_number} updated.", "success")
+    # -------------------
+    # UPDATE EXPECTED DELIVERY
+    # -------------------
+    expected_delivery = request.form.get("expected_delivery")
+
+    if expected_delivery:
+
+        try:
+            package.expected_delivery = datetime.strptime(
+                expected_delivery,
+                "%Y-%m-%d"
+            )
+
+        except ValueError:
+            flash("Invalid delivery date format.", "danger")
+            return redirect(url_for("main.admin_packages"))
+
+    # -------------------
+    # AUTO SET DELIVERY DATE
+    # -------------------
+    if package.status == "Delivered" and not package.expected_delivery:
+
+        package.expected_delivery = datetime.utcnow()
+
+    # -------------------
+    # SAVE
+    # -------------------
+    db.session.commit()
+
+    flash("Package updated successfully.", "success")
 
     return redirect(url_for("main.admin_packages"))
 
