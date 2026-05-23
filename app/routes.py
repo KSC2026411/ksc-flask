@@ -432,16 +432,28 @@ def dashboard():
 
     total_packages = len(all_packages)
 
+    # -------------------
+    # PENDING
+    # -------------------
     pending_deliveries = sum(
         1 for p in all_packages
         if p.status and "pending" in p.status.lower()
     )
 
+    # -------------------
+    # DELIVERED + ARCHIVED
+    # -------------------
     delivered_packages = sum(
         1 for p in all_packages
-        if p.status and "delivered" in p.status.lower()
+        if p.status and (
+            "delivered" in p.status.lower()
+            or "archived" in p.status.lower()
+        )
     )
 
+    # -------------------
+    # IN TRANSIT
+    # -------------------
     in_transit_packages = sum(
         1 for p in all_packages
         if p.status and "transit" in p.status.lower()
