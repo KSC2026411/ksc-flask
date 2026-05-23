@@ -5,72 +5,214 @@
 {% block customer_content %}
 
 <!-- =========================
+     DASHBOARD HEADER
+========================= -->
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+
+    <div>
+        <h2 class="fw-bold mb-1">
+            Welcome, {{ current_user.first_name }}
+        </h2>
+        <p class="text-muted mb-0">
+            Here is an overview of your shipments and account activity.
+        </p>
+    </div>
+
+    <a href="{{ url_for('main.schedule') }}" class="btn btn-primary mt-3 mt-md-0">
+        + Schedule Package
+    </a>
+
+</div>
+
+<!-- =========================
+     ANALYTICS CARDS
+========================= -->
+<div class="row g-3 mb-5">
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Total Packages</h6>
+                <h2 class="fw-bold mb-0">
+                    {{ total_packages }}
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Pending Deliveries</h6>
+                <h2 class="fw-bold text-warning mb-0">
+                    {{ pending_deliveries }}
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Delivered Packages</h6>
+                <h2 class="fw-bold text-success mb-0">
+                    {{ delivered_packages }}
+                </h2>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- =========================
      ANNOUNCEMENTS
 ========================= -->
 <div class="card shadow-sm border-0 mb-5">
+
     <div class="card-header bg-secondary text-white">
         <h4 class="mb-0">Active Announcements</h4>
     </div>
+
     <div class="card-body">
+
         {% if announcements %}
+
             {% for a in announcements %}
+
             <div class="border rounded p-3 mb-3 shadow-sm">
-                <h5 class="mb-2">{{ a.title }}</h5>
-                <div class="mb-2">{{ a.message|safe }}</div>
-                <small class="text-muted">Posted: {{ a.created_at.strftime('%Y-%m-%d') }}</small>
+
+                <h5 class="mb-2">
+                    {{ a.title }}
+                </h5>
+
+                <div class="mb-2">
+                    {{ a.message|safe }}
+                </div>
+
+                <small class="text-muted">
+                    Posted: {{ a.created_at.strftime('%Y-%m-%d') }}
+                </small>
+
             </div>
+
             {% endfor %}
+
         {% else %}
-            <p class="mb-0 text-muted">No announcements currently.</p>
+
+            <p class="mb-0 text-muted">
+                No announcements currently.
+            </p>
+
         {% endif %}
+
     </div>
+
 </div>
 
 <!-- =========================
      RECENT PACKAGES TABLE
 ========================= -->
 <div class="card shadow-sm border-0 mb-5">
-    <div class="card-header bg-secondary text-white">
-        <h4 class="mb-0">Your Recent Packages</h4>
+
+    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center flex-wrap">
+
+        <h4 class="mb-0">
+            Your 3 Most Recent Packages
+        </h4>
+
+        <a href="{{ url_for('main.my_packages') }}"
+           class="btn btn-sm btn-light mt-2 mt-md-0">
+            View All
+        </a>
+
     </div>
+
     <div class="card-body">
+
         {% if packages %}
-            <table class="table table-hover table-striped align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Tracking #</th>
-                        <th>Status</th>
-                        <th>Created At</th>
-                        <th>Expected Delivery</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for p in packages %}
-                    <tr>
-                        <td>{{ p.tracking_number }}</td>
-                        <td>
-                            {% if p.status == "Pending" %}
-                                <span class="badge bg-warning text-dark">{{ p.status }}</span>
-                            {% elif p.status == "In Transit" %}
-                                <span class="badge bg-info">{{ p.status }}</span>
-                            {% elif p.status == "Delivered" %}
-                                <span class="badge bg-success">{{ p.status }}</span>
-                            {% elif p.status == "Cancelled" %}
-                                <span class="badge bg-danger">{{ p.status }}</span>
-                            {% else %}
-                                <span class="badge bg-secondary">{{ p.status }}</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ p.created_at.strftime('%Y-%m-%d') }}</td>
-                        <td>{{ p.expected_delivery.strftime('%Y-%m-%d') if p.expected_delivery else '-' }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+
+            <div class="table-responsive">
+
+                <table class="table table-hover table-striped align-middle">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tracking #</th>
+                            <th>Status</th>
+                            <th>Created At</th>
+                            <th>Expected Delivery</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for p in packages %}
+
+                        <tr>
+
+                            <td>
+                                {{ p.tracking_number }}
+                            </td>
+
+                            <td>
+
+                                {% if p.status == "Pending" %}
+                                    <span class="badge bg-warning text-dark">
+                                        {{ p.status }}
+                                    </span>
+
+                                {% elif p.status == "In Transit" %}
+                                    <span class="badge bg-info">
+                                        {{ p.status }}
+                                    </span>
+
+                                {% elif p.status == "Delivered" %}
+                                    <span class="badge bg-success">
+                                        {{ p.status }}
+                                    </span>
+
+                                {% elif p.status == "Cancelled" %}
+                                    <span class="badge bg-danger">
+                                        {{ p.status }}
+                                    </span>
+
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        {{ p.status }}
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ p.created_at.strftime('%Y-%m-%d') }}
+                            </td>
+
+                            <td>
+                                {{ p.expected_delivery.strftime('%Y-%m-%d') if p.expected_delivery else '-' }}
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
         {% else %}
-            <p class="text-muted mb-0">You have no packages yet.</p>
+
+            <p class="text-muted mb-0">
+                You have no packages yet.
+            </p>
+
         {% endif %}
+
     </div>
+
 </div>
 
 {% endblock %}

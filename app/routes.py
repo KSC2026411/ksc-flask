@@ -390,38 +390,60 @@ def logout():
 @login_required
 def dashboard():
 
+    # -------------------
+    # CUSTOMER ONLY
+    # -------------------
     if current_user.role != "customer":
         flash("Admins cannot access customer pages.", "warning")
         return redirect(url_for("main.admin_dashboard"))
 
     now = datetime.utcnow()
 
-    announcements = Announcement.query.filter(
-        Announcement.expires_at.isnot(None),
-        Announcement.expires_at > now
-    ).order_by(Announcement.created_at.desc()).all()
+    # -------------------
+    # ACTIVE ANNOUNCEMENTS
+    # -------------------
+    announcements = (
+        Announcement.query.filter(
+            Announcement.expires_at.isnot(None),
+            Announcement.expires_at > now
+        )
+        .order_by(Announcement.created_at.desc())
+        .all()
+    )
 
-    packages = Package.query.filter_by(
+    # -------------------
+    # ONLY 3 RECENT PACKAGES
+    # -------------------
+    packages = (
+        Package.query.filter_by(
+            user_id=current_user.id
+        )
+        .order_by(Package.created_at.desc())
+        .limit(3)
+        .all()
+    )
+
+    # -------------------
+    # FULL ANALYTICS
+    # -------------------
+    all_packages = Package.query.filter_by(
         user_id=current_user.id
-    ).order_by(Package.created_at.desc()).all()
+    ).all()
 
-    # -------------------
-    # FIXED ANALYTICS (CASE-SAFE)
-    # -------------------
-    total_packages = len(packages)
+    total_packages = len(all_packages)
 
     pending_deliveries = sum(
-        1 for p in packages
+        1 for p in all_packages
         if p.status and "pending" in p.status.lower()
     )
 
     delivered_packages = sum(
-        1 for p in packages
+        1 for p in all_packages
         if p.status and "delivered" in p.status.lower()
     )
 
     in_transit_packages = sum(
-        1 for p in packages
+        1 for p in all_packages
         if p.status and "transit" in p.status.lower()
     )
 
