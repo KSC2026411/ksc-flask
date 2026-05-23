@@ -8,30 +8,97 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # USER MODEL
 # -------------------
 class User(db.Model, UserMixin):
+    __tablename__ = "user"
+
+    # -------------------
+    # PRIMARY KEY
+    # -------------------
     id = db.Column(db.Integer, primary_key=True)
 
-    # UPDATED NAME FIELDS
+    # -------------------
+    # USER INFO
+    # -------------------
     first_name = db.Column(db.String(100), nullable=False)
     last_name = db.Column(db.String(100), nullable=False)
 
-    email = db.Column(db.String(150), unique=True, nullable=False)
+    email = db.Column(
+        db.String(150),
+        unique=True,
+        nullable=False,
+        index=True
+    )
 
-    _password = db.Column("password", db.String(200), nullable=False)
+    phone = db.Column(db.String(50), nullable=True)
 
-    phone = db.Column(db.String(50))
-    is_active = db.Column(db.Boolean, default=False, nullable=False)
+    # -------------------
+    # PASSWORD
+    # -------------------
+    _password = db.Column(
+        "password",
+        db.String(255),
+        nullable=False
+    )
 
-    # login security
-    failed_attempts = db.Column(db.Integer, default=0)
-    next_allowed_login = db.Column(db.DateTime, nullable=True)
+    # -------------------
+    # ACCOUNT STATUS
+    # -------------------
+    # Database column = active
+    # Python attribute = is_active
+    is_active = db.Column(
+        "active",
+        db.Boolean,
+        nullable=False,
+        default=True,
+        server_default=db.text("true")
+    )
 
-    # role system
-    role = db.Column(db.String(20), default="customer")
+    # -------------------
+    # LOGIN SECURITY
+    # -------------------
+    failed_attempts = db.Column(
+        db.Integer,
+        nullable=False,
+        default=0,
+        server_default="0"
+    )
 
-    # relationships
+    next_allowed_login = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
+    # -------------------
+    # ROLE SYSTEM
+    # -------------------
+    role = db.Column(
+        db.String(20),
+        nullable=False,
+        default="customer",
+        server_default="customer"
+    )
+
+    # -------------------
+    # TIMESTAMPS
+    # -------------------
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
+
+    updated_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False
+    )
+
+    # -------------------
+    # RELATIONSHIPS
+    # -------------------
     packages = db.relationship(
-        'Package',
-        back_populates='user',
+        "Package",
+        back_populates="user",
         cascade="all, delete-orphan"
     )
 
@@ -47,7 +114,10 @@ class User(db.Model, UserMixin):
         self._password = generate_password_hash(plain_password)
 
     def check_password(self, plain_password):
-        return check_password_hash(self._password, plain_password)
+        return check_password_hash(
+            self._password,
+            plain_password
+        )
 
     # -------------------
     # ROLE HELPERS
@@ -63,22 +133,37 @@ class User(db.Model, UserMixin):
         self.role = "admin"
 
     # -------------------
-    # ACCOUNT ACTIVATION
+    # ACCOUNT HELPERS
     # -------------------
-    @property
-    def is_active_user(self):
-        return self.is_active
-
     def activate_account(self):
         self.is_active = True
         db.session.commit()
 
+    def deactivate_account(self):
+        self.is_active = False
+        db.session.commit()
+
+    def reset_login_attempts(self):
+        self.failed_attempts = 0
+        self.next_allowed_login = None
+        db.session.commit()
+
     # -------------------
-    # FULL NAME HELPER (NEW)
+    # DISPLAY HELPERS
     # -------------------
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
+
+    # -------------------
+    # DEBUG / ADMIN
+    # -------------------
+    def __repr__(self):
+        return (
+            f"<User {self.id} | "
+            f"{self.email} | "
+            f"{self.role}>"
+        )
 
 
 # -------------------
