@@ -42,15 +42,13 @@ class User(db.Model, UserMixin):
     # -------------------
     # ACCOUNT STATUS
     # -------------------
-    # Database column = active
-    # Python attribute = is_active
+    
     is_active = db.Column(
-        "active",
-        db.Boolean,
-        nullable=False,
-        default=True,
-        server_default=db.text("true")
-    )
+    db.Boolean,
+    nullable=False,
+    default=True,
+    server_default=db.text("true")
+)
 
     # -------------------
     # LOGIN SECURITY
