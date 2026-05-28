@@ -853,9 +853,8 @@ def admin_packages():
                 f"%{search_query}%"
             ),
 
-            User.name.ilike(
-                f"%{search_query}%"
-            ),
+            User.first_name.ilike(f"%{search_query}%"),
+            User.last_name.ilike(f"%{search_query}%"),
 
             User.phone.ilike(
                 f"%{search_query}%"
@@ -1116,9 +1115,9 @@ def promote_user(user_id):
     if user.role != "admin":
         user.role = "admin"
         db.session.commit()
-        flash(f"{user.name} is now an admin.", "success")
+        flash(f"{user.full_name} is now an admin.", "success")
     else:
-        flash(f"{user.name} is already an admin.", "info")
+        flash(f"{user.full_name} is already an admin.", "info")
     return redirect(url_for("main.admin_users"))
 
 
@@ -1130,9 +1129,9 @@ def demote_user(user_id):
     if user.role == "admin":
         user.role = "customer"
         db.session.commit()
-        flash(f"{user.name} has been demoted.", "success")
+        flash(f"{user.full_name} has been demoted.", "success")
     else:
-        flash(f"{user.name} is already a customer.", "info")
+        flash(f"{user.full_name} is already a customer.", "info")
     return redirect(url_for("main.admin_users"))
 
 
@@ -1146,7 +1145,7 @@ def activate_user(user_id):
 
     db.session.commit()
 
-    flash(f"{user.name} activated.", "success")
+    flash(f"{user.full_name} activated.", "success")
     return redirect(url_for("main.admin_users"))
 
 
@@ -1160,12 +1159,8 @@ def deactivate_user(user_id):
 
     db.session.commit()
 
-    flash(f"{user.name} deactivated.", "warning")
+    flash(f"{user.full_name} deactivated.", "warning")
     return redirect(url_for("main.admin_users"))
-
-
-
-
 
 
 @main.route('/admin/announcements', methods=['GET', 'POST'])
@@ -1269,7 +1264,8 @@ def admin_packages_table():
             Package.tracking_number.ilike(f"%{search_query}%"),
             Package.description.ilike(f"%{search_query}%"),
             Package.status.ilike(f"%{search_query}%"),
-            User.name.ilike(f"%{search_query}%"),
+            User.first_name.ilike(f"%{search_query}%"),
+            User.last_name.ilike(f"%{search_query}%"),
             User.phone.ilike(f"%{search_query}%")
         ))
 
