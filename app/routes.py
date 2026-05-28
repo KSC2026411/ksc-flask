@@ -1141,11 +1141,13 @@ def demote_user(user_id):
 def activate_user(user_id):
 
     user = User.query.get_or_404(user_id)
-    user.active = True
+
+    user.is_active = True
 
     db.session.commit()
 
     flash(f"{user.full_name} activated.", "success")
+
     return redirect(url_for("main.admin_users"))
 
 
@@ -1155,11 +1157,13 @@ def activate_user(user_id):
 def deactivate_user(user_id):
 
     user = User.query.get_or_404(user_id)
-    user.active = False
+
+    user.is_active = False
 
     db.session.commit()
 
     flash(f"{user.full_name} deactivated.", "warning")
+
     return redirect(url_for("main.admin_users"))
 
 
