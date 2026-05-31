@@ -3,7 +3,6 @@
 import traceback
 from flask import request
 from flask_login import current_user
-from app.events import online_users, emit_online_users
 from datetime import datetime
 
 from .extensions import socketio, db
@@ -12,7 +11,15 @@ from .models import Package
 # -----------------------------
 # ONLINE USERS TRACKER
 # -----------------------------
-online_users = {}
+online_users = set()
+
+
+def emit_online_users():
+    socketio.emit(
+        "online_users_update",
+        {"count": len(online_users)},
+        namespace="/customer"
+    )
 
 # -----------------------------
 # HELPER: emit package update
