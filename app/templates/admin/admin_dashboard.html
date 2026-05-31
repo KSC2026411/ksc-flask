@@ -55,6 +55,35 @@
 
     </div>
 
+    <!-- ONLINE USERS -->
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+
+            <h5 class="mb-0">
+                🟢 Users Online
+            </h5>
+
+            <span class="badge bg-light text-dark fs-6">
+                <span id="online-count">0</span> Online
+            </span>
+
+        </div>
+
+        <div class="card-body">
+
+            <div id="online-users-empty" class="text-muted">
+                No users currently online.
+            </div>
+
+            <ul id="online-users-list"
+                class="list-group list-group-flush">
+            </ul>
+
+        </div>
+
+    </div>
+
     <!-- ANNOUNCEMENTS -->
     <div class="card shadow-sm border-0 mb-4">
 
@@ -121,7 +150,6 @@
 
         <div class="card-body">
 
-            <!-- EMPTY STATE FIRST -->
             <div id="empty-search-state" class="text-center py-5">
 
                 <h5 class="fw-bold mb-3">
@@ -134,7 +162,6 @@
 
             </div>
 
-            <!-- RESULTS -->
             <div id="packages-table" class="d-none"></div>
 
         </div>
@@ -142,6 +169,60 @@
     </div>
 
 </div>
+
+<!-- SOCKET.IO -->
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<script>
+
+const adminSocket = io("/admin");
+
+adminSocket.on("online_users_update", function(users) {
+
+    const count =
+        document.getElementById("online-count");
+
+    const list =
+        document.getElementById("online-users-list");
+
+    const empty =
+        document.getElementById("online-users-empty");
+
+    count.textContent = users.length;
+
+    list.innerHTML = "";
+
+    if (users.length === 0) {
+
+        empty.style.display = "block";
+        return;
+
+    }
+
+    empty.style.display = "none";
+
+    users.forEach(user => {
+
+        list.innerHTML += `
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+
+                <div>
+                    <strong>${user.name}</strong><br>
+                    <small class="text-muted">${user.email}</small>
+                </div>
+
+                <span class="badge bg-success">
+                    ${user.role}
+                </span>
+
+            </li>
+        `;
+
+    });
+
+});
+
+</script>
 
 <!-- LIVE SEARCH -->
 <script>
@@ -154,7 +235,6 @@ searchInput.addEventListener("input", async function () {
 
     const query = this.value.trim();
 
-    // hide results if empty
     if (query.length === 0) {
 
         packagesTable.classList.add("d-none");

@@ -377,8 +377,15 @@ def login():
 @main.route("/logout")
 @login_required
 def logout():
+
+    online_users.pop(current_user.id, None)
+
+    emit_online_users()
+
     logout_user()
+
     flash("Logged out.", "info")
+
     return redirect(url_for("main.home"))
 
 
