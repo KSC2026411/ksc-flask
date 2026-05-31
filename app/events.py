@@ -8,24 +8,32 @@ from datetime import datetime
 from .extensions import socketio, db
 from .models import Package
 
+
 # -----------------------------
 # ONLINE USERS TRACKER
 # -----------------------------
-online_users = set()
+online_users = {}
 
 
 def emit_online_users():
+
     socketio.emit(
         "online_users_update",
-        {"count": len(online_users)},
-        namespace="/customer"
+        {
+            "count": len(online_users),
+            "users": list(online_users.values())
+        },
+        namespace="/admin"
     )
+
 
 # -----------------------------
 # HELPER: emit package update
 # -----------------------------
 def emit_package_update(package):
+
     try:
+
         data = {
             "cargo_id": package.id,
             "status": package.status,
@@ -43,22 +51,9 @@ def emit_package_update(package):
         )
 
     except Exception as e:
+
         print("Emit error:", e)
         traceback.print_exc()
-
-
-# -----------------------------
-# HELPER: broadcast online users
-# -----------------------------
-def emit_online_users():
-
-    users = list(online_users.values())
-
-    socketio.emit(
-        "online_users_update",
-        users,
-        namespace="/admin"
-    )
 
 
 # -----------------------------
@@ -80,8 +75,14 @@ def register_socketio_events(app):
                 "id": current_user.id,
                 "name": current_user.full_name,
                 "email": current_user.email,
-                "role": current_user.role
+                "role": current_user.role,
+                "sid": request.sid
             }
+
+            print(
+                f"Online Users: {len(online_users)} "
+                f"({current_user.full_name})"
+            )
 
             emit_online_users()
 
@@ -90,9 +91,19 @@ def register_socketio_events(app):
 
         print(f"Customer disconnected: {request.sid}")
 
-        if current_user.is_authenticated:
+        remove_user = None
 
-            online_users.pop(current_user.id, None)
+        for user_id, user_data in online_users.items():
+
+            if user_data.get("sid") == request.sid:
+                remove_user = user_id
+                break
+
+        if remove_user:
+
+            online_users.pop(remove_user, None)
+
+            print(f"Online Users: {len(online_users)}")
 
             emit_online_users()
 

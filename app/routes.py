@@ -763,6 +763,14 @@ def customer_analytics():
 ###### ADMIN SYSTEM ROUTES #######
 ######                     ####### 
 
+@main.route("/admin/online-users")
+@login_required
+@admin_required
+def admin_online_users():
+
+    return jsonify(
+        list(online_users.values())
+    )
 
 @main.route("/admin")
 @login_required
