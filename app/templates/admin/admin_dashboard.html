@@ -9,7 +9,7 @@
     <!-- ANALYTICS -->
     <div class="row g-3 mb-4">
 
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md-4 col-xl">
             <div class="card bg-primary text-white text-center shadow-sm h-100">
                 <div class="card-body">
                     <h6 class="card-title">Total Packages</h6>
@@ -20,7 +20,7 @@
             </div>
         </div>
 
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md-4 col-xl">
             <div class="card bg-warning text-dark text-center shadow-sm h-100">
                 <div class="card-body">
                     <h6 class="card-title">Pending</h6>
@@ -31,7 +31,7 @@
             </div>
         </div>
 
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md-4 col-xl">
             <div class="card bg-success text-white text-center shadow-sm h-100">
                 <div class="card-body">
                     <h6 class="card-title">Delivered Today</h6>
@@ -42,12 +42,23 @@
             </div>
         </div>
 
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md-4 col-xl">
             <div class="card bg-info text-white text-center shadow-sm h-100">
                 <div class="card-body">
                     <h6 class="card-title">Active Users</h6>
-                    <p class="fs-3 fw-bold mb-0" id="online-count">
-                        0
+                    <p class="fs-3 fw-bold mb-0">
+                        {{ active_users or 0 }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-4 col-xl">
+            <div class="card bg-danger text-white text-center shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-title">Pending Activations</h6>
+                    <p class="fs-3 fw-bold mb-0">
+                        {{ pending_activations or 0 }}
                     </p>
                 </div>
             </div>
@@ -65,7 +76,7 @@
             </h5>
 
             <span class="badge bg-light text-dark">
-                Live Monitoring
+                <span id="online-count">0</span> Online
             </span>
 
         </div>
@@ -76,8 +87,7 @@
                 No users currently online.
             </div>
 
-            <ul id="online-users-list"
-                class="list-group list-group-flush">
+            <ul id="online-users-list" class="list-group list-group-flush">
             </ul>
 
         </div>
@@ -107,8 +117,7 @@
                     </div>
 
                     <small class="text-muted">
-                        Posted:
-                        {{ a.created_at.strftime('%Y-%m-%d') }}
+                        Posted: {{ a.created_at.strftime('%Y-%m-%d') }}
                     </small>
 
                 </div>
@@ -142,7 +151,7 @@
                     id="package-search"
                     class="form-control"
                     placeholder="Search tracking number, customer, status..."
-                    style="max-width:400px;"
+                    style="max-width: 400px;"
                 >
 
             </div>
@@ -178,24 +187,25 @@
 
 const adminSocket = io("/admin");
 
-adminSocket.on("online_users_update", function(users) {
+adminSocket.on("online_users_update", function(data) {
 
     const count = document.getElementById("online-count");
     const list = document.getElementById("online-users-list");
     const empty = document.getElementById("online-users-empty");
 
-    count.textContent = users.length;
+    count.textContent = data.count;
 
     list.innerHTML = "";
 
-    if (users.length === 0) {
+    if (data.users.length === 0) {
+
         empty.style.display = "block";
         return;
     }
 
     empty.style.display = "none";
 
-    users.forEach(user => {
+    data.users.forEach(user => {
 
         list.innerHTML += `
             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -235,6 +245,7 @@ searchInput.addEventListener("input", async function () {
         packagesTable.innerHTML = "";
 
         emptyState.classList.remove("d-none");
+
         return;
     }
 

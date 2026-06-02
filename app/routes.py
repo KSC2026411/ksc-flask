@@ -790,7 +790,7 @@ def admin_dashboard():
     base_query = Package.query
 
     # -------------------
-    # FIXED ANALYTICS LOGIC
+    # ANALYTICS
     # -------------------
     total_packages = base_query.count()
 
@@ -805,7 +805,15 @@ def admin_dashboard():
 
     active_users = User.query.filter_by(
         role="customer",
-        is_active=True  # <- updated
+        is_active=True
+    ).count()
+
+    # -------------------
+    # NEW ACCOUNTS PENDING ACTIVATION
+    # -------------------
+    pending_activations = User.query.filter_by(
+        role="customer",
+        is_active=False
     ).count()
 
     return render_template(
@@ -815,7 +823,8 @@ def admin_dashboard():
         total_packages=total_packages,
         pending_deliveries=pending_deliveries,
         delivered_today=delivered_today,
-        active_users=active_users
+        active_users=active_users,
+        pending_activations=pending_activations
     )
 
 #

@@ -1,21 +1,29 @@
 # app/events.py
 
 import traceback
-from flask import request
-from flask_login import current_user
 from datetime import datetime
 
-from .extensions import socketio, db
-from .models import Package
+from flask import request
+from flask_login import current_user
+
+from .extensions import socketio
 
 
-# -----------------------------
+# =====================================================
 # ONLINE USERS TRACKER
-# -----------------------------
+# =====================================================
+
+# user_id -> user info
 online_users = {}
+
+# socket_id -> user_id
+active_sids = {}
 
 
 def emit_online_users():
+    """
+    Send current online users list to admin dashboard.
+    """
 
     socketio.emit(
         "online_users_update",
@@ -27,10 +35,14 @@ def emit_online_users():
     )
 
 
-# -----------------------------
-# HELPER: emit package update
-# -----------------------------
+# =====================================================
+# PACKAGE UPDATE HELPER
+# =====================================================
+
 def emit_package_update(package):
+    """
+    Broadcast package updates to customer namespace.
+    """
 
     try:
 
@@ -52,83 +64,88 @@ def emit_package_update(package):
 
     except Exception as e:
 
-        print("Emit error:", e)
+        print("Package update emit error:", e)
         traceback.print_exc()
 
 
-# -----------------------------
+# =====================================================
 # SOCKET.IO EVENTS
-# -----------------------------
+# =====================================================
+
 def register_socketio_events(app):
 
-    # =============================
-    # CUSTOMER SOCKETS
-    # =============================
+    # =================================================
+    # CUSTOMER NAMESPACE
+    # =================================================
+
     @socketio.on("connect", namespace="/customer")
-    def handle_connect():
+    def customer_connect():
 
         print(f"Customer connected: {request.sid}")
 
-        if current_user.is_authenticated:
+        if not current_user.is_authenticated:
+            return
 
-            online_users[current_user.id] = {
-                "id": current_user.id,
-                "name": current_user.full_name,
-                "email": current_user.email,
-                "role": current_user.role,
-                "sid": request.sid
-            }
+        # track socket -> user
+        active_sids[request.sid] = current_user.id
 
-            print(
-                f"Online Users: {len(online_users)} "
-                f"({current_user.full_name})"
-            )
+        # track online user
+        online_users[current_user.id] = {
+            "id": current_user.id,
+            "name": current_user.full_name,
+            "email": current_user.email,
+            "role": current_user.role
+        }
 
-            emit_online_users()
+        print(
+            f"Online Users: {len(online_users)} "
+            f"({current_user.full_name})"
+        )
+
+        emit_online_users()
 
     @socketio.on("disconnect", namespace="/customer")
-    def handle_disconnect():
+    def customer_disconnect():
 
         print(f"Customer disconnected: {request.sid}")
 
-        remove_user = None
+        user_id = active_sids.pop(request.sid, None)
 
-        for user_id, user_data in online_users.items():
+        if not user_id:
+            return
 
-            if user_data.get("sid") == request.sid:
-                remove_user = user_id
-                break
+        # Check if user still has another tab/window open
+        still_connected = user_id in active_sids.values()
 
-        if remove_user:
+        if not still_connected:
+            online_users.pop(user_id, None)
 
-            online_users.pop(remove_user, None)
+        print(f"Online Users: {len(online_users)}")
 
-            print(f"Online Users: {len(online_users)}")
-
-            emit_online_users()
+        emit_online_users()
 
     @socketio.on("cargo_update", namespace="/customer")
     def handle_cargo_update(data):
 
-        print(f"Received cargo update from client: {data}")
+        print(f"Received cargo update: {data}")
 
         try:
 
             socketio.emit(
                 "cargo_update",
                 data,
-                namespace="/customer",
-                broadcast=True
+                namespace="/customer"
             )
 
         except Exception as e:
 
-            print(f"Error emitting cargo_update: {e}")
+            print("Cargo update error:", e)
             traceback.print_exc()
 
-    # =============================
-    # ADMIN SOCKETS
-    # =============================
+    # =================================================
+    # ADMIN NAMESPACE
+    # =================================================
+
     @socketio.on("connect", namespace="/admin")
     def admin_connect():
 
