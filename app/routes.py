@@ -535,6 +535,73 @@ def schedule():
 # PACKAGE ACTIONS (Customer)
 # -------------------
 
+@main.route("/customer/package/<int:package_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_package(package_id):
+    package = Package.query.get_or_404(package_id)
+
+    # Ownership check
+    if package.user_id != current_user.id:
+        abort(403)
+
+    # Lock editing for certain statuses
+    LOCKED_STATUSES = [
+        "Picked Up",
+        "In Transit",
+        "Out for Delivery",
+        "At warehouse",
+        "Loaded",
+        "Shipped",
+        "Delivered",
+        "Cancelled"
+    ]
+
+    if package.status in LOCKED_STATUSES:
+        flash("This package can no longer be edited.", "warning")
+        return redirect(url_for("main.customer_packages"))
+
+    if request.method == "POST":
+        # Update fields from form
+        package.description = request.form.get("description")
+        package.street = request.form.get("street")
+        package.city = request.form.get("city")
+        package.state = request.form.get("state")
+        package.zip_code = request.form.get("zip_code")
+
+        # Pickup date validation
+        pickup_date = request.form.get("pickup_date")
+        if pickup_date:
+            pickup_date_obj = datetime.strptime(pickup_date, "%Y-%m-%d").date()
+            if pickup_date_obj < date.today():
+                flash("Pickup date cannot be in the past.", "danger")
+                return redirect(url_for("main.edit_package", package_id=package.id))
+            package.pickup_date = pickup_date_obj
+
+        # Admin suggested date validation
+        admin_date = request.form.get("admin_suggested_date")
+        if admin_date:
+            admin_date_obj = datetime.strptime(admin_date, "%Y-%m-%d").date()
+            if admin_date_obj < package.pickup_date:
+                flash("Admin suggested date cannot be before the pickup date.", "danger")
+                return redirect(url_for("main.edit_package", package_id=package.id))
+            package.admin_suggested_date = admin_date_obj
+
+        # Deposit checkbox
+        deposit_paid = request.form.get("deposit_paid") == "on"
+        package.deposit_paid = deposit_paid
+
+        db.session.commit()
+        flash("Package updated successfully.", "success")
+        return redirect(url_for("main.customer_packages"))
+
+    # Render edit page with today's date for client-side min
+    return render_template(
+        "customer/edit_package.html",
+        package=package,
+        today=date.today().strftime("%Y-%m-%d")
+    )
+
+
 @main.route("/customer/package/<int:package_id>/reschedule", methods=["POST"])
 @login_required
 def reschedule_package(package_id):

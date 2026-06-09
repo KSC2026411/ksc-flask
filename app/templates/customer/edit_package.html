@@ -1,0 +1,86 @@
+{% extends "customer/base_customer.html" %}
+
+{% block customer_content %}
+<div class="container mt-4">
+    <h2>Edit Package</h2>
+    <form method="POST">
+        <!-- Tracking Number (disabled) -->
+        <div class="mb-3">
+            <label for="tracking_number" class="form-label">Tracking Number</label>
+            <input type="text"
+                   class="form-control"
+                   id="tracking_number"
+                   value="{{ package.tracking_number or 'Pending' }}"
+                   disabled>
+        </div>
+
+        <!-- Description -->
+        <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <input type="text"
+                   class="form-control"
+                   name="description"
+                   id="description"
+                   value="{{ package.description }}"
+                   required>
+        </div>
+
+        <!-- Address Fields -->
+        <div class="mb-3">
+            <label for="street" class="form-label">Street</label>
+            <input type="text" class="form-control" name="street" id="street" value="{{ package.street }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="city" class="form-label">City</label>
+            <input type="text" class="form-control" name="city" id="city" value="{{ package.city }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="state" class="form-label">State</label>
+            <input type="text" class="form-control" name="state" id="state" value="{{ package.state }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="zip_code" class="form-label">ZIP Code</label>
+            <input type="text" class="form-control" name="zip_code" id="zip_code" value="{{ package.zip_code }}" required>
+        </div>
+
+        <!-- Pickup Date -->
+        <div class="mb-3">
+            <label for="pickup_date" class="form-label">Pickup Date</label>
+            <input type="date"
+                   class="form-control"
+                   name="pickup_date"
+                   id="pickup_date"
+                   min="{{ today }}"
+                   value="{{ package.pickup_date.strftime('%Y-%m-%d') if package.pickup_date else '' }}">
+        </div>
+
+        <!-- Admin Suggested Date -->
+        <div class="mb-3">
+            <label for="admin_suggested_date" class="form-label">Admin Suggested Date</label>
+            <input type="date"
+                   class="form-control"
+                   name="admin_suggested_date"
+                   id="admin_suggested_date"
+                   min="{{ today }}"
+                   value="{{ package.admin_suggested_date.strftime('%Y-%m-%d') if package.admin_suggested_date else '' }}">
+        </div>
+
+        <!-- Deposit Paid Checkbox -->
+        <div class="form-check mb-3">
+            <input type="checkbox"
+                   class="form-check-input"
+                   name="deposit_paid"
+                   id="deposit_paid"
+                   {% if package.deposit_paid %}checked{% endif %}>
+            <label class="form-check-label" for="deposit_paid">Deposit Paid</label>
+        </div>
+
+        <!-- Buttons -->
+        <button type="submit" class="btn btn-primary">Update Package</button>
+        <a href="{{ url_for('main.customer_packages') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

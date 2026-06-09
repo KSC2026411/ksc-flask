@@ -48,25 +48,58 @@
                     {{ pkg.pickup_date.strftime('%Y-%m-%d') if pkg.pickup_date else "N/A" }}
                 </p>
 
-                <!-- ACTIONS -->
+                <!-- ACTION TOGGLE -->
                 <button class="btn btn-outline-dark btn-sm w-100 toggle-btn">
                     View Actions
                 </button>
 
                 <div class="package-actions d-none mt-3">
 
-                    <!-- CANCEL -->
-                    {% if pkg.status not in ['Delivered', 'Picked Up', 'Cancelled'] %}
+                    <!-- EDIT PACKAGE -->
+                    {% if pkg.status not in [
+                        'Picked Up',
+                        'In Transit',
+                        'Out for Delivery',
+                        'At warehouse',
+                        'Loaded',
+                        'Shipped',
+                        'Delivered',
+                        'Cancelled'
+                    ] %}
+                    <a href="{{ url_for('main.edit_package', package_id=pkg.id) }}"
+                       class="btn btn-primary btn-sm w-100 mb-2">
+                        Edit Package
+                    </a>
+                    {% endif %}
+
+                    <!-- CANCEL PACKAGE -->
+                    {% if pkg.status not in [
+                        'Delivered',
+                        'Picked Up',
+                        'In Transit',
+                        'Out for Delivery',
+                        'At warehouse',
+                        'Shipped',
+                        'Loaded',
+                        'Cancelled'
+                    ] %}
                     <form method="POST"
                           action="{{ url_for('main.cancel_package', package_id=pkg.id) }}">
+
                         <button class="btn btn-danger btn-sm w-100 mb-2">
                             Cancel Package
                         </button>
+
                     </form>
                     {% endif %}
 
-                    <!-- RESCHEDULE -->
-                    {% if pkg.status in ['Scheduled', 'Pending'] %}
+                    <!-- REQUEST RESCHEDULE -->
+                    {% if pkg.status in [
+                        'Pending',
+                        'Approved',
+                        'Scheduled',
+                        'Awaiting Pickup'
+                    ] %}
                     <form method="POST"
                           action="{{ url_for('main.reschedule_package', package_id=pkg.id) }}">
 
@@ -82,31 +115,37 @@
                     </form>
                     {% endif %}
 
-                    <!-- PICKUP CONFIRM -->
+                    <!-- CUSTOMER PICKUP CONFIRMATION -->
                     {% if pkg.status == 'Ready for Pickup' %}
                     <form method="POST"
                           action="{{ url_for('main.customer_confirm_pickup', package_id=pkg.id) }}">
+
                         <button class="btn btn-success btn-sm w-100">
                             Mark as Picked Up
                         </button>
+
                     </form>
                     {% endif %}
 
-                    <!-- ADMIN RESCHEDULE -->
+                    <!-- ADMIN SUGGESTED RESCHEDULE -->
                     {% if pkg.status == "Admin Suggested Reschedule" %}
 
                         <form method="POST"
                               action="{{ url_for('main.accept_admin_reschedule', package_id=pkg.id) }}">
+
                             <button class="btn btn-success btn-sm w-100 mb-2">
                                 Accept New Date
                             </button>
+
                         </form>
 
                         <form method="POST"
                               action="{{ url_for('main.customer_reject_admin_reschedule', package_id=pkg.id) }}">
+
                             <button class="btn btn-danger btn-sm w-100 mb-2">
                                 Reject
                             </button>
+
                         </form>
 
                         <form method="POST"
@@ -138,33 +177,35 @@
 </div>
 
 {% else %}
-    <p class="text-muted">No packages scheduled.</p>
+
+<p class="text-muted">
+    No packages scheduled.
+</p>
+
 {% endif %}
 
-<!-- ==============================
-     MOBILE-FRIENDLY TOGGLE SCRIPT
-============================== -->
 <script>
-document.querySelectorAll('.toggle-btn').forEach(btn => {
 
-    btn.addEventListener('click', function () {
+document.querySelectorAll(".toggle-btn").forEach(btn => {
 
-        const card = this.closest('.package-card');
-        const actions = card.querySelector('.package-actions');
+    btn.addEventListener("click", function () {
 
-        const isOpen = !actions.classList.contains('d-none');
+        const card = this.closest(".package-card");
+        const actions = card.querySelector(".package-actions");
 
-        // close all
-        document.querySelectorAll('.package-actions').forEach(a => a.classList.add('d-none'));
+        const isOpen = !actions.classList.contains("d-none");
 
-        // toggle current
+        document.querySelectorAll(".package-actions")
+            .forEach(a => a.classList.add("d-none"));
+
         if (!isOpen) {
-            actions.classList.remove('d-none');
+            actions.classList.remove("d-none");
         }
 
     });
 
 });
+
 </script>
 
 {% endblock %}
