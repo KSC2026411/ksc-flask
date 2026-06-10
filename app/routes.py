@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import json
 import re
+import openai
 
 from itsdangerous import URLSafeTimedSerializer
 
@@ -1423,6 +1424,55 @@ def track_public(tracking_number):
         tracking_number=tracking_number
     )
 
+@main.route("/customer/package/suggest_description", methods=["POST"])
+@login_required
+def suggest_description():
+    data = request.get_json()
+    user_text = data.get("text", "")
 
+    if not user_text:
+        return jsonify({"suggestion": ""})
 
+    prompt = f"Rewrite this package description clearly and concisely for a shipping label:\n\n{user_text}"
 
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=50,
+        temperature=0.7
+    )
+
+    suggestion = response.choices[0].message.content.strip()
+    return jsonify({"suggestion": suggestion})
+
+@main.route("/customer/chatbot", methods=["POST"])
+@login_required
+def customer_chatbot():
+    data = request.get_json()
+    question = data.get("question", "")
+
+    if not question:
+        return jsonify({"answer": "Please ask a question."})
+
+    # Example: inject safe context
+    context = f"""
+    You are a helpful support assistant for a package delivery app. 
+    The user can ask about package status, pickup, reschedule, or cancellation.
+    """
+
+    # Optional: add package info if needed
+    # package_id = data.get("package_id")
+    # package = Package.query.get(package_id)
+
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": context},
+            {"role": "user", "content": question}
+        ],
+        max_tokens=150,
+        temperature=0.7
+    )
+
+    answer = response.choices[0].message.content.strip()
+    return jsonify({"answer": answer})

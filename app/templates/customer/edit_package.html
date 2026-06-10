@@ -3,7 +3,9 @@
 {% block customer_content %}
 <div class="container mt-4">
     <h2>Edit Package</h2>
+
     <form method="POST">
+
         <!-- Tracking Number (disabled) -->
         <div class="mb-3">
             <label for="tracking_number" class="form-label">Tracking Number</label>
@@ -14,33 +16,51 @@
                    disabled>
         </div>
 
-        <!-- Description -->
+        <!-- DESCRIPTION + AI FEATURE -->
         <div class="mb-3">
             <label for="description" class="form-label">Description</label>
+
             <input type="text"
                    class="form-control"
                    name="description"
                    id="description"
                    value="{{ package.description }}"
                    required>
+
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary mt-2"
+                    id="suggest-btn">
+                ✨ Suggest Description
+            </button>
+
+            <small id="ai-suggestion" class="text-muted d-block mt-2"></small>
+
+            <button type="button"
+                    class="btn btn-sm btn-success mt-2 d-none"
+                    id="use-suggestion">
+                Use This Suggestion
+            </button>
         </div>
 
-        <!-- Address Fields -->
+        <!-- Street -->
         <div class="mb-3">
             <label for="street" class="form-label">Street</label>
             <input type="text" class="form-control" name="street" id="street" value="{{ package.street }}" required>
         </div>
 
+        <!-- City -->
         <div class="mb-3">
             <label for="city" class="form-label">City</label>
             <input type="text" class="form-control" name="city" id="city" value="{{ package.city }}" required>
         </div>
 
+        <!-- State -->
         <div class="mb-3">
             <label for="state" class="form-label">State</label>
             <input type="text" class="form-control" name="state" id="state" value="{{ package.state }}" required>
         </div>
 
+        <!-- ZIP -->
         <div class="mb-3">
             <label for="zip_code" class="form-label">ZIP Code</label>
             <input type="text" class="form-control" name="zip_code" id="zip_code" value="{{ package.zip_code }}" required>
@@ -68,7 +88,7 @@
                    value="{{ package.admin_suggested_date.strftime('%Y-%m-%d') if package.admin_suggested_date else '' }}">
         </div>
 
-        <!-- Deposit Paid Checkbox -->
+        <!-- Deposit -->
         <div class="form-check mb-3">
             <input type="checkbox"
                    class="form-check-input"
@@ -81,6 +101,58 @@
         <!-- Buttons -->
         <button type="submit" class="btn btn-primary">Update Package</button>
         <a href="{{ url_for('main.customer_packages') }}" class="btn btn-secondary">Cancel</a>
+
     </form>
 </div>
+
+<!-- =========================
+     AI SCRIPT
+========================= -->
+<script>
+document.getElementById("suggest-btn").addEventListener("click", async function () {
+    const descriptionInput = document.getElementById("description");
+    const suggestionBox = document.getElementById("ai-suggestion");
+    const useBtn = document.getElementById("use-suggestion");
+
+    suggestionBox.innerText = "Generating suggestion...";
+    useBtn.classList.add("d-none");
+
+    try {
+        const response = await fetch("/customer/package/suggest_description", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                text: descriptionInput.value
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.suggestion) {
+            suggestionBox.innerText = "Suggested: " + data.suggestion;
+
+            // store suggestion on button
+            useBtn.dataset.suggestion = data.suggestion;
+            useBtn.classList.remove("d-none");
+        } else {
+            suggestionBox.innerText = "No suggestion available.";
+        }
+
+    } catch (err) {
+        console.error(err);
+        suggestionBox.innerText = "Error generating suggestion.";
+    }
+});
+
+// apply suggestion
+document.getElementById("use-suggestion").addEventListener("click", function () {
+    const suggestion = this.dataset.suggestion;
+    if (suggestion) {
+        document.getElementById("description").value = suggestion;
+    }
+});
+</script>
+
 {% endblock %}

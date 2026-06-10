@@ -38,10 +38,17 @@
             <!-- BODY -->
             <div class="card-body">
 
-                <p class="mb-2">
+                <!-- DESCRIPTION WITH AI SUGGESTION -->
+                <div class="mb-3">
                     <strong>Description:</strong><br>
-                    {{ pkg.description or "N/A" }}
-                </p>
+                    <input type="text" class="form-control form-control-sm mb-1 description-input"
+                           value="{{ pkg.description or '' }}" data-package-id="{{ pkg.id }}">
+                    <button type="button" class="btn btn-outline-secondary btn-sm w-100 suggest-btn" 
+                            data-package-id="{{ pkg.id }}">
+                        Suggest Description
+                    </button>
+                    <small class="text-muted suggestion-text d-block mt-1" id="suggestion-{{ pkg.id }}"></small>
+                </div>
 
                 <p class="mb-3">
                     <strong>Pickup Date:</strong><br>
@@ -185,27 +192,41 @@
 {% endif %}
 
 <script>
-
 document.querySelectorAll(".toggle-btn").forEach(btn => {
-
     btn.addEventListener("click", function () {
-
         const card = this.closest(".package-card");
         const actions = card.querySelector(".package-actions");
-
         const isOpen = !actions.classList.contains("d-none");
-
         document.querySelectorAll(".package-actions")
             .forEach(a => a.classList.add("d-none"));
-
-        if (!isOpen) {
-            actions.classList.remove("d-none");
-        }
-
+        if (!isOpen) actions.classList.remove("d-none");
     });
-
 });
 
+// ---------------------------
+// AI DESCRIPTION SUGGESTION
+// ---------------------------
+document.querySelectorAll(".suggest-btn").forEach(btn => {
+    btn.addEventListener("click", async function() {
+        const pkgId = this.dataset.packageId;
+        const input = document.querySelector(`.description-input[data-package-id='${pkgId}']`);
+        const suggestionBox = document.getElementById(`suggestion-${pkgId}`);
+        suggestionBox.innerText = "Generating suggestion...";
+
+        try {
+            const response = await fetch("/customer/package/suggest_description", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: input.value })
+            });
+            const data = await response.json();
+            suggestionBox.innerText = data.suggestion || "No suggestion available";
+        } catch (err) {
+            suggestionBox.innerText = "Error generating suggestion";
+            console.error(err);
+        }
+    });
+});
 </script>
 
 {% endblock %}

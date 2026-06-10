@@ -14,13 +14,18 @@ from .extensions import db, migrate, socketio
 from .models import User, Announcement
 from . import events
 
+# -------------------------------------------------
+# Load environment variables
+# -------------------------------------------------
+load_dotenv()
+
+# Optional: load OpenAI key into environment for use in routes
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    print("⚠️  OPENAI_API_KEY not set. Smart Description and Chatbot will not work.")
+
 
 def create_app():
-    # -------------------------------------------------
-    # Load environment variables
-    # -------------------------------------------------
-    load_dotenv()
-
     app = Flask(__name__)
 
     # =====================================================
