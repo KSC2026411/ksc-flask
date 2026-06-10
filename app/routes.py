@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import json
 import re
-import openai
+from openai import OpenAI
 
 from itsdangerous import URLSafeTimedSerializer
 
@@ -18,6 +18,11 @@ from .utils import generate_tracking, send_push_notification
 
 main = Blueprint("main", __name__)
 csrf = CSRFProtect()
+
+# ----------------------------
+# Global OpenAI client
+# ----------------------------
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # -------------------------
 # Email validation regex
@@ -1428,22 +1433,28 @@ def track_public(tracking_number):
 @login_required
 def suggest_description():
     data = request.get_json()
-    user_text = data.get("text", "")
+    text = data.get("text", "")
 
-    if not user_text:
+    if not text:
         return jsonify({"suggestion": ""})
 
-    prompt = f"Rewrite this package description clearly and concisely for a shipping label:\n\n{user_text}"
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful logistics assistant."},
+                {"role": "user", "content": f"Rewrite this package description clearly and concisely: {text}"}
+            ],
+            max_tokens=60,
+            temperature=0.7
+        )
 
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=50,
-        temperature=0.7
-    )
+        suggestion = response.choices[0].message.content.strip()
+        return jsonify({"suggestion": suggestion})
 
-    suggestion = response.choices[0].message.content.strip()
-    return jsonify({"suggestion": suggestion})
+    except Exception as e:
+        print("OpenAI error:", e)
+        return jsonify({"suggestion": "Error generating suggestion"}), 500
 
 @main.route("/customer/chatbot", methods=["POST"])
 @login_required
