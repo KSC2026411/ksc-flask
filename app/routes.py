@@ -399,18 +399,23 @@ def logout():
 @login_required
 def dashboard():
 
-    # -------------------
-    # CUSTOMER ONLY
-    # -------------------
-    if current_user.role != "customer":
-        flash("Admins cannot access customer pages.", "warning")
+    # ----------------------------
+    # ROLE SAFETY CHECK
+    # ----------------------------
+    role = (current_user.role or "").strip().lower()
+
+    if role != "customer":
+        flash("Admins cannot access customer dashboard.", "warning")
         return redirect(url_for("main.admin_dashboard"))
 
+    # ----------------------------
+    # CURRENT TIME (UTC SAFE)
+    # ----------------------------
     now = datetime.utcnow()
 
-    # -------------------
+    # ----------------------------
     # ACTIVE ANNOUNCEMENTS
-    # -------------------
+    # ----------------------------
     announcements = (
         Announcement.query.filter(
             Announcement.expires_at.isnot(None),
@@ -420,38 +425,29 @@ def dashboard():
         .all()
     )
 
-    # -------------------
-    # ONLY 3 RECENT PACKAGES
-    # -------------------
-    packages = (
-        Package.query.filter_by(
-            user_id=current_user.id
-        )
+    # ----------------------------
+    # ALL CUSTOMER PACKAGES
+    # ----------------------------
+    all_packages = (
+        Package.query
+        .filter_by(user_id=current_user.id)
         .order_by(Package.created_at.desc())
-        .limit(3)
         .all()
     )
 
-    # -------------------
-    # FULL ANALYTICS
-    # -------------------
-    all_packages = Package.query.filter_by(
-        user_id=current_user.id
-    ).all()
+    # Only latest 3 packages for dashboard preview
+    packages = all_packages[:3]
 
+    # ----------------------------
+    # ANALYTICS
+    # ----------------------------
     total_packages = len(all_packages)
 
-    # -------------------
-    # PENDING
-    # -------------------
     pending_deliveries = sum(
         1 for p in all_packages
         if p.status and "pending" in p.status.lower()
     )
 
-    # -------------------
-    # DELIVERED + ARCHIVED
-    # -------------------
     delivered_packages = sum(
         1 for p in all_packages
         if p.status and (
@@ -460,14 +456,14 @@ def dashboard():
         )
     )
 
-    # -------------------
-    # IN TRANSIT
-    # -------------------
     in_transit_packages = sum(
         1 for p in all_packages
         if p.status and "transit" in p.status.lower()
     )
 
+    # ----------------------------
+    # RENDER DASHBOARD
+    # ----------------------------
     return render_template(
         "customer/customer_dashboard.html",
         announcements=announcements,

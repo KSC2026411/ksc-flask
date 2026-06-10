@@ -13,7 +13,6 @@
         <h2 class="fw-bold mb-1">
             Welcome, {{ current_user.first_name }}
         </h2>
-
         <p class="text-muted mb-0">
             Here is an overview of your shipments and account activity.
         </p>
@@ -34,15 +33,8 @@
     <div class="col-md-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
-
-                <h6 class="text-muted">
-                    Total Packages
-                </h6>
-
-                <h2 class="fw-bold mb-0">
-                    {{ total_packages }}
-                </h2>
-
+                <h6 class="text-muted">Total Packages</h6>
+                <h2 class="fw-bold mb-0">{{ total_packages }}</h2>
             </div>
         </div>
     </div>
@@ -50,15 +42,8 @@
     <div class="col-md-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
-
-                <h6 class="text-muted">
-                    Pending Deliveries
-                </h6>
-
-                <h2 class="fw-bold text-warning mb-0">
-                    {{ pending_deliveries }}
-                </h2>
-
+                <h6 class="text-muted">Pending Deliveries</h6>
+                <h2 class="fw-bold text-warning mb-0">{{ pending_deliveries }}</h2>
             </div>
         </div>
     </div>
@@ -66,15 +51,8 @@
     <div class="col-md-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
-
-                <h6 class="text-muted">
-                    Delivered Packages
-                </h6>
-
-                <h2 class="fw-bold text-success mb-0">
-                    {{ delivered_packages }}
-                </h2>
-
+                <h6 class="text-muted">Delivered Packages</h6>
+                <h2 class="fw-bold text-success mb-0">{{ delivered_packages }}</h2>
             </div>
         </div>
     </div>
@@ -85,47 +63,25 @@
      ANNOUNCEMENTS
 ========================= -->
 <div class="card shadow-sm border-0 mb-5">
-
     <div class="card-header bg-secondary text-white">
-        <h4 class="mb-0">
-            Active Announcements
-        </h4>
+        <h4 class="mb-0">Active Announcements</h4>
     </div>
 
     <div class="card-body">
 
         {% if announcements %}
-
             {% for a in announcements %}
-
             <div class="border rounded p-3 mb-3 shadow-sm">
-
-                <h5 class="mb-2">
-                    {{ a.title }}
-                </h5>
-
-                <div class="mb-2">
-                    {{ a.message|safe }}
-                </div>
-
-                <small class="text-muted">
-                    Posted: {{ a.created_at.strftime('%Y-%m-%d') }}
-                </small>
-
+                <h5 class="mb-2">{{ a.title }}</h5>
+                <div class="mb-2">{{ a.message|safe }}</div>
+                <small class="text-muted">Posted: {{ a.created_at.strftime('%Y-%m-%d') }}</small>
             </div>
-
             {% endfor %}
-
         {% else %}
-
-            <p class="mb-0 text-muted">
-                No announcements currently.
-            </p>
-
+            <p class="mb-0 text-muted">No announcements currently.</p>
         {% endif %}
 
     </div>
-
 </div>
 
 <!-- =========================
@@ -134,145 +90,162 @@
 <div class="card shadow-sm border-0 mb-5">
 
     <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center flex-wrap">
-
-        <h4 class="mb-0">
-            Your 3 Most Recent Packages
-        </h4>
-
-        <a href="{{ url_for('main.my_packages') }}"
-           class="btn btn-sm btn-light mt-2 mt-md-0">
-            View All
-        </a>
-
+        <h4 class="mb-0">Your 3 Most Recent Packages</h4>
+        <a href="{{ url_for('main.my_packages') }}" class="btn btn-sm btn-light mt-2 mt-md-0">View All</a>
     </div>
 
     <div class="card-body">
 
         {% if packages %}
-
-            <div class="table-responsive">
-
-                <table class="table table-hover table-striped align-middle">
-
-                    <thead class="table-light">
-                        <tr>
-                            <th>Tracking #</th>
-                            <th>Status</th>
-                            <th>Created At</th>
-                            <th>Expected Delivery</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-
-                        {% for p in packages %}
-
-                        <tr>
-
-                            <td>
-                                {{ p.tracking_number }}
-                            </td>
-
-                            <td>
-
-                                {% if p.status == "Pending" %}
-                                    <span class="badge bg-warning text-dark">
-                                        {{ p.status }}
-                                    </span>
-
-                                {% elif p.status == "In Transit" %}
-                                    <span class="badge bg-info">
-                                        {{ p.status }}
-                                    </span>
-
-                                {% elif p.status == "Delivered" %}
-                                    <span class="badge bg-success">
-                                        {{ p.status }}
-                                    </span>
-
-                                {% elif p.status == "Cancelled" %}
-                                    <span class="badge bg-danger">
-                                        {{ p.status }}
-                                    </span>
-
-                                {% elif p.status == "Scheduled" %}
-                                    <span class="badge bg-secondary">
-                                        {{ p.status }}
-                                    </span>
-
-                                {% else %}
-                                    <span class="badge bg-dark">
-                                        {{ p.status }}
-                                    </span>
-
-                                {% endif %}
-
-                            </td>
-
-                            <td>
-                                {{ p.created_at.strftime('%Y-%m-%d') }}
-                            </td>
-
-                            <td>
-
-                                {% if p.expected_delivery %}
-
-                                    {{ p.expected_delivery.strftime('%Y-%m-%d') }}
-
-                                {% elif p.status in ["Pending", "Scheduled"] %}
-
-                                    <span class="text-muted">
-                                        Awaiting shipment
-                                    </span>
-
-                                {% elif p.status == "In Transit" %}
-
-                                    <span class="text-primary">
-                                        Estimating delivery...
-                                    </span>
-
-                                {% elif p.status == "Delivered" %}
-
-                                    <span class="text-success">
-                                        Delivered
-                                    </span>
-
-                                {% elif p.status == "Cancelled" %}
-
-                                    <span class="text-danger">
-                                        Cancelled
-                                    </span>
-
-                                {% else %}
-
-                                    <span class="text-muted">
-                                        Not available
-                                    </span>
-
-                                {% endif %}
-
-                            </td>
-
-                        </tr>
-
-                        {% endfor %}
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Tracking #</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Expected Delivery</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in packages %}
+                    <tr>
+                        <td>{{ p.tracking_number }}</td>
+                        <td>
+                            {% if p.status == "Pending" %}
+                                <span class="badge bg-warning text-dark">{{ p.status }}</span>
+                            {% elif p.status == "In Transit" %}
+                                <span class="badge bg-info">{{ p.status }}</span>
+                            {% elif p.status == "Delivered" %}
+                                <span class="badge bg-success">{{ p.status }}</span>
+                            {% elif p.status == "Cancelled" %}
+                                <span class="badge bg-danger">{{ p.status }}</span>
+                            {% elif p.status == "Scheduled" %}
+                                <span class="badge bg-secondary">{{ p.status }}</span>
+                            {% else %}
+                                <span class="badge bg-dark">{{ p.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ p.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            {% if p.expected_delivery %}
+                                {{ p.expected_delivery.strftime('%Y-%m-%d') }}
+                            {% elif p.status in ["Pending", "Scheduled"] %}
+                                <span class="text-muted">Awaiting shipment</span>
+                            {% elif p.status == "In Transit" %}
+                                <span class="text-primary">Estimating delivery...</span>
+                            {% elif p.status == "Delivered" %}
+                                <span class="text-success">Delivered</span>
+                            {% elif p.status == "Cancelled" %}
+                                <span class="text-danger">Cancelled</span>
+                            {% else %}
+                                <span class="text-muted">Not available</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         {% else %}
-
-            <p class="text-muted mb-0">
-                You have no packages yet.
-            </p>
-
+            <p class="text-muted mb-0">You have no packages yet.</p>
         {% endif %}
 
     </div>
+</div>
+
+<!-- =========================
+     AI CHAT WIDGET
+========================= -->
+<div id="ai-chat-widget">
+
+    <div id="ai-chat-header">
+        🤖 Assistant
+        <button onclick="toggleChat()">✖</button>
+    </div>
+
+    <div id="ai-chat-body"></div>
+
+    <div id="ai-chat-input">
+        <input type="text" id="ai-question" placeholder="Ask about your packages...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
 
 </div>
+
+<style>
+#ai-chat-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 300px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    overflow: hidden;
+    font-family: Arial;
+    z-index: 9999;
+}
+#ai-chat-header {
+    background: #111;
+    color: white;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+}
+#ai-chat-body {
+    height: 250px;
+    overflow-y: auto;
+    padding: 10px;
+    font-size: 14px;
+}
+#ai-chat-input {
+    display: flex;
+    border-top: 1px solid #eee;
+}
+#ai-chat-input input {
+    flex: 1;
+    border: none;
+    padding: 10px;
+}
+#ai-chat-input button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 10px;
+}
+</style>
+
+<script>
+function toggleChat() {
+    const widget = document.getElementById("ai-chat-widget");
+    widget.style.display = widget.style.display === "none" ? "block" : "none";
+}
+
+async function sendMessage() {
+    const input = document.getElementById("ai-question");
+    const body = document.getElementById("ai-chat-body");
+
+    const question = input.value;
+    if (!question) return;
+
+    body.innerHTML += `<div><b>You:</b> ${question}</div>`;
+    input.value = "";
+
+    try {
+        const res = await fetch("/customer/chatbot", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question })
+        });
+        const data = await res.json();
+        body.innerHTML += `<div><b>AI:</b> ${data.answer}</div>`;
+        body.scrollTop = body.scrollHeight;
+    } catch (err) {
+        body.innerHTML += `<div style="color:red;">AI error</div>`;
+        console.error(err);
+    }
+}
+</script>
 
 {% endblock %}
