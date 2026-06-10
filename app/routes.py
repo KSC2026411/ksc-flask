@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import json
 import re
 from openai import OpenAI
+import os
 
 from itsdangerous import URLSafeTimedSerializer
 
