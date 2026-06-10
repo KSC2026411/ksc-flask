@@ -22,3 +22,5 @@ gevent-websocket
 
 pywebpush==2.0.3
 py-vapid==1.9.2
+
+openai>=1.0.0
