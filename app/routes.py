@@ -1461,30 +1461,41 @@ def suggest_description():
 @login_required
 def customer_chatbot():
     data = request.get_json()
-    question = data.get("question", "")
+    question = data.get("question", "").strip()
 
     if not question:
         return jsonify({"answer": "Please ask a question."})
 
-    # Example: inject safe context
-    context = f"""
-    You are a helpful support assistant for a package delivery app. 
-    The user can ask about package status, pickup, reschedule, or cancellation.
-    """
+    try:
+        context = """
+        You are a helpful customer support assistant for KSK Cargo.
 
-    # Optional: add package info if needed
-    # package_id = data.get("package_id")
-    # package = Package.query.get(package_id)
+        Help users with:
+        - Package tracking
+        - Pickup scheduling
+        - Rescheduling deliveries
+        - Package cancellation
+        - General delivery questions
 
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": context},
-            {"role": "user", "content": question}
-        ],
-        max_tokens=150,
-        temperature=0.7
-    )
+        Keep answers short, friendly, and professional.
+        """
 
-    answer = response.choices[0].message.content.strip()
-    return jsonify({"answer": answer})
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": context},
+                {"role": "user", "content": question}
+            ],
+            max_tokens=150,
+            temperature=0.7
+        )
+
+        answer = response.choices[0].message.content.strip()
+
+        return jsonify({"answer": answer})
+
+    except Exception as e:
+        print("Chatbot error:", e)
+        return jsonify({
+            "answer": "Sorry, the AI assistant is currently unavailable."
+        }), 500
