@@ -4,7 +4,7 @@ from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import text, or_
 from bs4 import BeautifulSoup
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import json
 import re
 from openai import OpenAI
