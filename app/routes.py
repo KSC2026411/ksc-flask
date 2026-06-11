@@ -7,8 +7,8 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timedelta, date
 import json
 import re
-from openai import OpenAI
 import os
+from openai import OpenAI
 
 from itsdangerous import URLSafeTimedSerializer
 
@@ -23,6 +23,7 @@ csrf = CSRFProtect()
 # ----------------------------
 # Global OpenAI client
 # ----------------------------
+
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # -------------------------
@@ -1456,25 +1457,29 @@ def suggest_description():
 @main.route("/customer/chatbot", methods=["POST"])
 @login_required
 def customer_chatbot():
-    data = request.get_json()
-    question = data.get("question", "").strip()
+
+    data = request.get_json(silent=True) or {}
+    question = (data.get("question") or "").strip()
 
     if not question:
         return jsonify({"answer": "Please ask a question."})
 
     try:
         context = """
-        You are a helpful customer support assistant for KSK Cargo.
+You are a helpful customer support assistant for KSK Cargo.
 
-        Help users with:
-        - Package tracking
-        - Pickup scheduling
-        - Rescheduling deliveries
-        - Package cancellation
-        - General delivery questions
+You help users with:
+- Package tracking and status explanations
+- Pickup scheduling
+- Delivery rescheduling
+- Package cancellation
+- General shipping questions
 
-        Keep answers short, friendly, and professional.
-        """
+Rules:
+- Be concise
+- Be friendly and professional
+- If you don't know package-specific info, ask for tracking number
+"""
 
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -1482,8 +1487,8 @@ def customer_chatbot():
                 {"role": "system", "content": context},
                 {"role": "user", "content": question}
             ],
-            max_tokens=150,
-            temperature=0.7
+            temperature=0.6,
+            max_tokens=180
         )
 
         answer = response.choices[0].message.content.strip()
@@ -1491,7 +1496,8 @@ def customer_chatbot():
         return jsonify({"answer": answer})
 
     except Exception as e:
-        print("Chatbot error:", e)
+        print("🔥 Chatbot error:", repr(e))
+
         return jsonify({
             "answer": "Sorry, the AI assistant is currently unavailable."
         }), 500

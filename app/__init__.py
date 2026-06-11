@@ -9,10 +9,12 @@ from flask_login import LoginManager
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from apscheduler.schedulers.background import BackgroundScheduler
+from openai import OpenAI
 
 from .extensions import db, migrate, socketio
 from .models import User, Announcement
 from . import events
+
 
 # -------------------------------------------------
 # Load environment variables
@@ -33,6 +35,9 @@ def create_app():
     # =====================================================
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret")
     app.config["DEV_MODE"] = os.getenv("DEV_MODE", "false").lower() == "true"
+    
+    app.config["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
+    app.openai_client = OpenAI(api_key=app.config["OPENAI_API_KEY"])
 
     # -------------------------------------------------
     # PUSH NOTIFICATIONS (VAPID)
