@@ -232,19 +232,37 @@ async function sendMessage() {
     body.innerHTML += `<div><b>You:</b> ${question}</div>`;
     input.value = "";
 
-    try {
-        const res = await fetch("/customer/chatbot", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ question })
-        });
-        const data = await res.json();
-        body.innerHTML += `<div><b>AI:</b> ${data.answer}</div>`;
-        body.scrollTop = body.scrollHeight;
-    } catch (err) {
-        body.innerHTML += `<div style="color:red;">AI error</div>`;
-        console.error(err);
-    }
+   try {
+    const res = await fetch("/customer/chatbot", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ question })
+    });
+
+    console.log("STATUS:", res.status);
+    console.log("URL:", res.url);
+
+    const text = await res.text();
+
+    console.log("RESPONSE:", text);
+
+    const data = JSON.parse(text);
+
+    body.innerHTML += `<div><b>AI:</b> ${data.answer}</div>`;
+    body.scrollTop = body.scrollHeight;
+
+} catch (err) {
+
+    console.error("CHATBOT FAILED:", err);
+
+    body.innerHTML += `
+        <div style="color:red;">
+            AI error: ${err.message}
+        </div>
+    `;
+}
 }
 </script>
 
