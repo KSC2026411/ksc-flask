@@ -910,6 +910,30 @@ def admin_packages():
     page = request.args.get("page", 1, type=int)
     search_query = request.args.get("search", "").strip()
 
+
+    # --------------------------------
+    # PACKAGE STATUSES
+    # --------------------------------
+    statuses = [
+        "Pending Approval",
+        "Approved",
+        "Pending",
+        "Scheduled",
+        "In Warehouse",
+        "Loaded",
+        "Ready for Pickup",
+        "Picked Up",
+        "In Transit",
+        "Shipped",
+        "Delivered",
+        "Archived",
+        "Cancelled",
+        "Pending Reschedule",
+        "Admin Suggested Reschedule",
+        "Rescheduled"
+    ]
+
+
     # --------------------------------
     # ONLY ACTIVE PACKAGES
     # EXCLUDE:
@@ -923,6 +947,7 @@ def admin_packages():
         Package.status != "Delivered",
         Package.status != "Archived"
     )
+
 
     # --------------------------------
     # SEARCH FILTER
@@ -943,14 +968,20 @@ def admin_packages():
                 f"%{search_query}%"
             ),
 
-            User.first_name.ilike(f"%{search_query}%"),
-            User.last_name.ilike(f"%{search_query}%"),
+            User.first_name.ilike(
+                f"%{search_query}%"
+            ),
+
+            User.last_name.ilike(
+                f"%{search_query}%"
+            ),
 
             User.phone.ilike(
                 f"%{search_query}%"
             )
 
         ))
+
 
     # --------------------------------
     # PAGINATION
@@ -962,6 +993,7 @@ def admin_packages():
         per_page=20
     )
 
+
     # --------------------------------
     # AJAX TABLE RESPONSE
     # --------------------------------
@@ -969,15 +1001,18 @@ def admin_packages():
 
         return render_template(
             "partials/admin_packages_table.html",
-            packages=packages
+            packages=packages,
+            statuses=statuses
         )
+
 
     # --------------------------------
     # FULL PAGE
     # --------------------------------
     return render_template(
         "admin/admin_packages.html",
-        packages=packages
+        packages=packages,
+        statuses=statuses
     )
 
 
@@ -1182,6 +1217,64 @@ def admin_clear_packages():
     db.session.commit()
 
     flash("All packages deleted.", "success")
+    return redirect(url_for("main.admin_packages"))
+
+@main.route("/admin/packages/bulk-update", methods=["POST"])
+@login_required
+@admin_required
+def admin_bulk_update_packages():
+
+    package_ids = request.form.getlist("package_ids")
+
+    if not package_ids:
+        flash("No packages selected.", "warning")
+        return redirect(url_for("main.admin_packages"))
+
+    packages = Package.query.filter(
+        Package.id.in_(package_ids)
+    ).all()
+
+    # ----------------------------
+    # STATUS
+    # ----------------------------
+    status = request.form.get("status")
+
+    if status:
+        for package in packages:
+            package.status = status
+
+    # ----------------------------
+    # EXPECTED DELIVERY
+    # ----------------------------
+    expected_delivery = request.form.get("expected_delivery")
+
+    if expected_delivery:
+        try:
+            delivery_date = datetime.strptime(
+                expected_delivery,
+                "%Y-%m-%d"
+            )
+
+            for package in packages:
+                package.expected_delivery = delivery_date
+
+        except ValueError:
+            flash("Invalid delivery date.", "danger")
+            return redirect(url_for("main.admin_packages"))
+
+    # ----------------------------
+    # UPDATED TIMESTAMP
+    # ----------------------------
+    for package in packages:
+        package.updated_at = datetime.utcnow()
+
+    db.session.commit()
+
+    flash(
+        f"{len(packages)} package(s) updated successfully.",
+        "success"
+    )
+
     return redirect(url_for("main.admin_packages"))
 
 #
