@@ -1589,8 +1589,12 @@ Rules:
         return jsonify({"answer": answer})
 
     except Exception as e:
-        print("🔥 Chatbot error:", repr(e))
 
-        return jsonify({
-            "answer": "Sorry, the AI assistant is currently unavailable."
-        }), 500
+        import traceback
+
+    print("🔥 CHATBOT ERROR:", repr(e))
+    traceback.print_exc()
+
+    return jsonify({
+        "answer": "Sorry, the AI assistant is currently unavailable."
+    }), 500
