@@ -1595,6 +1595,11 @@ Rules:
         print("🔥 CHATBOT ERROR:", repr(e))
         traceback.print_exc()
 
+        if "insufficient_quota" in str(e):
+            return jsonify({
+            "answer": "The AI assistant is temporarily unavailable. Please try again later."
+        }), 200
+
         return jsonify({
         "answer": "Sorry, the AI assistant is currently unavailable."
         }), 500
