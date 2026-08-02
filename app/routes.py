@@ -1592,9 +1592,9 @@ Rules:
 
         import traceback
 
-    print("🔥 CHATBOT ERROR:", repr(e))
-    traceback.print_exc()
+        print("🔥 CHATBOT ERROR:", repr(e))
+        traceback.print_exc()
 
-    return jsonify({
+        return jsonify({
         "answer": "Sorry, the AI assistant is currently unavailable."
-    }), 500
+        }), 500
