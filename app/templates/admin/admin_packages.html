@@ -79,26 +79,13 @@
       action="{{ url_for('main.admin_packages_bulk_action') }}">
 
 ```
-<div class="card shadow-sm border-0 mb-3">
+<div id="bulk-actions-card"
+     class="card shadow-sm border-0 mb-3"
+     style="display: none;">
 
     <div class="card-body">
 
         <div class="d-flex flex-wrap align-items-center gap-3">
-
-            <!-- SELECT ALL -->
-            <div class="form-check mb-0">
-
-                <input type="checkbox"
-                       class="form-check-input"
-                       id="select-all">
-
-                <label for="select-all"
-                       class="form-check-label fw-semibold">
-                    Select All
-                </label>
-
-            </div>
-
 
             <!-- SELECTED COUNT -->
             <strong id="selected-count"
@@ -136,14 +123,23 @@
                    style="max-width:200px;">
 
 
-            <!-- ACTION -->
+            <!-- UPDATE -->
             <button type="submit"
                     id="bulk-update-button"
                     class="btn btn-primary"
-                    disabled
                     onclick="return confirm('Update selected packages?');">
 
                 Update Selected
+
+            </button>
+
+
+            <!-- CLEAR SELECTION -->
+            <button type="button"
+                    id="clear-selection-button"
+                    class="btn btn-outline-secondary">
+
+                Clear Selection
 
             </button>
 
@@ -155,6 +151,7 @@
 ```
 
 </form>
+ 
 
 <!-- PACKAGES TABLE -->
 
@@ -700,33 +697,58 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const selectAll = document.getElementById("select-all");
     const selectAllHeader = document.getElementById("select-all-header");
+
     const selectedCount = document.getElementById("selected-count");
-    const bulkUpdateButton = document.getElementById("bulk-update-button");
+    const bulkActionsCard = document.getElementById("bulk-actions-card");
+    const clearSelectionButton = document.getElementById("clear-selection-button");
+
     const searchInput = document.getElementById("package-search");
 
-    const packageCheckboxes = () => {
+
+    function getPackageCheckboxes() {
+
         return Array.from(
             document.querySelectorAll(".package-checkbox")
         );
-    };
+
+    }
 
 
-    /*
-     * UPDATE SELECTED COUNT
-     */
-    function updateSelectedCount() {
+    function updateSelectionUI() {
 
-        const checkboxes = packageCheckboxes();
+        const checkboxes = getPackageCheckboxes();
 
-        const selected = checkboxes.filter(
+        const selectedCheckboxes = checkboxes.filter(
             checkbox => checkbox.checked
-        ).length;
+        );
 
+        const selected = selectedCheckboxes.length;
+
+
+        /*
+         * UPDATE COUNT
+         */
         selectedCount.textContent =
             `${selected} package${selected === 1 ? "" : "s"} selected`;
 
-        bulkUpdateButton.disabled = selected === 0;
 
+        /*
+         * SHOW / HIDE BULK ACTIONS
+         */
+        if (selected > 0) {
+
+            bulkActionsCard.style.display = "";
+
+        } else {
+
+            bulkActionsCard.style.display = "none";
+
+        }
+
+
+        /*
+         * SELECT ALL STATE
+         */
         const allSelected =
             checkboxes.length > 0 &&
             selected === checkboxes.length;
@@ -735,11 +757,14 @@ document.addEventListener("DOMContentLoaded", function () {
             selected > 0 &&
             selected < checkboxes.length;
 
+
         selectAll.checked = allSelected;
         selectAll.indeterminate = someSelected;
 
+
         selectAllHeader.checked = allSelected;
         selectAllHeader.indeterminate = someSelected;
+
     }
 
 
@@ -748,16 +773,20 @@ document.addEventListener("DOMContentLoaded", function () {
      */
     function toggleAll(checked) {
 
-        packageCheckboxes().forEach(function (checkbox) {
+        getPackageCheckboxes().forEach(function (checkbox) {
 
             checkbox.checked = checked;
 
         });
 
-        updateSelectedCount();
+        updateSelectionUI();
+
     }
 
 
+    /*
+     * TOP SELECT ALL
+     */
     selectAll.addEventListener("change", function () {
 
         toggleAll(this.checked);
@@ -765,6 +794,9 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 
+    /*
+     * TABLE HEADER SELECT ALL
+     */
     selectAllHeader.addEventListener("change", function () {
 
         toggleAll(this.checked);
@@ -779,9 +811,31 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (event.target.classList.contains("package-checkbox")) {
 
-            updateSelectedCount();
+            updateSelectionUI();
 
         }
+
+    });
+
+
+    /*
+     * CLEAR SELECTION
+     */
+    clearSelectionButton.addEventListener("click", function () {
+
+        getPackageCheckboxes().forEach(function (checkbox) {
+
+            checkbox.checked = false;
+
+        });
+
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+
+        selectAllHeader.checked = false;
+        selectAllHeader.indeterminate = false;
+
+        updateSelectionUI();
 
     });
 
@@ -814,9 +868,12 @@ document.addEventListener("DOMContentLoaded", function () {
     /*
      * INITIAL STATE
      */
-    updateSelectedCount();
+    updateSelectionUI();
 
 });
+
+</script>
+
 
 </script>
 
