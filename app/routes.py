@@ -1469,38 +1469,64 @@ def admin_packages_table():
 @login_required
 @admin_required
 def admin_packages_bulk_action():
-    package_ids = request.form.getlist("package_ids")
-    action = request.form.get("action")
 
+    package_ids = request.form.getlist("package_ids")
+    status = request.form.get("status", "").strip()
+    expected_delivery = request.form.get("expected_delivery", "").strip()
+
+    # Make sure packages were selected
     if not package_ids:
         flash("Please select at least one package.", "warning")
-        return redirect(request.referrer or url_for("main.admin_packages"))
+        return redirect(
+            request.referrer or url_for("main.admin_packages")
+        )
 
+    # Find selected packages
     packages = Package.query.filter(
         Package.id.in_(package_ids)
     ).all()
 
-    if action == "mark_ready":
-        for package in packages:
-            package.status = "Ready"
+    if not packages:
+        flash("No valid packages were selected.", "warning")
+        return redirect(
+            request.referrer or url_for("main.admin_packages")
+        )
 
-    elif action == "mark_shipped":
-        for package in packages:
-            package.status = "Shipped"
+    # Parse delivery date if provided
+    delivery_date = None
 
-    elif action == "delete":
-        for package in packages:
-            db.session.delete(package)
+    if expected_delivery:
+        try:
+            delivery_date = datetime.strptime(
+                expected_delivery,
+                "%Y-%m-%d"
+            ).date()
 
-    else:
-        flash("Invalid bulk action.", "danger")
-        return redirect(request.referrer or url_for("main.admin_packages"))
+        except ValueError:
+            flash("Invalid expected delivery date.", "danger")
+            return redirect(
+                request.referrer or url_for("main.admin_packages")
+            )
+
+    # Update selected packages
+    for package in packages:
+
+        if status:
+            package.status = status
+
+        if delivery_date:
+            package.expected_delivery = delivery_date
 
     db.session.commit()
 
-    flash(f"{len(packages)} package(s) updated successfully.", "success")
+    flash(
+        f"{len(packages)} package(s) updated successfully.",
+        "success"
+    )
 
-    return redirect(request.referrer or url_for("main.admin_packages"))
+    return redirect(
+        request.referrer or url_for("main.admin_packages")
+    )
 
 @main.route("/admin/audit")
 @login_required
