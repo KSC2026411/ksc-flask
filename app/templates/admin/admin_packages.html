@@ -78,76 +78,99 @@
       method="POST"
       action="{{ url_for('main.admin_packages_bulk_action') }}">
 
-```
-<div id="bulk-actions-card"
-     class="card shadow-sm border-0 mb-3 d-none">
+    <div id="bulk-actions-card"
+         class="card shadow-sm border-0 mb-3 d-none">
 
-    <div class="card-body">
+        <div class="card-body">
 
-        <div class="d-flex flex-wrap align-items-center gap-3">
+            <div class="d-flex flex-wrap align-items-center gap-2">
 
-            <!-- SELECTED COUNT -->
-            <strong id="selected-count"
-                    class="text-primary">
-                0 packages selected
-            </strong>
+                <!-- SELECTED COUNT -->
+                <strong id="selected-count"
+                        class="text-primary me-2">
+                    0 packages selected
+                </strong>
 
 
-            <!-- STATUS -->
-            <select name="status"
-                    id="bulk-status"
-                    class="form-select"
-                    style="max-width:220px;">
+                <!-- APPROVE -->
+                <button type="submit"
+                        name="action"
+                        value="approve"
+                        class="btn btn-success"
+                        onclick="return confirm('Approve all selected packages?');">
 
-                <option value="">
-                    Change Status...
-                </option>
+                    Approve Selected
 
-                {% for s in statuses %}
+                </button>
 
-                    <option value="{{ s }}">
-                        {{ s }}
+
+                <!-- ARCHIVE -->
+                <button type="submit"
+                        name="action"
+                        value="archive"
+                        class="btn btn-secondary"
+                        onclick="return confirm('Archive all selected packages?');">
+
+                    Archive Selected
+
+                </button>
+
+
+                <!-- STATUS -->
+                <select name="status"
+                        id="bulk-status"
+                        class="form-select"
+                        style="max-width:220px;">
+
+                    <option value="">
+                        Change Status...
                     </option>
 
-                {% endfor %}
+                    {% for s in statuses %}
 
-            </select>
+                        <option value="{{ s }}">
+                            {{ s }}
+                        </option>
 
+                    {% endfor %}
 
-            <!-- EXPECTED DELIVERY -->
-            <input type="date"
-                   name="expected_delivery"
-                   id="bulk-expected-delivery"
-                   class="form-control"
-                   style="max-width:200px;">
+                </select>
 
 
-            <!-- UPDATE -->
-            <button type="submit"
-                    id="bulk-update-button"
-                    class="btn btn-primary"
-                    onclick="return confirm('Update selected packages?');">
-
-                Update Selected
-
-            </button>
+                <!-- EXPECTED DELIVERY -->
+                <input type="date"
+                       name="expected_delivery"
+                       id="bulk-expected-delivery"
+                       class="form-control"
+                       style="max-width:200px;">
 
 
-            <!-- CLEAR SELECTION -->
-            <button type="button"
-                    id="clear-selection-button"
-                    class="btn btn-outline-secondary">
+                <!-- UPDATE -->
+                <button type="submit"
+                        name="action"
+                        value="update"
+                        class="btn btn-primary"
+                        onclick="return confirm('Update selected packages?');">
 
-                Clear Selection
+                    Update Selected
 
-            </button>
+                </button>
+
+
+                <!-- CLEAR -->
+                <button type="button"
+                        id="clear-selection-button"
+                        class="btn btn-outline-secondary">
+
+                    Clear Selection
+
+                </button>
+
+            </div>
 
         </div>
 
     </div>
-
-</div>
-```
 
 </form>
  

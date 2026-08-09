@@ -1471,17 +1471,19 @@ def admin_packages_table():
 def admin_packages_bulk_action():
 
     package_ids = request.form.getlist("package_ids")
+    action = request.form.get("action", "").strip()
     status = request.form.get("status", "").strip()
     expected_delivery = request.form.get("expected_delivery", "").strip()
 
-    # Make sure packages were selected
+    # ---------------------------------------------------------
+    # NO PACKAGES SELECTED
+    # ---------------------------------------------------------
     if not package_ids:
         flash("Please select at least one package.", "warning")
         return redirect(
             request.referrer or url_for("main.admin_packages")
         )
 
-    # Find selected packages
     packages = Package.query.filter(
         Package.id.in_(package_ids)
     ).all()
@@ -1492,37 +1494,203 @@ def admin_packages_bulk_action():
             request.referrer or url_for("main.admin_packages")
         )
 
-    # Parse delivery date if provided
-    delivery_date = None
+    # ---------------------------------------------------------
+    # BULK APPROVE
+    # ---------------------------------------------------------
+    if action == "approve":
 
-    if expected_delivery:
+        approved_count = 0
+        already_approved = 0
+
         try:
-            delivery_date = datetime.strptime(
-                expected_delivery,
-                "%Y-%m-%d"
-            ).date()
 
-        except ValueError:
-            flash("Invalid expected delivery date.", "danger")
+            for package in packages:
+
+                # Already approved
+                if package.tracking_number:
+                    already_approved += 1
+                    continue
+
+                # Generate tracking number
+                tracking = generate_tracking()
+
+                package.tracking_number = tracking
+                package.status = "Scheduled"
+                package.updated_at = datetime.utcnow()
+
+                approved_count += 1
+
+            db.session.commit()
+
+        except Exception as e:
+
+            db.session.rollback()
+
+            print("BULK APPROVE FAILED:", e)
+
+            flash(
+                "Bulk approval failed. No packages were changed.",
+                "danger"
+            )
+
             return redirect(
                 request.referrer or url_for("main.admin_packages")
             )
 
-    # Update selected packages
-    for package in packages:
+        if approved_count and already_approved:
 
-        if status:
-            package.status = status
+            flash(
+                f"{approved_count} package(s) approved. "
+                f"{already_approved} package(s) were already approved.",
+                "success"
+            )
 
-        if delivery_date:
-            package.expected_delivery = delivery_date
+        elif approved_count:
 
-    db.session.commit()
+            flash(
+                f"{approved_count} package(s) approved successfully.",
+                "success"
+            )
 
-    flash(
-        f"{len(packages)} package(s) updated successfully.",
-        "success"
-    )
+        else:
+
+            flash(
+                "All selected packages were already approved.",
+                "warning"
+            )
+
+        return redirect(
+            request.referrer or url_for("main.admin_packages")
+        )
+
+    # ---------------------------------------------------------
+    # BULK ARCHIVE
+    # ---------------------------------------------------------
+    if action == "archive":
+
+        archived_count = 0
+
+        try:
+
+            for package in packages:
+
+                # Don't re-archive packages
+                if package.status == "Archived":
+                    continue
+
+                package.status = "Archived"
+                package.updated_at = datetime.utcnow()
+
+                archived_count += 1
+
+            db.session.commit()
+
+        except Exception as e:
+
+            db.session.rollback()
+
+            print("BULK ARCHIVE FAILED:", e)
+
+            flash(
+                "Bulk archive failed. No packages were changed.",
+                "danger"
+            )
+
+            return redirect(
+                request.referrer or url_for("main.admin_packages")
+            )
+
+        if archived_count:
+
+            flash(
+                f"{archived_count} package(s) archived successfully.",
+                "success"
+            )
+
+        else:
+
+            flash(
+                "All selected packages were already archived.",
+                "warning"
+            )
+
+        return redirect(
+            request.referrer or url_for("main.admin_packages")
+        )
+
+    # ---------------------------------------------------------
+    # BULK STATUS / DELIVERY DATE UPDATE
+    # ---------------------------------------------------------
+    if action == "update":
+
+        delivery_date = None
+
+        if expected_delivery:
+
+            try:
+
+                delivery_date = datetime.strptime(
+                    expected_delivery,
+                    "%Y-%m-%d"
+                ).date()
+
+            except ValueError:
+
+                flash(
+                    "Invalid expected delivery date.",
+                    "danger"
+                )
+
+                return redirect(
+                    request.referrer or url_for("main.admin_packages")
+                )
+
+        updated_count = 0
+
+        try:
+
+            for package in packages:
+
+                if status:
+                    package.status = status
+
+                if delivery_date:
+                    package.expected_delivery = delivery_date
+
+                package.updated_at = datetime.utcnow()
+
+                updated_count += 1
+
+            db.session.commit()
+
+        except Exception as e:
+
+            db.session.rollback()
+
+            print("BULK UPDATE FAILED:", e)
+
+            flash(
+                "Bulk update failed. No packages were changed.",
+                "danger"
+            )
+
+            return redirect(
+                request.referrer or url_for("main.admin_packages")
+            )
+
+        flash(
+            f"{updated_count} package(s) updated successfully.",
+            "success"
+        )
+
+        return redirect(
+            request.referrer or url_for("main.admin_packages")
+        )
+
+    # ---------------------------------------------------------
+    # INVALID ACTION
+    # ---------------------------------------------------------
+    flash("Invalid bulk action.", "danger")
 
     return redirect(
         request.referrer or url_for("main.admin_packages")
