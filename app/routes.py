@@ -1465,6 +1465,43 @@ def admin_packages_table():
         packages=packages
     )
 
+@main.route("/admin/packages/bulk-action", methods=["POST"])
+@login_required
+@admin_required
+def admin_packages_bulk_action():
+    package_ids = request.form.getlist("package_ids")
+    action = request.form.get("action")
+
+    if not package_ids:
+        flash("Please select at least one package.", "warning")
+        return redirect(request.referrer or url_for("main.admin_packages"))
+
+    packages = Package.query.filter(
+        Package.id.in_(package_ids)
+    ).all()
+
+    if action == "mark_ready":
+        for package in packages:
+            package.status = "Ready"
+
+    elif action == "mark_shipped":
+        for package in packages:
+            package.status = "Shipped"
+
+    elif action == "delete":
+        for package in packages:
+            db.session.delete(package)
+
+    else:
+        flash("Invalid bulk action.", "danger")
+        return redirect(request.referrer or url_for("main.admin_packages"))
+
+    db.session.commit()
+
+    flash(f"{len(packages)} package(s) updated successfully.", "success")
+
+    return redirect(request.referrer or url_for("main.admin_packages"))
+
 @main.route("/admin/audit")
 @login_required
 @admin_required
