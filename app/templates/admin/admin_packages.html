@@ -80,8 +80,7 @@
 
 ```
 <div id="bulk-actions-card"
-     class="card shadow-sm border-0 mb-3"
-     style="display: none;">
+     class="card shadow-sm border-0 mb-3 d-none">
 
     <div class="card-body">
 
@@ -692,126 +691,129 @@
 <!-- BULK SELECT + SEARCH JAVASCRIPT -->
 
 <script>
+(function () {
 
-document.addEventListener("DOMContentLoaded", function () {
-
-    const selectAll = document.getElementById("select-all");
-    const selectAllHeader = document.getElementById("select-all-header");
-
-    const selectedCount = document.getElementById("selected-count");
-    const bulkActionsCard = document.getElementById("bulk-actions-card");
-    const clearSelectionButton = document.getElementById("clear-selection-button");
-
-    const searchInput = document.getElementById("package-search");
-
-
-    function getPackageCheckboxes() {
-
+    function getCheckboxes() {
         return Array.from(
             document.querySelectorAll(".package-checkbox")
         );
-
     }
 
 
-    function updateSelectionUI() {
+    function updateBulkActions() {
 
-        const checkboxes = getPackageCheckboxes();
+        const checkboxes = getCheckboxes();
 
-        const selectedCheckboxes = checkboxes.filter(
-            checkbox => checkbox.checked
-        );
+        const selected = checkboxes.filter(function (checkbox) {
+            return checkbox.checked;
+        });
 
-        const selected = selectedCheckboxes.length;
+        const count = selected.length;
+
+        const bulkCard = document.getElementById("bulk-actions-card");
+        const selectedCount = document.getElementById("selected-count");
+
+        const selectAll = document.getElementById("select-all");
+        const selectAllHeader = document.getElementById("select-all-header");
 
 
         /*
          * UPDATE COUNT
          */
-        selectedCount.textContent =
-            `${selected} package${selected === 1 ? "" : "s"} selected`;
+        if (selectedCount) {
 
-
-        /*
-         * SHOW / HIDE BULK ACTIONS
-         */
-        if (selected > 0) {
-
-            bulkActionsCard.style.display = "";
-
-        } else {
-
-            bulkActionsCard.style.display = "none";
+            selectedCount.textContent =
+                count + " package" + (count === 1 ? "" : "s") + " selected";
 
         }
 
 
         /*
-         * SELECT ALL STATE
+         * SHOW / HIDE BULK ACTION BAR
+         */
+        if (bulkCard) {
+
+            if (count > 0) {
+
+                bulkCard.classList.remove("d-none");
+
+            } else {
+
+                bulkCard.classList.add("d-none");
+
+            }
+
+        }
+
+
+        /*
+         * UPDATE SELECT-ALL CHECKBOXES
          */
         const allSelected =
             checkboxes.length > 0 &&
-            selected === checkboxes.length;
+            count === checkboxes.length;
 
-        const someSelected =
-            selected > 0 &&
-            selected < checkboxes.length;
-
-
-        selectAll.checked = allSelected;
-        selectAll.indeterminate = someSelected;
+        const partiallySelected =
+            count > 0 &&
+            count < checkboxes.length;
 
 
-        selectAllHeader.checked = allSelected;
-        selectAllHeader.indeterminate = someSelected;
+        if (selectAll) {
+
+            selectAll.checked = allSelected;
+            selectAll.indeterminate = partiallySelected;
+
+        }
+
+
+        if (selectAllHeader) {
+
+            selectAllHeader.checked = allSelected;
+            selectAllHeader.indeterminate = partiallySelected;
+
+        }
 
     }
 
 
     /*
-     * SELECT / DESELECT ALL
+     * SELECT ALL
      */
-    function toggleAll(checked) {
+    function selectAllPackages(checked) {
 
-        getPackageCheckboxes().forEach(function (checkbox) {
+        getCheckboxes().forEach(function (checkbox) {
 
             checkbox.checked = checked;
 
         });
 
-        updateSelectionUI();
+        updateBulkActions();
 
     }
 
 
     /*
-     * TOP SELECT ALL
-     */
-    selectAll.addEventListener("change", function () {
-
-        toggleAll(this.checked);
-
-    });
-
-
-    /*
-     * TABLE HEADER SELECT ALL
-     */
-    selectAllHeader.addEventListener("change", function () {
-
-        toggleAll(this.checked);
-
-    });
-
-
-    /*
-     * INDIVIDUAL CHECKBOXES
+     * PAGE CHECKBOXES
      */
     document.addEventListener("change", function (event) {
 
         if (event.target.classList.contains("package-checkbox")) {
 
-            updateSelectionUI();
+            updateBulkActions();
+
+        }
+
+
+        if (event.target.id === "select-all") {
+
+            selectAllPackages(event.target.checked);
+
+        }
+
+
+        if (event.target.id === "select-all-header") {
+
+            selectAllPackages(event.target.checked);
 
         }
 
@@ -821,60 +823,52 @@ document.addEventListener("DOMContentLoaded", function () {
     /*
      * CLEAR SELECTION
      */
-    clearSelectionButton.addEventListener("click", function () {
+    document.addEventListener("click", function (event) {
 
-        getPackageCheckboxes().forEach(function (checkbox) {
+        if (event.target.id === "clear-selection-button") {
 
-            checkbox.checked = false;
+            getCheckboxes().forEach(function (checkbox) {
 
-        });
+                checkbox.checked = false;
 
-        selectAll.checked = false;
-        selectAll.indeterminate = false;
+            });
 
-        selectAllHeader.checked = false;
-        selectAllHeader.indeterminate = false;
+            updateBulkActions();
 
-        updateSelectionUI();
+        }
 
     });
 
 
     /*
-     * SEARCH CURRENT PAGE
+     * INITIALIZE
      */
-    searchInput.addEventListener("input", function () {
+    function initializeBulkSelection() {
 
-        const searchTerm = this.value
-            .trim()
-            .toLowerCase();
+        updateBulkActions();
 
-        const rows = document.querySelectorAll(".package-row");
-
-        rows.forEach(function (row) {
-
-            const rowText = row.textContent.toLowerCase();
-
-            row.style.display =
-                rowText.includes(searchTerm)
-                    ? ""
-                    : "none";
-
-        });
-
-    });
+    }
 
 
     /*
-     * INITIAL STATE
+     * NORMAL PAGE LOAD
      */
-    updateSelectionUI();
+    if (document.readyState === "loading") {
 
-});
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializeBulkSelection
+        );
 
+    } else {
+
+        initializeBulkSelection();
+
+    }
+
+
+})();
 </script>
 
-
-</script>
 
 {% endblock %}
