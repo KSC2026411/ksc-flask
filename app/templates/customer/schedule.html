@@ -1,119 +1,325 @@
 {% extends "customer/base_customer.html" %}
 
+{% block title %}Schedule Pickup - KSC Logistics{% endblock %}
+
 {% block customer_content %}
 
-<h2>Schedule Pickup</h2>
-
 {% with messages = get_flashed_messages() %}
-    {% if messages %}
-        {% for msg in messages %}
-            <div class="alert alert-info">{{ msg }}</div>
-        {% endfor %}
-    {% endif %}
+{% if messages %}
+
+<div class="mb-3">
+    {% for msg in messages %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        {{ msg }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 {% endwith %}
 
-<form method="POST" class="row g-3 mt-3">
+<div class="container py-4">
 
-    <!-- Package Description (Customer enters freely) -->
-    <div class="col-12">
-        <label class="form-label">Package Description</label>
-        <textarea name="description" class="form-control" rows="3"
-                  placeholder="Describe what you're shipping (e.g. 2 boxes of clothing, TV, etc.)"
-                  required></textarea>
+```
+<div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+
+        <h3 class="mb-1">Schedule a Pickup</h3>
+        <p class="text-muted mb-4">
+            Enter your package information and upload photos for our review.
+        </p>
+
+        <form method="POST"
+              enctype="multipart/form-data"
+              id="schedule-form">
+
+            <div class="row g-3">
+
+                <!-- PACKAGE DESCRIPTION -->
+                <div class="col-12">
+                    <label class="form-label fw-semibold">
+                        Package Description
+                    </label>
+
+                    <textarea name="description"
+                              class="form-control"
+                              rows="3"
+                              placeholder="Describe what you're shipping (e.g. 2 boxes of clothing, TV, etc.)"
+                              required></textarea>
+                </div>
+
+                <!-- STREET -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">
+                        Street
+                    </label>
+
+                    <input type="text"
+                           name="street"
+                           class="form-control"
+                           required>
+                </div>
+
+                <!-- CITY -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">
+                        City
+                    </label>
+
+                    <input type="text"
+                           name="city"
+                           class="form-control"
+                           required>
+                </div>
+
+                <!-- STATE -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">
+                        State
+                    </label>
+
+                    <select name="state"
+                            class="form-select"
+                            required>
+
+                        <option value="">
+                            Select State
+                        </option>
+
+                        <option value="AL">Alabama</option>
+                        <option value="AK">Alaska</option>
+                        <option value="AZ">Arizona</option>
+                        <option value="AR">Arkansas</option>
+                        <option value="CA">California</option>
+                        <option value="CO">Colorado</option>
+                        <option value="CT">Connecticut</option>
+                        <option value="DE">Delaware</option>
+                        <option value="FL">Florida</option>
+                        <option value="GA">Georgia</option>
+                        <option value="HI">Hawaii</option>
+                        <option value="ID">Idaho</option>
+                        <option value="IL">Illinois</option>
+                        <option value="IN">Indiana</option>
+                        <option value="IA">Iowa</option>
+                        <option value="KS">Kansas</option>
+                        <option value="KY">Kentucky</option>
+                        <option value="LA">Louisiana</option>
+                        <option value="ME">Maine</option>
+                        <option value="MD">Maryland</option>
+                        <option value="MA">Massachusetts</option>
+                        <option value="MI">Michigan</option>
+                        <option value="MN">Minnesota</option>
+                        <option value="MS">Mississippi</option>
+                        <option value="MO">Missouri</option>
+                        <option value="MT">Montana</option>
+                        <option value="NE">Nebraska</option>
+                        <option value="NV">Nevada</option>
+                        <option value="NH">New Hampshire</option>
+                        <option value="NJ">New Jersey</option>
+                        <option value="NM">New Mexico</option>
+                        <option value="NY">New York</option>
+                        <option value="NC">North Carolina</option>
+                        <option value="ND">North Dakota</option>
+                        <option value="OH">Ohio</option>
+                        <option value="OK">Oklahoma</option>
+                        <option value="OR">Oregon</option>
+                        <option value="PA">Pennsylvania</option>
+                        <option value="RI">Rhode Island</option>
+                        <option value="SC">South Carolina</option>
+                        <option value="SD">South Dakota</option>
+                        <option value="TN">Tennessee</option>
+                        <option value="TX">Texas</option>
+                        <option value="UT">Utah</option>
+                        <option value="VT">Vermont</option>
+                        <option value="VA">Virginia</option>
+                        <option value="WA">Washington</option>
+                        <option value="WV">West Virginia</option>
+                        <option value="WI">Wisconsin</option>
+                        <option value="WY">Wyoming</option>
+
+                    </select>
+                </div>
+
+                <!-- ZIP -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">
+                        ZIP
+                    </label>
+
+                    <input type="text"
+                           name="zip"
+                           class="form-control"
+                           required>
+                </div>
+
+                <!-- PHONE -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">
+                        Phone Number
+                    </label>
+
+                    <input type="text"
+                           name="phone"
+                           class="form-control"
+                           required>
+                </div>
+
+                <!-- PICKUP DATE -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">
+                        Pickup Date
+                    </label>
+
+                    <input type="date"
+                           name="date"
+                           id="pickup-date"
+                           class="form-control"
+                           required>
+                </div>
+
+                <!-- PACKAGE PHOTOS -->
+                <div class="col-12">
+
+                    <div class="card border bg-light">
+                        <div class="card-body">
+
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-camera me-1"></i>
+                                Package Photos
+                            </label>
+
+                            <p class="text-muted small mb-3">
+                                Upload up to 3 clear photos of your package.
+                                Photos help us review your pickup request.
+                            </p>
+
+                            <input type="file"
+                                   name="package_photos"
+                                   id="package_photos"
+                                   class="form-control"
+                                   accept="image/jpeg,image/png,image/webp"
+                                   multiple>
+
+                            <div class="form-text">
+                                JPG, JPEG, PNG, or WEBP. Maximum 3 photos.
+                            </div>
+
+                            <!-- PHOTO PREVIEW -->
+                            <div id="photo-preview"
+                                 class="row g-3 mt-2">
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- SUBMIT -->
+                <div class="col-12 text-center mt-4">
+
+                    <button type="submit"
+                            id="schedule-submit"
+                            class="btn btn-success btn-lg px-5">
+
+                        <i class="bi bi-calendar-check me-1"></i>
+                        Schedule Pickup
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
     </div>
-
-    <div class="col-md-6">
-        <label class="form-label">Street</label>
-        <input type="text" name="street" class="form-control" required>
-    </div>
-
-    <div class="col-md-6">
-        <label class="form-label">City</label>
-        <input type="text" name="city" class="form-control" required>
-    </div>
-
-    <!-- STATE DROPDOWN -->
-    <div class="col-md-4">
-        <label class="form-label">State</label>
-        <select name="state" class="form-control" required>
-            <option value="">Select State</option>
-            <option value="AL">Alabama</option>
-            <option value="AK">Alaska</option>
-            <option value="AZ">Arizona</option>
-            <option value="AR">Arkansas</option>
-            <option value="CA">California</option>
-            <option value="CO">Colorado</option>
-            <option value="CT">Connecticut</option>
-            <option value="DE">Delaware</option>
-            <option value="FL">Florida</option>
-            <option value="GA">Georgia</option>
-            <option value="HI">Hawaii</option>
-            <option value="ID">Idaho</option>
-            <option value="IL">Illinois</option>
-            <option value="IN">Indiana</option>
-            <option value="IA">Iowa</option>
-            <option value="KS">Kansas</option>
-            <option value="KY">Kentucky</option>
-            <option value="LA">Louisiana</option>
-            <option value="ME">Maine</option>
-            <option value="MD">Maryland</option>
-            <option value="MA">Massachusetts</option>
-            <option value="MI">Michigan</option>
-            <option value="MN">Minnesota</option>
-            <option value="MS">Mississippi</option>
-            <option value="MO">Missouri</option>
-            <option value="MT">Montana</option>
-            <option value="NE">Nebraska</option>
-            <option value="NV">Nevada</option>
-            <option value="NH">New Hampshire</option>
-            <option value="NJ">New Jersey</option>
-            <option value="NM">New Mexico</option>
-            <option value="NY">New York</option>
-            <option value="NC">North Carolina</option>
-            <option value="ND">North Dakota</option>
-            <option value="OH">Ohio</option>
-            <option value="OK">Oklahoma</option>
-            <option value="OR">Oregon</option>
-            <option value="PA">Pennsylvania</option>
-            <option value="RI">Rhode Island</option>
-            <option value="SC">South Carolina</option>
-            <option value="SD">South Dakota</option>
-            <option value="TN">Tennessee</option>
-            <option value="TX">Texas</option>
-            <option value="UT">Utah</option>
-            <option value="VT">Vermont</option>
-            <option value="VA">Virginia</option>
-            <option value="WA">Washington</option>
-            <option value="WV">West Virginia</option>
-            <option value="WI">Wisconsin</option>
-            <option value="WY">Wyoming</option>
-        </select>
-    </div>
-
-    <div class="col-md-4">
-        <label class="form-label">ZIP</label>
-        <input type="text" name="zip" class="form-control" required>
-    </div>
-
-    <div class="col-md-4">
-        <label class="form-label">Phone Number</label>
-        <input type="text" name="phone" class="form-control" required>
-    </div>
-
-    <div class="col-md-4">
-        <label class="form-label">Pickup Date</label>
-        <input type="date" name="date" class="form-control" required>
-    </div>
-
-    <div class="col-12 text-center">
-        <button type="submit" class="btn btn-success w-50">
-            Schedule Pickup
-        </button>
-    </div>
-</form>
-
-<div class="alert alert-warning mt-3">
-    <strong>Note:</strong> A <strong>$75 Zelle deposit 48H before pickup date</strong> is required to confirm your pickup.
 </div>
+```
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const fileInput = document.getElementById("package_photos");
+    const preview = document.getElementById("photo-preview");
+    const form = document.getElementById("schedule-form");
+
+    const maxPhotos = 3;
+    const maxFileSize = 10 * 1024 * 1024;
+
+    fileInput.addEventListener("change", function () {
+
+        preview.innerHTML = "";
+
+        const files = Array.from(fileInput.files);
+
+        if (files.length > maxPhotos) {
+            alert("You can upload a maximum of 3 photos.");
+            fileInput.value = "";
+            return;
+        }
+
+        for (const file of files) {
+
+            if (!file.type.startsWith("image/")) {
+                alert("Only image files are allowed.");
+                fileInput.value = "";
+                preview.innerHTML = "";
+                return;
+            }
+
+            if (file.size > maxFileSize) {
+                alert(file.name + " is larger than 10 MB.");
+                fileInput.value = "";
+                preview.innerHTML = "";
+                return;
+            }
+
+            const col = document.createElement("div");
+            col.className = "col-6 col-md-4";
+
+            const card = document.createElement("div");
+            card.className = "card border-0 shadow-sm";
+
+            const image = document.createElement("img");
+            image.className = "card-img-top rounded";
+            image.style.height = "160px";
+            image.style.objectFit = "cover";
+
+            image.src = URL.createObjectURL(file);
+
+            const body = document.createElement("div");
+            body.className = "card-body p-2";
+
+            const name = document.createElement("div");
+            name.className = "small text-muted text-truncate";
+            name.textContent = file.name;
+
+            body.appendChild(name);
+            card.appendChild(image);
+            card.appendChild(body);
+            col.appendChild(card);
+            preview.appendChild(col);
+        }
+    });
+
+    form.addEventListener("submit", function (event) {
+    if (fileInput.files.length > maxPhotos) {
+        alert("You can upload a maximum of 3 photos.");
+        event.preventDefault();
+        return;
+    }
+
+    const button = document.getElementById("schedule-submit");
+
+    button.disabled = true;
+    button.innerHTML =
+        '<span class="spinner-border spinner-border-sm me-2"></span>' +
+        'Submitting...';
+});
+
+});
+</script>
 
 {% endblock %}

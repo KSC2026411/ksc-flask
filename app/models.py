@@ -193,10 +193,76 @@ class Package(db.Model):
 
     reschedule_attempts = db.Column(db.Integer, default=0)
 
-    # relationship
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    user = db.relationship('User', back_populates='packages')
+    # -------------------
+# RELATIONSHIPS
+# -------------------
 
+user_id = db.Column(
+    db.Integer,
+    db.ForeignKey('user.id'),
+    nullable=False
+)
+
+user = db.relationship(
+    'User',
+    back_populates='packages'
+)
+
+photos = db.relationship(
+    "PackagePhoto",
+    back_populates="package",
+    cascade="all, delete-orphan"
+)
+
+# -------------------
+# PACKAGE PHOTO MODEL
+# -------------------
+
+class PackagePhoto(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    package_id = db.Column(
+        db.Integer,
+        db.ForeignKey("package.id"),
+        nullable=False
+    )
+
+    filename = db.Column(
+        db.String(255),
+        nullable=False
+    )
+
+    original_filename = db.Column(
+        db.String(255),
+        nullable=True
+    )
+
+    uploaded_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
+
+    delete_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+
+    package = db.relationship(
+        "Package",
+        back_populates="photos"
+    )
+
+    def __repr__(self):
+        return (
+            f"<PackagePhoto "
+            f"{self.id} | "
+            f"Package {self.package_id}>"
+        )
 
 # -------------------
 # ANNOUNCEMENT MODEL

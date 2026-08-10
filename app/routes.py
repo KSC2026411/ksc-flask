@@ -3,16 +3,18 @@ from flask_login import login_required, login_user, logout_user, current_user
 from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import text, or_
 from bs4 import BeautifulSoup
+from werkzeug.utils import secure_filename
 
 from datetime import datetime, timedelta, date
 import json
 import re
 import os
+import uuid
 from openai import OpenAI
 
 from itsdangerous import URLSafeTimedSerializer
 
-from .models import User, Package, Announcement, PushSubscription, AuditLog
+from .models import User, Package, Announcement, PushSubscription, AuditLog, PackagePhoto 
 from .extensions import db, socketio
 from .decorators import admin_required
 from .utils import generate_tracking, send_push_notification
@@ -51,6 +53,13 @@ def confirm_activation_token(token, secret_key, expiration=3600, salt='email-con
         return None
     return email
 
+def schedule_photo_deletion(package):
+    if not package.delivered_at:
+        package.delivered_at = datetime.utcnow()
+    delete_at = package.delivered_at + timedelta(days=15)
+    for photo in package.photos:
+        photo.delete_at = delete_at
+
 # US Federal Holidays dictionary
 US_FEDERAL_HOLIDAYS = {
     "01-01": "Happy New Year! 🎉",
@@ -66,6 +75,12 @@ US_FEDERAL_HOLIDAYS = {
     "12-25": "Merry Christmas! 🎄"
 }
 
+UPLOAD_FOLDER = os.environ.get(
+    "PACKAGE_PHOTO_UPLOAD_FOLDER",
+    "/app/package_uploads"
+)
+
+MAX_CONTENT_LENGTH = 10 * 1024 * 1024
 ######                        #######
 ###### PUBLIC ROUTES #######
 ######                        #######
@@ -478,39 +493,51 @@ def dashboard():
 @main.route("/schedule", methods=["GET", "POST"])
 @login_required
 def schedule():
-
     if current_user.role == "admin":
         flash("Admins cannot access customer pages.", "warning")
         return redirect(url_for("main.admin_dashboard"))
-
     if request.method == "POST":
-
-        description = request.form.get("description")
-        street = request.form.get("street")
-        city = request.form.get("city")
-        state = request.form.get("state")
-        zip_code = request.form.get("zip")
-        phone = request.form.get("phone")
-        pickup_date_str = request.form.get("date")
-
+        description = request.form.get("description", "").strip()
+        street = request.form.get("street", "").strip()
+        city = request.form.get("city", "").strip()
+        state = request.form.get("state", "").strip()
+        zip_code = request.form.get("zip", "").strip()
+        phone = request.form.get("phone", "").strip()
+        pickup_date_str = request.form.get("date", "").strip()
         if not all([description, street, city, state, zip_code, phone, pickup_date_str]):
             flash("All fields are required!", "warning")
             return redirect(url_for("main.schedule"))
-
         try:
             pickup_datetime = datetime.strptime(pickup_date_str, "%Y-%m-%d")
         except ValueError:
             flash("Invalid pickup date!", "danger")
             return redirect(url_for("main.schedule"))
-
         if pickup_datetime < datetime.now() + timedelta(hours=72):
             flash("Pickup must be at least 72 hours from now.", "warning")
             return redirect(url_for("main.schedule"))
-
-        # -------------------
-        # IMPORTANT FIX:
-        # tracking_number = NONE until admin approval
-        # -------------------
+        photos = [photo for photo in request.files.getlist("package_photos") if photo and photo.filename]
+        if len(photos) > 3:
+            flash("You can upload a maximum of 3 photos.", "warning")
+            return redirect(url_for("main.schedule"))
+        allowed_extensions = {"jpg", "jpeg", "png", "webp"}
+        max_file_size = 10 * 1024 * 1024
+        for photo in photos:
+            original_name = secure_filename(photo.filename)
+            if not original_name:
+                flash("One of the uploaded files is invalid.", "danger")
+                return redirect(url_for("main.schedule"))
+            extension = original_name.rsplit(".", 1)[1].lower() if "." in original_name else ""
+            if extension not in allowed_extensions:
+                flash("Only JPG, JPEG, and WEBP photos are allowed.", "warning")
+                return redirect(url_for("main.schedule"))
+            photo.seek(0, os.SEEK_END)
+            file_size = photo.tell()
+            photo.seek(0)
+            if file_size > max_file_size:
+                flash(f"{original_name} is larger than 10 MB.", "warning")
+                return redirect(url_for("main.schedule"))
+        upload_folder = os.environ.get("UPLOAD_FOLDER", os.path.join(os.getcwd(), "static", "uploads", "packages"))
+        os.makedirs(upload_folder, exist_ok=True)
         package = Package(
             tracking_number=None,
             status="Pending Approval",
@@ -522,17 +549,42 @@ def schedule():
             user_id=current_user.id,
             pickup_date=pickup_datetime.date()
         )
-
-        db.session.add(package)
-        db.session.commit()
-
-        flash(
-            "Pickup scheduled successfully. Await admin approval.",
-            "success"
-        )
-
+        saved_files = []
+        try:
+            db.session.add(package)
+            db.session.flush()
+            for photo in photos:
+                original_name = secure_filename(photo.filename)
+                extension = original_name.rsplit(".", 1)[1].lower()
+                filename = f"{uuid.uuid4().hex}.{extension}"
+                file_path = os.path.join(upload_folder, filename)
+                photo.save(file_path)
+                saved_files.append(file_path)
+                package_photo = PackagePhoto(
+                    package_id=package.id,
+                    filename=filename,
+                    original_filename=original_name,
+                    uploaded_at=datetime.utcnow(),
+                    delete_at=None
+                )
+                db.session.add(package_photo)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            for file_path in saved_files:
+                try:
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                except Exception:
+                    pass
+            print("SCHEDULE PACKAGE ERROR:", e)
+            flash("Unable to schedule pickup. Please try again.", "danger")
+            return redirect(url_for("main.schedule"))
+        if photos:
+            flash(f"Pickup scheduled with {len(photos)} photo(s). Awaiting admin approval.", "success")
+        else:
+            flash("Pickup scheduled successfully. Awaiting admin approval.", "success")
         return redirect(url_for("main.schedule"))
-
     return render_template("customer/schedule.html")
 
 # -------------------
@@ -1060,42 +1112,30 @@ def approve_package(package_id):
 @login_required
 @admin_required
 def admin_update_package(package_id):
-
     package = Package.query.get_or_404(package_id)
-
-    # --------------------------------
-    # UPDATE STATUS
-    # --------------------------------
-    status = request.form.get("status")
+    status = request.form.get("status", "").strip()
 
     if status:
         package.status = status
 
-    # --------------------------------
-    # UPDATE EXPECTED DELIVERY
-    # --------------------------------
-    expected_delivery = request.form.get("expected_delivery")
+        if status == "Delivered":
+            if not package.delivered_at:
+                package.delivered_at = datetime.utcnow()
 
-    if expected_delivery:
+            for photo in package.photos:
+                photo.delete_at = package.delivered_at + timedelta(days=15)
+        else:
+            package.delivered_at = None
 
-        try:
-            package.expected_delivery = datetime.strptime(
-                expected_delivery,
-                "%Y-%m-%d"
-            )
+            for photo in package.photos:
+                photo.delete_at = None
 
-        except ValueError:
-            flash("Invalid delivery date.", "danger")
-            return redirect(url_for("main.admin_packages"))
-
-    # --------------------------------
-    # SAVE
-    # --------------------------------
+    package.updated_at = datetime.utcnow()
     db.session.commit()
 
     flash("Package updated successfully.", "success")
-
     return redirect(url_for("main.admin_packages"))
+
 
 
 @main.route("/admin/package/<int:package_id>/suggest-reschedule", methods=["POST"])
@@ -1223,7 +1263,6 @@ def admin_clear_packages():
 @login_required
 @admin_required
 def admin_bulk_update_packages():
-
     package_ids = request.form.getlist("package_ids")
 
     if not package_ids:
@@ -1234,25 +1273,24 @@ def admin_bulk_update_packages():
         Package.id.in_(package_ids)
     ).all()
 
-    # ----------------------------
-    # STATUS
-    # ----------------------------
     status = request.form.get("status")
 
     if status:
         for package in packages:
             package.status = status
 
-    # ----------------------------
-    # EXPECTED DELIVERY
-    # ----------------------------
+            if status == "Delivered" and not package.delivered_at:
+                package.delivered_at = datetime.utcnow()
+
+            elif status != "Delivered":
+                package.delivered_at = None
+
     expected_delivery = request.form.get("expected_delivery")
 
     if expected_delivery:
         try:
             delivery_date = datetime.strptime(
-                expected_delivery,
-                "%Y-%m-%d"
+                expected_delivery, "%Y-%m-%d"
             )
 
             for package in packages:
@@ -1262,9 +1300,6 @@ def admin_bulk_update_packages():
             flash("Invalid delivery date.", "danger")
             return redirect(url_for("main.admin_packages"))
 
-    # ----------------------------
-    # UPDATED TIMESTAMP
-    # ----------------------------
     for package in packages:
         package.updated_at = datetime.utcnow()
 
@@ -1465,236 +1500,122 @@ def admin_packages_table():
         packages=packages
     )
 
+
 @main.route("/admin/packages/bulk-action", methods=["POST"])
 @login_required
 @admin_required
 def admin_packages_bulk_action():
-
     package_ids = request.form.getlist("package_ids")
     action = request.form.get("action", "").strip()
     status = request.form.get("status", "").strip()
-    expected_delivery = request.form.get("expected_delivery", "").strip()
 
-    # ---------------------------------------------------------
-    # NO PACKAGES SELECTED
-    # ---------------------------------------------------------
     if not package_ids:
         flash("Please select at least one package.", "warning")
-        return redirect(
-            request.referrer or url_for("main.admin_packages")
-        )
+        return redirect(request.referrer or url_for("main.admin_packages"))
 
-    packages = Package.query.filter(
-        Package.id.in_(package_ids)
-    ).all()
+    packages = Package.query.filter(Package.id.in_(package_ids)).all()
 
     if not packages:
         flash("No valid packages were selected.", "warning")
-        return redirect(
-            request.referrer or url_for("main.admin_packages")
-        )
+        return redirect(request.referrer or url_for("main.admin_packages"))
 
-    # ---------------------------------------------------------
     # BULK APPROVE
-    # ---------------------------------------------------------
     if action == "approve":
-
         approved_count = 0
         already_approved = 0
 
         try:
-
             for package in packages:
-
-                # Already approved
                 if package.tracking_number:
                     already_approved += 1
                     continue
 
-                # Generate tracking number
-                tracking = generate_tracking()
-
-                package.tracking_number = tracking
+                package.tracking_number = generate_tracking()
                 package.status = "Scheduled"
                 package.updated_at = datetime.utcnow()
-
                 approved_count += 1
 
             db.session.commit()
-
         except Exception as e:
-
             db.session.rollback()
-
             print("BULK APPROVE FAILED:", e)
-
-            flash(
-                "Bulk approval failed. No packages were changed.",
-                "danger"
-            )
-
-            return redirect(
-                request.referrer or url_for("main.admin_packages")
-            )
+            flash("Bulk approval failed. No packages were changed.", "danger")
+            return redirect(request.referrer or url_for("main.admin_packages"))
 
         if approved_count and already_approved:
-
-            flash(
-                f"{approved_count} package(s) approved. "
-                f"{already_approved} package(s) were already approved.",
-                "success"
-            )
-
+            flash(f"{approved_count} package(s) approved. {already_approved} already approved.", "success")
         elif approved_count:
-
-            flash(
-                f"{approved_count} package(s) approved successfully.",
-                "success"
-            )
-
+            flash(f"{approved_count} package(s) approved successfully.", "success")
         else:
+            flash("All selected packages were already approved.", "warning")
 
-            flash(
-                "All selected packages were already approved.",
-                "warning"
-            )
+        return redirect(request.referrer or url_for("main.admin_packages"))
 
-        return redirect(
-            request.referrer or url_for("main.admin_packages")
-        )
-
-    # ---------------------------------------------------------
     # BULK ARCHIVE
-    # ---------------------------------------------------------
     if action == "archive":
-
         archived_count = 0
 
         try:
-
             for package in packages:
-
-                # Don't re-archive packages
                 if package.status == "Archived":
                     continue
 
                 package.status = "Archived"
                 package.updated_at = datetime.utcnow()
-
                 archived_count += 1
 
             db.session.commit()
-
         except Exception as e:
-
             db.session.rollback()
-
             print("BULK ARCHIVE FAILED:", e)
-
-            flash(
-                "Bulk archive failed. No packages were changed.",
-                "danger"
-            )
-
-            return redirect(
-                request.referrer or url_for("main.admin_packages")
-            )
+            flash("Bulk archive failed. No packages were changed.", "danger")
+            return redirect(request.referrer or url_for("main.admin_packages"))
 
         if archived_count:
-
-            flash(
-                f"{archived_count} package(s) archived successfully.",
-                "success"
-            )
-
+            flash(f"{archived_count} package(s) archived successfully.", "success")
         else:
+            flash("All selected packages were already archived.", "warning")
 
-            flash(
-                "All selected packages were already archived.",
-                "warning"
-            )
+        return redirect(request.referrer or url_for("main.admin_packages"))
 
-        return redirect(
-            request.referrer or url_for("main.admin_packages")
-        )
-
-    # ---------------------------------------------------------
-    # BULK STATUS / DELIVERY DATE UPDATE
-    # ---------------------------------------------------------
+    # BULK STATUS UPDATE
     if action == "update":
-
-        delivery_date = None
-
-        if expected_delivery:
-
-            try:
-
-                delivery_date = datetime.strptime(
-                    expected_delivery,
-                    "%Y-%m-%d"
-                ).date()
-
-            except ValueError:
-
-                flash(
-                    "Invalid expected delivery date.",
-                    "danger"
-                )
-
-                return redirect(
-                    request.referrer or url_for("main.admin_packages")
-                )
-
         updated_count = 0
 
         try:
-
             for package in packages:
-
                 if status:
                     package.status = status
 
-                if delivery_date:
-                    package.expected_delivery = delivery_date
+                    if status == "Delivered":
+                        if not package.delivered_at:
+                            package.delivered_at = datetime.utcnow()
+
+                        for photo in package.photos:
+                            photo.delete_at = package.delivered_at + timedelta(days=15)
+
+                    elif status != "Delivered":
+                        package.delivered_at = None
+
+                        for photo in package.photos:
+                            photo.delete_at = None
 
                 package.updated_at = datetime.utcnow()
-
                 updated_count += 1
 
             db.session.commit()
-
         except Exception as e:
-
             db.session.rollback()
-
             print("BULK UPDATE FAILED:", e)
+            flash("Bulk update failed. No packages were changed.", "danger")
+            return redirect(request.referrer or url_for("main.admin_packages"))
 
-            flash(
-                "Bulk update failed. No packages were changed.",
-                "danger"
-            )
+        flash(f"{updated_count} package(s) updated successfully.", "success")
+        return redirect(request.referrer or url_for("main.admin_packages"))
 
-            return redirect(
-                request.referrer or url_for("main.admin_packages")
-            )
-
-        flash(
-            f"{updated_count} package(s) updated successfully.",
-            "success"
-        )
-
-        return redirect(
-            request.referrer or url_for("main.admin_packages")
-        )
-
-    # ---------------------------------------------------------
-    # INVALID ACTION
-    # ---------------------------------------------------------
     flash("Invalid bulk action.", "danger")
+    return redirect(request.referrer or url_for("main.admin_packages"))
 
-    return redirect(
-        request.referrer or url_for("main.admin_packages")
-    )
 
 @main.route("/admin/audit")
 @login_required
