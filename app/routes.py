@@ -4,6 +4,7 @@ from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import text, or_
 from bs4 import BeautifulSoup
 from werkzeug.utils import secure_filename
+from sqlalchemy.orm import selectinload
 
 from datetime import datetime, timedelta, date
 import json
@@ -14,7 +15,7 @@ from openai import OpenAI
 
 from itsdangerous import URLSafeTimedSerializer
 
-from .models import User, Package, Announcement, PushSubscription, AuditLog, PackagePhoto 
+from .models import User, Package, PackageContainer, Announcement, PushSubscription, AuditLog, PackagePhoto 
 from .extensions import db, socketio
 from .decorators import admin_required
 from .utils import generate_tracking, send_push_notification
@@ -958,14 +959,8 @@ def admin_dashboard():
 @login_required
 @admin_required
 def admin_packages():
-
     page = request.args.get("page", 1, type=int)
     search_query = request.args.get("search", "").strip()
-
-
-    # --------------------------------
-    # PACKAGE STATUSES
-    # --------------------------------
     statuses = [
         "Pending Approval",
         "Approved",
@@ -984,83 +979,36 @@ def admin_packages():
         "Admin Suggested Reschedule",
         "Rescheduled"
     ]
-
-
-    # --------------------------------
-    # ONLY ACTIVE PACKAGES
-    # EXCLUDE:
-    # - Delivered
-    # - Archived
-    # --------------------------------
-    query = Package.query.join(
+    query = Package.query.options(
+        selectinload(Package.container_assignments).selectinload(PackageContainer.container)
+    ).join(
         Package.user,
         isouter=True
     ).filter(
         Package.status != "Delivered",
         Package.status != "Archived"
     )
-
-
-    # --------------------------------
-    # SEARCH FILTER
-    # --------------------------------
     if search_query:
-
         query = query.filter(or_(
-
-            Package.tracking_number.ilike(
-                f"%{search_query}%"
-            ),
-
-            Package.description.ilike(
-                f"%{search_query}%"
-            ),
-
-            Package.status.ilike(
-                f"%{search_query}%"
-            ),
-
-            User.first_name.ilike(
-                f"%{search_query}%"
-            ),
-
-            User.last_name.ilike(
-                f"%{search_query}%"
-            ),
-
-            User.phone.ilike(
-                f"%{search_query}%"
-            )
-
+            Package.tracking_number.ilike(f"%{search_query}%"),
+            Package.description.ilike(f"%{search_query}%"),
+            Package.status.ilike(f"%{search_query}%"),
+            User.first_name.ilike(f"%{search_query}%"),
+            User.last_name.ilike(f"%{search_query}%"),
+            User.phone.ilike(f"%{search_query}%")
         ))
-
-
-    # --------------------------------
-    # PAGINATION
-    # --------------------------------
     packages = query.order_by(
         Package.created_at.desc()
     ).paginate(
         page=page,
         per_page=20
     )
-
-
-    # --------------------------------
-    # AJAX TABLE RESPONSE
-    # --------------------------------
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-
         return render_template(
             "partials/admin_packages_table.html",
             packages=packages,
             statuses=statuses
         )
-
-
-    # --------------------------------
-    # FULL PAGE
-    # --------------------------------
     return render_template(
         "admin/admin_packages.html",
         packages=packages,
@@ -1072,39 +1020,34 @@ def admin_packages():
 @login_required
 @admin_required
 def approve_package(package_id):
-
     print("APPROVE ROUTE HIT")
-
     package = Package.query.get_or_404(package_id)
-
     print("PACKAGE FOUND:", package.id)
-
     if package.tracking_number:
         print("ALREADY HAS TRACKING")
         flash("Package already approved.", "warning")
         return redirect(url_for("main.admin_packages"))
-
     tracking = generate_tracking()
-
     print("GENERATED TRACKING:", tracking)
-
     package.tracking_number = tracking
-
     package.status = "Scheduled"
     package.updated_at = datetime.utcnow()
-
+    status_history = PackageStatusHistory(
+        package_id=package.id,
+        status="Scheduled",
+        source="ADMIN",
+        note="Pickup approved and tracking number generated."
+    )
+    db.session.add(status_history)
     try:
         db.session.commit()
         print("COMMIT SUCCESS")
     except Exception as e:
         db.session.rollback()
         print("COMMIT FAILED:", e)
-
-    flash(
-        f"Pickup approved. Tracking #: {package.tracking_number}",
-        "success"
-    )
-
+        flash("Unable to approve package. Please try again.", "danger")
+        return redirect(url_for("main.admin_packages"))
+    flash(f"Pickup approved. Tracking #: {package.tracking_number}", "success")
     return redirect(url_for("main.admin_packages"))
 
 
@@ -1114,25 +1057,28 @@ def approve_package(package_id):
 def admin_update_package(package_id):
     package = Package.query.get_or_404(package_id)
     status = request.form.get("status", "").strip()
-
     if status:
+        old_status = package.status
         package.status = status
-
         if status == "Delivered":
             if not package.delivered_at:
                 package.delivered_at = datetime.utcnow()
-
             for photo in package.photos:
                 photo.delete_at = package.delivered_at + timedelta(days=15)
         else:
             package.delivered_at = None
-
             for photo in package.photos:
                 photo.delete_at = None
-
+        if old_status != status:
+            status_history = PackageStatusHistory(
+                package_id=package.id,
+                status=status,
+                source="ADMIN",
+                note=f"Status changed from {old_status} to {status}."
+            )
+            db.session.add(status_history)
     package.updated_at = datetime.utcnow()
     db.session.commit()
-
     flash("Package updated successfully.", "success")
     return redirect(url_for("main.admin_packages"))
 
