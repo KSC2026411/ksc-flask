@@ -4,105 +4,886 @@
 
 {% block admin_content %}
 
+<!-- PAGE HEADER -->
+
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
 
-    <div>
-        <h2 class="mb-1">Active Packages</h2>
-        <p class="text-muted mb-0">
-            Manage active deliveries, schedules, statuses, and expected delivery dates
-        </p>
-    </div>
+<div>
+    <h2 class="mb-1">Active Packages</h2>
 
-    <div class="d-flex flex-wrap gap-2">
+    <p class="text-muted mb-0">
+        Manage deliveries, schedules, statuses, and customer requests
+    </p>
+</div>
 
-        <!-- ARCHIVE DELIVERED -->
-        <form method="POST"
-              action="{{ url_for('main.admin_archive_delivered') }}"
-              onsubmit="return confirm('Archive all delivered packages?');">
+<div class="d-flex flex-wrap gap-2">
 
-            <button type="submit" class="btn btn-success">
-                Archive Delivered
-            </button>
+    <!-- ARCHIVE DELIVERED -->
+    <form method="POST"
+          action="{{ url_for('main.admin_archive_delivered') }}"
+          onsubmit="return confirm('Archive all delivered packages?');">
 
-        </form>
+        <button type="submit"
+                class="btn btn-success">
+            Archive Delivered
+        </button>
 
-        <!-- VIEW ARCHIVED -->
-        <a href="{{ url_for('main.admin_archived_packages') }}"
-           class="btn btn-secondary">
-            View Archived
-        </a>
+    </form>
 
-        <!-- CLEAR ALL -->
-        <form method="POST"
-              action="{{ url_for('main.admin_clear_packages') }}"
-              onsubmit="return confirm('⚠️ This will permanently delete ALL packages. Continue?');">
+    <!-- VIEW ARCHIVED -->
+    <a href="{{ url_for('main.admin_archived_packages') }}"
+       class="btn btn-secondary">
+        View Archived
+    </a>
 
-            <button type="submit" class="btn btn-danger">
-                Clear All
-            </button>
+    <!-- CLEAR ALL -->
+    <form method="POST"
+          action="{{ url_for('main.admin_clear_packages') }}"
+          onsubmit="return confirm('⚠️ This will permanently delete ALL packages. Continue?');">
 
-        </form>
+        <button type="submit"
+                class="btn btn-danger">
+            Clear All
+        </button>
 
-    </div>
+    </form>
+
+</div>
 
 </div>
 
 <!-- SEARCH -->
+
 <div class="card shadow-sm border-0 mb-4">
 
-    <div class="card-body">
+<div class="card-body">
 
-        <input type="text"
-               id="package-search"
-               class="form-control"
-               placeholder="Search tracking number, customer, phone, description, or status..."
-               autocomplete="off">
-
-    </div>
+    <input type="text"
+           id="package-search"
+           class="form-control"
+           placeholder="Search by Tracking Number, Customer, Phone, Status, or Description..."
+           autocomplete="off">
 
 </div>
 
-<!-- PACKAGES -->
+</div>
+
+<!-- BULK UPDATE -->
+
+<form id="bulk-update-form"
+      method="POST"
+      action="{{ url_for('main.admin_packages_bulk_action') }}">
+
+    <div id="bulk-actions-card"
+         class="card shadow-sm border-0 mb-3 d-none">
+
+        <div class="card-body">
+
+            <div class="d-flex flex-wrap align-items-center gap-2">
+
+                <!-- SELECTED COUNT -->
+                <strong id="selected-count"
+                        class="text-primary me-2">
+                    0 packages selected
+                </strong>
+
+
+                <!-- APPROVE -->
+                <button type="submit"
+                        name="action"
+                        value="approve"
+                        class="btn btn-success"
+                        onclick="return confirm('Approve all selected packages?');">
+
+                    Approve Selected
+
+                </button>
+
+
+                <!-- ARCHIVE -->
+                <button type="submit"
+                        name="action"
+                        value="archive"
+                        class="btn btn-secondary"
+                        onclick="return confirm('Archive all selected packages?');">
+
+                    Archive Selected
+
+                </button>
+
+
+                <!-- STATUS -->
+                <select name="status"
+                        id="bulk-status"
+                        class="form-select"
+                        style="max-width:220px;">
+
+                    <option value="">
+                        Change Status...
+                    </option>
+
+                    {% for s in statuses %}
+
+                        <option value="{{ s }}">
+                            {{ s }}
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+
+                <!-- EXPECTED DELIVERY -->
+                <input type="date"
+                       name="expected_delivery"
+                       id="bulk-expected-delivery"
+                       class="form-control"
+                       style="max-width:200px;">
+
+
+                <!-- UPDATE -->
+                <button type="submit"
+                        name="action"
+                        value="update"
+                        class="btn btn-primary"
+                        onclick="return confirm('Update selected packages?');">
+
+                    Update Selected
+
+                </button>
+
+
+                <!-- CLEAR -->
+                <button type="button"
+                        id="clear-selection-button"
+                        class="btn btn-outline-secondary">
+
+                    Clear Selection
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</form>
+ 
+
+<!-- PACKAGES TABLE -->
+
 <div class="card shadow-sm border-0">
 
-    <div class="card-body p-0">
+<div class="card-body p-0">
 
-        {% include "partials/admin_packages_table.html" %}
+    <div class="table-responsive">
+
+        <table class="table table-striped table-bordered align-middle mb-0"
+               style="min-width:1900px;">
+
+            <thead class="table-dark">
+
+                <tr>
+
+                    <!-- SELECT -->
+                    <th width="50"
+                        class="text-center">
+
+                        <input type="checkbox"
+                               id="select-all-header"
+                               class="form-check-input">
+
+                    </th>
+
+
+                    <!-- TRACKING -->
+                    <th>
+                        Tracking #
+                    </th>
+
+
+                    <!-- CUSTOMER -->
+                    <th>
+                        Customer
+                    </th>
+
+
+                    <!-- PHONE -->
+                    <th>
+                        Phone
+                    </th>
+
+
+                    <!-- DESCRIPTION -->
+                    <th>
+                        Description
+                    </th>
+
+
+                    <!-- NOTES -->
+                    <th>
+                        Notes
+                    </th>
+
+
+                    <!-- ADDRESS -->
+                    <th>
+                        Pickup Address
+                    </th>
+
+
+                    <!-- PICKUP DATE -->
+                    <th>
+                        Pickup Date
+                    </th>
+
+
+                    <!-- EXPECTED DELIVERY -->
+                    <th>
+                        Expected Delivery
+                    </th>
+
+
+                    <!-- STATUS -->
+                    <th>
+                        Status
+                    </th>
+
+
+                    <!-- STATUS UPDATE -->
+                    <th style="min-width:220px;">
+                        Update Status
+                    </th>
+
+
+                    <!-- RESCHEDULE -->
+                    <th style="min-width:220px;">
+                        Suggest Reschedule
+                    </th>
+
+
+                    <!-- ACTIONS -->
+                    <th style="min-width:240px;">
+                        Actions
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody id="packages-table-body">
+
+                {% if packages.items %}
+
+                    {% for p in packages.items %}
+
+                    <tr class="package-row">
+
+                        <!-- CHECKBOX -->
+                        <td class="text-center">
+
+                            <input type="checkbox"
+                                   class="form-check-input package-checkbox"
+                                   name="package_ids"
+                                   value="{{ p.id }}"
+                                   form="bulk-update-form">
+
+                        </td>
+
+
+                        <!-- TRACKING -->
+                        <td class="fw-bold">
+
+                            {{ p.tracking_number or "Pending Approval" }}
+
+                        </td>
+
+
+                        <!-- CUSTOMER -->
+                        <td>
+
+                            {{ p.user.full_name if p.user else "N/A" }}
+
+                        </td>
+
+
+                        <!-- PHONE -->
+                        <td>
+
+                            {{ p.user.phone if p.user else "N/A" }}
+
+                        </td>
+
+
+                        <!-- DESCRIPTION -->
+                        <td>
+
+                            {{ p.description or "N/A" }}
+
+                        </td>
+
+
+                        <!-- NOTES -->
+                        <td>
+
+                            {{ p.notes or "-" }}
+
+                        </td>
+
+
+                        <!-- PICKUP ADDRESS -->
+                        <td>
+
+                            {{ p.street or "" }}<br>
+
+                            {{ p.city or "" }},
+                            {{ p.state or "" }}
+                            {{ p.zip_code or "" }}
+
+                        </td>
+
+
+                        <!-- PICKUP DATE -->
+                        <td>
+
+                            {{ p.pickup_date.strftime('%Y-%m-%d')
+                               if p.pickup_date else "N/A" }}
+
+                        </td>
+
+
+                        <!-- EXPECTED DELIVERY -->
+                        <td>
+
+                            <form method="POST"
+                                  action="{{ url_for('main.admin_update_package', package_id=p.id) }}">
+
+                                <input type="date"
+                                       name="expected_delivery"
+                                       class="form-control form-control-sm mb-2"
+                                       value="{{ p.expected_delivery.strftime('%Y-%m-%d')
+                                                if p.expected_delivery else '' }}">
+
+                                <button type="submit"
+                                        class="btn btn-outline-success btn-sm w-100">
+
+                                    Save
+
+                                </button>
+
+                            </form>
+
+                        </td>
+
+
+                        <!-- STATUS -->
+                        <td>
+
+                            <span class="badge
+                                {% if p.status == 'Delivered' %}
+                                    bg-success
+                                {% elif p.status == 'In Transit' %}
+                                    bg-info
+                                {% elif p.status == 'Pending Approval' %}
+                                    bg-warning text-dark
+                                {% elif p.status == 'Cancelled' %}
+                                    bg-danger
+                                {% elif p.status == 'Archived' %}
+                                    bg-dark
+                                {% elif p.status == 'In Warehouse' %}
+                                    bg-primary
+                                {% elif p.status == 'Scheduled' %}
+                                    bg-success
+                                {% elif p.status == 'Loaded' %}
+                                    bg-secondary
+                                {% elif p.status == 'Ready for Pickup' %}
+                                    bg-primary
+                                {% elif p.status == 'Picked Up' %}
+                                    bg-info
+                                {% elif p.status == 'Rescheduled' %}
+                                    bg-warning text-dark
+                                {% else %}
+                                    bg-secondary
+                                {% endif %}">
+
+                                {{ p.status or "Pending Approval" }}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- INDIVIDUAL STATUS UPDATE -->
+                        <td>
+
+                            <form method="POST"
+                                  action="{{ url_for('main.admin_update_package', package_id=p.id) }}">
+
+                                <select name="status"
+                                        class="form-select mb-2">
+
+                                    {% for s in bulk_statuses %}
+
+                                        <option value="{{ s }}"
+                                            {% if p.status == s %}
+                                                selected
+                                            {% endif %}>
+
+                                            {{ s }}
+
+                                        </option>
+
+                                    {% endfor %}
+
+                                </select>
+
+                                <button type="submit"
+                                        class="btn btn-outline-primary w-100">
+
+                                    Update
+
+                                </button>
+
+                            </form>
+
+                        </td>
+
+
+                        <!-- RESCHEDULE -->
+                        <td>
+
+                            <form method="POST"
+                                  action="{{ url_for('main.admin_suggest_reschedule', package_id=p.id) }}">
+
+                                <input type="date"
+                                       name="new_date"
+                                       class="form-control mb-2"
+                                       required>
+
+                                <button type="submit"
+                                        class="btn btn-warning w-100">
+
+                                    Suggest
+
+                                </button>
+
+                            </form>
+
+                        </td>
+
+
+                        <!-- ACTIONS -->
+                        <td class="text-nowrap">
+
+                            <!-- APPROVAL -->
+                            {% if not p.tracking_number %}
+
+                                <form method="POST"
+                                      action="{{ url_for('main.approve_package', package_id=p.id) }}"
+                                      class="mb-2"
+                                      onsubmit="return confirm('Approve this pickup request?');">
+
+                                    <button type="submit"
+                                            class="btn btn-success btn-sm w-100">
+
+                                        Approve Pickup
+
+                                    </button>
+
+                                </form>
+
+                            {% else %}
+
+                                <div class="mb-2">
+
+                                    <span class="badge bg-success">
+                                        Approved
+                                    </span>
+
+                                </div>
+
+                            {% endif %}
+
+
+                            <!-- RESCHEDULE REQUEST -->
+                            {% if p.status == "Pending Reschedule"
+                                  and p.admin_suggested_date %}
+
+                                <div class="small text-muted mb-2">
+
+                                    Suggested:
+                                    {{ p.admin_suggested_date.strftime('%Y-%m-%d') }}
+
+                                </div>
+
+
+                                <div class="d-flex gap-2">
+
+                                    <!-- ACCEPT -->
+                                    <form method="POST"
+                                          action="{{ url_for('main.admin_accept_reschedule', package_id=p.id) }}"
+                                          onsubmit="return confirm('Accept this reschedule?');">
+
+                                        <button type="submit"
+                                                class="btn btn-success btn-sm">
+
+                                            Accept
+
+                                        </button>
+
+                                    </form>
+
+
+                                    <!-- REJECT -->
+                                    <form method="POST"
+                                          action="{{ url_for('main.reject_admin_reschedule', package_id=p.id) }}"
+                                          onsubmit="return confirm('Reject this reschedule?');">
+
+                                        <button type="submit"
+                                                class="btn btn-danger btn-sm">
+
+                                            Reject
+
+                                        </button>
+
+                                    </form>
+
+                                </div>
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                {% else %}
+
+                    <tr>
+
+                        <td colspan="14"
+                            class="text-center py-4 text-muted">
+
+                            No active packages found.
+
+                        </td>
+
+                    </tr>
+
+                {% endif %}
+
+            </tbody>
+
+        </table>
 
     </div>
 
 </div>
 
+</div>
+
+<!-- PAGINATION -->
+
+{% if packages.pages > 1 %}
+
+<nav aria-label="Package pagination"
+     class="mt-4">
+
+<ul class="pagination justify-content-center">
+
+    <!-- PREVIOUS -->
+    {% if packages.has_prev %}
+
+        <li class="page-item">
+
+            <a class="page-link"
+               href="{{ url_for('main.admin_packages', page=packages.prev_num) }}">
+
+                Previous
+
+            </a>
+
+        </li>
+
+    {% else %}
+
+        <li class="page-item disabled">
+
+            <span class="page-link">
+                Previous
+            </span>
+
+        </li>
+
+    {% endif %}
+
+
+    <!-- PAGE NUMBERS -->
+    {% for page_num in packages.iter_pages(
+        left_edge=1,
+        right_edge=1,
+        left_current=2,
+        right_current=2
+    ) %}
+
+        {% if page_num %}
+
+            {% if page_num == packages.page %}
+
+                <li class="page-item active">
+
+                    <span class="page-link">
+                        {{ page_num }}
+                    </span>
+
+                </li>
+
+            {% else %}
+
+                <li class="page-item">
+
+                    <a class="page-link"
+                       href="{{ url_for('main.admin_packages', page=page_num) }}">
+
+                        {{ page_num }}
+
+                    </a>
+
+                </li>
+
+            {% endif %}
+
+        {% else %}
+
+            <li class="page-item disabled">
+
+                <span class="page-link">
+                    …
+                </span>
+
+            </li>
+
+        {% endif %}
+
+    {% endfor %}
+
+
+    <!-- NEXT -->
+    {% if packages.has_next %}
+
+        <li class="page-item">
+
+            <a class="page-link"
+               href="{{ url_for('main.admin_packages', page=packages.next_num) }}">
+
+                Next
+
+            </a>
+
+        </li>
+
+    {% else %}
+
+        <li class="page-item disabled">
+
+            <span class="page-link">
+                Next
+            </span>
+
+        </li>
+
+    {% endif %}
+
+</ul>
+
+</nav>
+
+{% endif %}
+
+<!-- BULK SELECT + SEARCH JAVASCRIPT -->
+
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+(function () {
 
-    const searchInput = document.getElementById("package-search");
-    const tableBody = document.getElementById("packages-table-body");
-
-    if (!searchInput || !tableBody) {
-        return;
+    function getCheckboxes() {
+        return Array.from(
+            document.querySelectorAll(".package-checkbox")
+        );
     }
 
-    searchInput.addEventListener("input", function () {
 
-        const searchTerm = this.value.toLowerCase().trim();
-        const rows = tableBody.querySelectorAll(".package-row");
+    function updateBulkActions() {
 
-        rows.forEach(function (row) {
+        const checkboxes = getCheckboxes();
 
-            const rowText = row.textContent.toLowerCase();
+        const selected = checkboxes.filter(function (checkbox) {
+            return checkbox.checked;
+        });
 
-            if (rowText.includes(searchTerm)) {
-                row.style.display = "";
+        const count = selected.length;
+
+        const bulkCard = document.getElementById("bulk-actions-card");
+        const selectedCount = document.getElementById("selected-count");
+
+        const selectAll = document.getElementById("select-all");
+        const selectAllHeader = document.getElementById("select-all-header");
+
+
+        /*
+         * UPDATE COUNT
+         */
+        if (selectedCount) {
+
+            selectedCount.textContent =
+                count + " package" + (count === 1 ? "" : "s") + " selected";
+
+        }
+
+
+        /*
+         * SHOW / HIDE BULK ACTION BAR
+         */
+        if (bulkCard) {
+
+            if (count > 0) {
+
+                bulkCard.classList.remove("d-none");
+
             } else {
-                row.style.display = "none";
+
+                bulkCard.classList.add("d-none");
+
             }
+
+        }
+
+
+        /*
+         * UPDATE SELECT-ALL CHECKBOXES
+         */
+        const allSelected =
+            checkboxes.length > 0 &&
+            count === checkboxes.length;
+
+        const partiallySelected =
+            count > 0 &&
+            count < checkboxes.length;
+
+
+        if (selectAll) {
+
+            selectAll.checked = allSelected;
+            selectAll.indeterminate = partiallySelected;
+
+        }
+
+
+        if (selectAllHeader) {
+
+            selectAllHeader.checked = allSelected;
+            selectAllHeader.indeterminate = partiallySelected;
+
+        }
+
+    }
+
+
+    /*
+     * SELECT ALL
+     */
+    function selectAllPackages(checked) {
+
+        getCheckboxes().forEach(function (checkbox) {
+
+            checkbox.checked = checked;
 
         });
 
+        updateBulkActions();
+
+    }
+
+
+    /*
+     * PAGE CHECKBOXES
+     */
+    document.addEventListener("change", function (event) {
+
+        if (event.target.classList.contains("package-checkbox")) {
+
+            updateBulkActions();
+
+        }
+
+
+        if (event.target.id === "select-all") {
+
+            selectAllPackages(event.target.checked);
+
+        }
+
+
+        if (event.target.id === "select-all-header") {
+
+            selectAllPackages(event.target.checked);
+
+        }
+
     });
 
-});
+
+    /*
+     * CLEAR SELECTION
+     */
+    document.addEventListener("click", function (event) {
+
+        if (event.target.id === "clear-selection-button") {
+
+            getCheckboxes().forEach(function (checkbox) {
+
+                checkbox.checked = false;
+
+            });
+
+            updateBulkActions();
+
+        }
+
+    });
+
+
+    /*
+     * INITIALIZE
+     */
+    function initializeBulkSelection() {
+
+        updateBulkActions();
+
+    }
+
+
+    /*
+     * NORMAL PAGE LOAD
+     */
+    if (document.readyState === "loading") {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializeBulkSelection
+        );
+
+    } else {
+
+        initializeBulkSelection();
+
+    }
+
+
+})();
 </script>
+
 
 {% endblock %}
