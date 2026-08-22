@@ -784,6 +784,61 @@ def propose_reschedule(package_id):
     flash("New pickup date proposed.")
     return redirect(url_for("main.my_packages"))
 
+@main.route("/admin/package/<int:package_id>/delete", methods=["POST"])
+@login_required
+def admin_delete_package(package_id):
+    # Admin-only protection
+    if current_user.role != "admin":
+        abort(403)
+
+    package = Package.query.get_or_404(package_id)
+    package_id_value = package.id
+
+    # Get photo file paths before deleting the package.
+    upload_folder = os.environ.get(
+        "UPLOAD_FOLDER",
+        os.path.join(os.getcwd(), "static", "uploads", "packages")
+    )
+
+    photo_paths = []
+
+    for photo in package.photos:
+        if photo.filename:
+            photo_paths.append(
+                os.path.join(upload_folder, photo.filename)
+            )
+
+    try:
+        # SQLAlchemy cascade will remove:
+        # - PackagePhoto records
+        # - PackageStatusHistory records
+        # - PackageContainer records
+        db.session.delete(package)
+        db.session.commit()
+
+        # Remove physical photo files after successful DB deletion.
+        for file_path in photo_paths:
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            except OSError as e:
+                print("PACKAGE PHOTO DELETE ERROR:", e)
+
+        flash(
+            f"Package #{package_id_value} was permanently deleted.",
+            "success"
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        print("ADMIN PACKAGE DELETE ERROR:", e)
+
+        flash(
+            "Unable to delete the package. No changes were made.",
+            "danger"
+        )
+
+    return redirect(url_for("main.admin_packages"))
 
 @main.route("/my-packages")
 @login_required
@@ -1015,6 +1070,37 @@ def admin_packages():
         statuses=statuses
     )
 
+@main.route("/admin/packages/<int:package_id>/cma-cgm-tracking")
+@login_required
+@admin_required
+def admin_cma_cgm_tracking(package_id):
+
+    package = Package.query.get_or_404(package_id)
+
+    reference = (
+        getattr(package, "container_number", None)
+        or getattr(package, "tracking_number", None)
+    )
+
+    if not reference:
+        flash(
+            "No CMA CGM tracking reference is assigned to this package.",
+            "warning"
+        )
+        return redirect(url_for("main.admin_packages"))
+
+    try:
+        tracking = track_cma_cgm(reference)
+
+    except CmaCgmError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("main.admin_packages"))
+
+    return render_template(
+        "admin/cma_cgm_tracking.html",
+        package=package,
+        tracking=tracking,
+    )
 
 @main.route("/admin/package/<int:package_id>/approve", methods=["POST"])
 @login_required

@@ -553,6 +553,17 @@
                                 </div>
 
                             {% endif %}
+<!-- DELETE PACKAGE -->
+<form method="POST"
+      action="{{ url_for('main.admin_delete_package', package_id=p.id) }}"
+      onsubmit="return confirm('WARNING: This will permanently delete this package, its related records, and its associated photo files. This action cannot be undone. Continue?');">
+
+    <button type="submit"
+            class="btn btn-danger btn-sm w-100">
+        Delete Package
+    </button>
+
+</form>
 
                         </td>
 
