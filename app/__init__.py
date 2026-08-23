@@ -45,6 +45,9 @@ def create_app():
     app.config["VAPID_PUBLIC_KEY"] = os.getenv("VAPID_PUBLIC_KEY")
     app.config["VAPID_PRIVATE_KEY"] = os.getenv("VAPID_PRIVATE_KEY")
 
+    CMA_CGM_API_KEY = os.getenv("CMA_CGM_API_KEY")
+    CMA_CGM_API_BASE = "https://apis.cma-cgm.net"
+
     # -------------------------------------------------
     # DATABASE CONFIG (Railway-safe)
     # -------------------------------------------------
@@ -71,7 +74,12 @@ def create_app():
     # =====================================================
     # RATE LIMITER (GLOBAL SECURITY)
     # =====================================================
-    limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "50 per hour"])
+    limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri=os.getenv("REDIS_URL")
+        )
     app.limiter = limiter
 
     # =====================================================
