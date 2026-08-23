@@ -1,325 +1,246 @@
 {% extends "customer/base_customer.html" %}
-
 {% block title %}Schedule Pickup - KSC Logistics{% endblock %}
-
 {% block customer_content %}
-
+<style>
+html,body{min-height:100%}
+.schedule-page{position:relative;width:100%;min-height:calc(100vh - 80px);padding:45px 0 60px;background:linear-gradient(rgba(11,31,58,.72),rgba(11,31,58,.72)),url("{{ url_for('static', filename='images/lb8.jpg') }}") center center/cover no-repeat;background-attachment:fixed}
+.schedule-page .schedule-container{width:100%;max-width:1150px;margin:0 auto}
+.schedule-page .schedule-card{border:0!important;border-radius:20px!important;overflow:hidden;background:rgba(255,255,255,.97);box-shadow:0 20px 60px rgba(0,0,0,.28)!important}
+.schedule-page .schedule-header{padding:32px 38px 26px;border-bottom:1px solid #e4e8ee}
+.schedule-page .schedule-header h3{font-size:36px;font-weight:800;color:#172033;margin:0 0 8px}
+.schedule-page .schedule-header p{font-size:18px;line-height:1.6;color:#697586;margin:0}
+.schedule-page .schedule-body{padding:38px}
+.schedule-page .form-section{margin-bottom:30px}
+.schedule-page .section-title{display:flex;align-items:center;gap:10px;margin-bottom:20px;color:#253044;font-size:21px;font-weight:800}
+.schedule-page .section-title i{color:#0d6efd}
+.schedule-page .form-label{color:#344054;font-size:16px;font-weight:700;margin-bottom:8px}
+.schedule-page .form-control,.schedule-page .form-select{min-height:52px;border:1px solid #cfd6df;border-radius:10px;font-size:16px;color:#253044;padding:12px 15px;box-shadow:none;transition:border-color .18s ease,box-shadow .18s ease}
+.schedule-page textarea.form-control{min-height:120px;resize:vertical}
+.schedule-page .form-control:focus,.schedule-page .form-select:focus{border-color:#0d6efd;box-shadow:0 0 0 3px rgba(13,110,253,.12)}
+.schedule-page .form-control::placeholder{color:#98a2b3}
+.schedule-page .address-section{background:#f7f9fb;border:1px solid #e2e7ed;border-radius:14px;padding:25px}
+.schedule-page .photo-section{background:#f7f9fb;border:1px solid #e2e7ed;border-radius:14px;padding:25px}
+.schedule-page .photo-section .form-control{background:#fff}
+.schedule-page .photo-help{font-size:14px;color:#697586;line-height:1.6;margin-top:7px}
+.schedule-page #photo-preview{margin-top:18px!important}
+.schedule-page .photo-preview-card{border:1px solid #dce2e9;border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 3px 12px rgba(0,0,0,.07)}
+.schedule-page .photo-preview-card img{width:100%;height:160px;object-fit:cover;display:block}
+.schedule-page .photo-preview-name{padding:9px 10px;font-size:13px;color:#697586;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.schedule-page .submit-area{padding-top:8px;text-align:center}
+.schedule-page #schedule-submit{min-width:250px;min-height:56px;border-radius:11px;font-size:18px;font-weight:800;padding:14px 32px;box-shadow:0 6px 16px rgba(25,135,84,.22)}
+.schedule-page .required-note{color:#697586;font-size:13px;margin-top:12px}
+.schedule-page .alert{border-radius:10px;font-size:16px}
+@media(max-width:991.98px){
+.schedule-page{padding:35px 0 45px}
+.schedule-page .schedule-header{padding:28px 30px 22px}
+.schedule-page .schedule-header h3{font-size:30px}
+.schedule-page .schedule-body{padding:30px}
+}
+@media(max-width:767.98px){
+.schedule-page{min-height:calc(100vh - 60px);padding:20px 0 30px;background:linear-gradient(rgba(11,31,58,.78),rgba(11,31,58,.78)),url("{{ url_for('static', filename='images/lb8.jpg') }}") center center/cover no-repeat;background-attachment:scroll}
+.schedule-page .schedule-header{padding:24px 20px 20px}
+.schedule-page .schedule-header h3{font-size:27px}
+.schedule-page .schedule-header p{font-size:16px}
+.schedule-page .schedule-body{padding:20px}
+.schedule-page .address-section,.schedule-page .photo-section{padding:18px}
+.schedule-page .section-title{font-size:19px}
+.schedule-page .form-control,.schedule-page .form-select{min-height:50px;font-size:16px}
+.schedule-page #schedule-submit{width:100%;min-width:0}
+.schedule-page .photo-preview-card img{height:130px}
+}
+@media(max-width:575.98px){
+.schedule-page .schedule-header h3{font-size:24px}
+.schedule-page .schedule-body{padding:16px}
+.schedule-page .address-section,.schedule-page .photo-section{padding:16px}
+.schedule-page .photo-preview-card img{height:120px}
+}
+</style>
+<div class="schedule-page">
 {% with messages = get_flashed_messages() %}
 {% if messages %}
-
-<div class="mb-3">
-    {% for msg in messages %}
-    <div class="alert alert-info alert-dismissible fade show" role="alert">
-        {{ msg }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    {% endfor %}
+<div class="container mb-3">
+{% for msg in messages %}
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+{{ msg }}
+<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
 </div>
 {% endif %}
 {% endwith %}
-
-<div class="container py-4">
-
-```
-<div class="card shadow-sm border-0">
-    <div class="card-body p-4">
-
-        <h3 class="mb-1">Schedule a Pickup</h3>
-        <p class="text-muted mb-4">
-            Enter your package information and upload photos for our review.
-        </p>
-
-        <form method="POST"
-              enctype="multipart/form-data"
-              id="schedule-form">
-
-            <div class="row g-3">
-
-                <!-- PACKAGE DESCRIPTION -->
-                <div class="col-12">
-                    <label class="form-label fw-semibold">
-                        Package Description
-                    </label>
-
-                    <textarea name="description"
-                              class="form-control"
-                              rows="3"
-                              placeholder="Describe what you're shipping (e.g. 2 boxes of clothing, TV, etc.)"
-                              required></textarea>
-                </div>
-
-                <!-- STREET -->
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">
-                        Street
-                    </label>
-
-                    <input type="text"
-                           name="street"
-                           class="form-control"
-                           required>
-                </div>
-
-                <!-- CITY -->
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">
-                        City
-                    </label>
-
-                    <input type="text"
-                           name="city"
-                           class="form-control"
-                           required>
-                </div>
-
-                <!-- STATE -->
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold">
-                        State
-                    </label>
-
-                    <select name="state"
-                            class="form-select"
-                            required>
-
-                        <option value="">
-                            Select State
-                        </option>
-
-                        <option value="AL">Alabama</option>
-                        <option value="AK">Alaska</option>
-                        <option value="AZ">Arizona</option>
-                        <option value="AR">Arkansas</option>
-                        <option value="CA">California</option>
-                        <option value="CO">Colorado</option>
-                        <option value="CT">Connecticut</option>
-                        <option value="DE">Delaware</option>
-                        <option value="FL">Florida</option>
-                        <option value="GA">Georgia</option>
-                        <option value="HI">Hawaii</option>
-                        <option value="ID">Idaho</option>
-                        <option value="IL">Illinois</option>
-                        <option value="IN">Indiana</option>
-                        <option value="IA">Iowa</option>
-                        <option value="KS">Kansas</option>
-                        <option value="KY">Kentucky</option>
-                        <option value="LA">Louisiana</option>
-                        <option value="ME">Maine</option>
-                        <option value="MD">Maryland</option>
-                        <option value="MA">Massachusetts</option>
-                        <option value="MI">Michigan</option>
-                        <option value="MN">Minnesota</option>
-                        <option value="MS">Mississippi</option>
-                        <option value="MO">Missouri</option>
-                        <option value="MT">Montana</option>
-                        <option value="NE">Nebraska</option>
-                        <option value="NV">Nevada</option>
-                        <option value="NH">New Hampshire</option>
-                        <option value="NJ">New Jersey</option>
-                        <option value="NM">New Mexico</option>
-                        <option value="NY">New York</option>
-                        <option value="NC">North Carolina</option>
-                        <option value="ND">North Dakota</option>
-                        <option value="OH">Ohio</option>
-                        <option value="OK">Oklahoma</option>
-                        <option value="OR">Oregon</option>
-                        <option value="PA">Pennsylvania</option>
-                        <option value="RI">Rhode Island</option>
-                        <option value="SC">South Carolina</option>
-                        <option value="SD">South Dakota</option>
-                        <option value="TN">Tennessee</option>
-                        <option value="TX">Texas</option>
-                        <option value="UT">Utah</option>
-                        <option value="VT">Vermont</option>
-                        <option value="VA">Virginia</option>
-                        <option value="WA">Washington</option>
-                        <option value="WV">West Virginia</option>
-                        <option value="WI">Wisconsin</option>
-                        <option value="WY">Wyoming</option>
-
-                    </select>
-                </div>
-
-                <!-- ZIP -->
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold">
-                        ZIP
-                    </label>
-
-                    <input type="text"
-                           name="zip"
-                           class="form-control"
-                           required>
-                </div>
-
-                <!-- PHONE -->
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold">
-                        Phone Number
-                    </label>
-
-                    <input type="text"
-                           name="phone"
-                           class="form-control"
-                           required>
-                </div>
-
-                <!-- PICKUP DATE -->
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold">
-                        Pickup Date
-                    </label>
-
-                    <input type="date"
-                           name="date"
-                           id="pickup-date"
-                           class="form-control"
-                           required>
-                </div>
-
-                <!-- PACKAGE PHOTOS -->
-                <div class="col-12">
-
-                    <div class="card border bg-light">
-                        <div class="card-body">
-
-                            <label class="form-label fw-bold">
-                                <i class="bi bi-camera me-1"></i>
-                                Package Photos
-                            </label>
-
-                            <p class="text-muted small mb-3">
-                                Upload up to 3 clear photos of your package.
-                                Photos help us review your pickup request.
-                            </p>
-
-                            <input type="file"
-                                   name="package_photos"
-                                   id="package_photos"
-                                   class="form-control"
-                                   accept="image/jpeg,image/png,image/webp"
-                                   multiple>
-
-                            <div class="form-text">
-                                JPG, JPEG, PNG, or WEBP. Maximum 3 photos.
-                            </div>
-
-                            <!-- PHOTO PREVIEW -->
-                            <div id="photo-preview"
-                                 class="row g-3 mt-2">
-                            </div>
-
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- SUBMIT -->
-                <div class="col-12 text-center mt-4">
-
-                    <button type="submit"
-                            id="schedule-submit"
-                            class="btn btn-success btn-lg px-5">
-
-                        <i class="bi bi-calendar-check me-1"></i>
-                        Schedule Pickup
-
-                    </button>
-
-                </div>
-
-            </div>
-
-        </form>
-
-    </div>
+<div class="container schedule-container">
+<div class="card schedule-card">
+<div class="schedule-header">
+<h3><i class="bi bi-calendar-check me-2 text-primary"></i>Schedule a Pickup</h3>
+<p>Enter your package information and upload photos for our review.</p>
 </div>
-```
-
+<div class="schedule-body">
+<form method="POST" enctype="multipart/form-data" id="schedule-form">
+<div class="form-section">
+<div class="section-title"><i class="bi bi-box-seam"></i>Package Information</div>
+<div class="row g-3">
+<div class="col-12">
+<label class="form-label">Package Description</label>
+<textarea name="description" class="form-control" rows="3" placeholder="Describe what you're shipping (e.g. 2 boxes of clothing, TV, etc.)" required></textarea>
 </div>
-
+</div>
+</div>
+<div class="form-section">
+<div class="section-title"><i class="bi bi-geo-alt"></i>Pickup Information</div>
+<div class="address-section">
+<div class="row g-3">
+<div class="col-md-6">
+<label class="form-label">Street</label>
+<input type="text" name="street" class="form-control" required>
+</div>
+<div class="col-md-6">
+<label class="form-label">City</label>
+<input type="text" name="city" class="form-control" required>
+</div>
+<div class="col-md-4">
+<label class="form-label">State</label>
+<select name="state" class="form-select" required>
+<option value="">Select State</option>
+<option value="AL">Alabama</option>
+<option value="AK">Alaska</option>
+<option value="AZ">Arizona</option>
+<option value="AR">Arkansas</option>
+<option value="CA">California</option>
+<option value="CO">Colorado</option>
+<option value="CT">Connecticut</option>
+<option value="DE">Delaware</option>
+<option value="FL">Florida</option>
+<option value="GA">Georgia</option>
+<option value="HI">Hawaii</option>
+<option value="ID">Idaho</option>
+<option value="IL">Illinois</option>
+<option value="IN">Indiana</option>
+<option value="IA">Iowa</option>
+<option value="KS">Kansas</option>
+<option value="KY">Kentucky</option>
+<option value="LA">Louisiana</option>
+<option value="ME">Maine</option>
+<option value="MD">Maryland</option>
+<option value="MA">Massachusetts</option>
+<option value="MI">Michigan</option>
+<option value="MN">Minnesota</option>
+<option value="MS">Mississippi</option>
+<option value="MO">Missouri</option>
+<option value="MT">Montana</option>
+<option value="NE">Nebraska</option>
+<option value="NV">Nevada</option>
+<option value="NH">New Hampshire</option>
+<option value="NJ">New Jersey</option>
+<option value="NM">New Mexico</option>
+<option value="NY">New York</option>
+<option value="NC">North Carolina</option>
+<option value="ND">North Dakota</option>
+<option value="OH">Ohio</option>
+<option value="OK">Oklahoma</option>
+<option value="OR">Oregon</option>
+<option value="PA">Pennsylvania</option>
+<option value="RI">Rhode Island</option>
+<option value="SC">South Carolina</option>
+<option value="SD">South Dakota</option>
+<option value="TN">Tennessee</option>
+<option value="TX">Texas</option>
+<option value="UT">Utah</option>
+<option value="VT">Vermont</option>
+<option value="VA">Virginia</option>
+<option value="WA">Washington</option>
+<option value="WV">West Virginia</option>
+<option value="WI">Wisconsin</option>
+<option value="WY">Wyoming</option>
+</select>
+</div>
+<div class="col-md-4">
+<label class="form-label">ZIP</label>
+<input type="text" name="zip" class="form-control" required>
+</div>
+<div class="col-md-4">
+<label class="form-label">Phone Number</label>
+<input type="text" name="phone" class="form-control" required>
+</div>
+<div class="col-md-4">
+<label class="form-label">Pickup Date</label>
+<input type="date" name="date" id="pickup-date" class="form-control" required>
+</div>
+</div>
+</div>
+</div>
+<div class="form-section">
+<div class="section-title"><i class="bi bi-camera"></i>Package Photos</div>
+<div class="photo-section">
+<p class="mb-2">Upload up to 3 clear photos of your package.</p>
+<div class="photo-help mb-3">Photos help us review your pickup request. JPG, JPEG, PNG, or WEBP. Maximum 3 photos.</div>
+<input type="file" name="package_photos" id="package_photos" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
+<div id="photo-preview" class="row g-3"></div>
+</div>
+</div>
+<div class="submit-area">
+<button type="submit" id="schedule-submit" class="btn btn-success btn-lg"><i class="bi bi-calendar-check me-2"></i>Schedule Pickup</button>
+<div class="required-note">Please review your information before submitting.</div>
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+</div>
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-
-    const fileInput = document.getElementById("package_photos");
-    const preview = document.getElementById("photo-preview");
-    const form = document.getElementById("schedule-form");
-
-    const maxPhotos = 3;
-    const maxFileSize = 10 * 1024 * 1024;
-
-    fileInput.addEventListener("change", function () {
-
-        preview.innerHTML = "";
-
-        const files = Array.from(fileInput.files);
-
-        if (files.length > maxPhotos) {
-            alert("You can upload a maximum of 3 photos.");
-            fileInput.value = "";
-            return;
-        }
-
-        for (const file of files) {
-
-            if (!file.type.startsWith("image/")) {
-                alert("Only image files are allowed.");
-                fileInput.value = "";
-                preview.innerHTML = "";
-                return;
-            }
-
-            if (file.size > maxFileSize) {
-                alert(file.name + " is larger than 10 MB.");
-                fileInput.value = "";
-                preview.innerHTML = "";
-                return;
-            }
-
-            const col = document.createElement("div");
-            col.className = "col-6 col-md-4";
-
-            const card = document.createElement("div");
-            card.className = "card border-0 shadow-sm";
-
-            const image = document.createElement("img");
-            image.className = "card-img-top rounded";
-            image.style.height = "160px";
-            image.style.objectFit = "cover";
-
-            image.src = URL.createObjectURL(file);
-
-            const body = document.createElement("div");
-            body.className = "card-body p-2";
-
-            const name = document.createElement("div");
-            name.className = "small text-muted text-truncate";
-            name.textContent = file.name;
-
-            body.appendChild(name);
-            card.appendChild(image);
-            card.appendChild(body);
-            col.appendChild(card);
-            preview.appendChild(col);
-        }
-    });
-
-    form.addEventListener("submit", function (event) {
-    if (fileInput.files.length > maxPhotos) {
-        alert("You can upload a maximum of 3 photos.");
-        event.preventDefault();
-        return;
-    }
-
-    const button = document.getElementById("schedule-submit");
-
-    button.disabled = true;
-    button.innerHTML =
-        '<span class="spinner-border spinner-border-sm me-2"></span>' +
-        'Submitting...';
+document.addEventListener("DOMContentLoaded",function(){
+const fileInput=document.getElementById("package_photos");
+const preview=document.getElementById("photo-preview");
+const form=document.getElementById("schedule-form");
+const button=document.getElementById("schedule-submit");
+const maxPhotos=3;
+const maxFileSize=10*1024*1024;
+fileInput.addEventListener("change",function(){
+preview.innerHTML="";
+const files=Array.from(fileInput.files);
+if(files.length>maxPhotos){
+alert("You can upload a maximum of 3 photos.");
+fileInput.value="";
+return;
+}
+for(const file of files){
+if(!file.type.startsWith("image/")){
+alert("Only image files are allowed.");
+fileInput.value="";
+preview.innerHTML="";
+return;
+}
+if(file.size>maxFileSize){
+alert(file.name+" is larger than 10 MB.");
+fileInput.value="";
+preview.innerHTML="";
+return;
+}
+const col=document.createElement("div");
+col.className="col-6 col-md-4";
+const card=document.createElement("div");
+card.className="photo-preview-card";
+const image=document.createElement("img");
+image.src=URL.createObjectURL(file);
+image.alt="Package photo preview";
+const name=document.createElement("div");
+name.className="photo-preview-name";
+name.textContent=file.name;
+card.appendChild(image);
+card.appendChild(name);
+col.appendChild(card);
+preview.appendChild(col);
+}
 });
-
+form.addEventListener("submit",function(event){
+if(fileInput.files.length>maxPhotos){
+alert("You can upload a maximum of 3 photos.");
+event.preventDefault();
+return;
+}
+button.disabled=true;
+button.innerHTML='<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+});
 });
 </script>
-
 {% endblock %}
