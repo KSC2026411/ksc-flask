@@ -16,11 +16,11 @@ class User(db.Model, UserMixin):
     phone = db.Column(db.String(50), nullable=True)
     _password = db.Column("password", db.String(255), nullable=False)
     is_active = db.Column(
-        "active",
-        db.Boolean,
-        nullable=False,
-        default=True,
-        server_default=db.text("true")
+    "active",
+    db.Boolean,
+    nullable=False,
+    default=True,
+    server_default=db.text("true")
     )
     failed_attempts = db.Column(
         db.Integer,
@@ -90,6 +90,14 @@ class User(db.Model, UserMixin):
 class Package(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     tracking_number = db.Column(db.String(20), unique=True, nullable=True)
+    # CMA CGM tracking
+    cma_cgm_booking_reference = db.Column(db.String(50), nullable=True)
+    cma_cgm_container_number = db.Column(db.String(20), nullable=True)
+    cma_cgm_last_status = db.Column(db.String(100), nullable=True)
+    cma_cgm_last_location = db.Column(db.String(255), nullable=True)
+    cma_cgm_vessel = db.Column(db.String(255), nullable=True)
+    cma_cgm_eta = db.Column(db.DateTime, nullable=True)
+    cma_cgm_last_updated = db.Column(db.DateTime, nullable=True)
     description = db.Column(db.String(255), nullable=False)
     street = db.Column(db.String(255), nullable=False)
     city = db.Column(db.String(100), nullable=False)
@@ -105,11 +113,7 @@ class Package(db.Model):
     delivered_at = db.Column(db.DateTime, nullable=True)
     received_by = db.Column(db.String(120), nullable=True)
     reschedule_attempts = db.Column(db.Integer, default=0)
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id"),
-        nullable=False
-    )
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     user = db.relationship(
         "User",
         back_populates="packages"
