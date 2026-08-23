@@ -119,6 +119,20 @@ def debug_user_columns():
         "database_url_host": db.engine.url.host,
         "columns": result
     }
+
+@main.route("/debug/fix-user-schema")
+def fix_user_schema():
+    from sqlalchemy import text
+
+    db.session.execute(
+        text('ALTER TABLE "user" DROP COLUMN IF EXISTS "is_active"')
+    )
+    db.session.commit()
+
+    return {
+        "status": "success",
+        "message": "Legacy is_active column removed."
+    }
     
 
     
