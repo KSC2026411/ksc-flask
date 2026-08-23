@@ -1,269 +1,379 @@
 {% extends "customer/base_customer.html" %}
-
 {% block title %}Customer Dashboard{% endblock %}
-
 {% block customer_content %}
-
-<!-- =========================
-     DASHBOARD HEADER
-========================= -->
-<div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
-
-    <div>
-        <h2 class="fw-bold mb-1">
-            Welcome, {{ current_user.first_name }}
-        </h2>
-        <p class="text-muted mb-0">
-            Here is an overview of your shipments and account activity.
-        </p>
-    </div>
-
-    <a href="{{ url_for('main.schedule') }}"
-       class="btn btn-primary mt-3 mt-md-0">
-        + Schedule Package
-    </a>
-
-</div>
-
-<!-- =========================
-     ANALYTICS CARDS
-========================= -->
-<div class="row g-3 mb-5">
-
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <h6 class="text-muted">Total Packages</h6>
-                <h2 class="fw-bold mb-0">{{ total_packages }}</h2>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <h6 class="text-muted">Pending Deliveries</h6>
-                <h2 class="fw-bold text-warning mb-0">{{ pending_deliveries }}</h2>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <h6 class="text-muted">Delivered Packages</h6>
-                <h2 class="fw-bold text-success mb-0">{{ delivered_packages }}</h2>
-            </div>
-        </div>
-    </div>
-
-</div>
-
-<!-- =========================
-     ANNOUNCEMENTS
-========================= -->
-<div class="card shadow-sm border-0 mb-5">
-    <div class="card-header bg-secondary text-white">
-        <h4 class="mb-0">Active Announcements</h4>
-    </div>
-
-    <div class="card-body">
-
-        {% if announcements %}
-            {% for a in announcements %}
-            <div class="border rounded p-3 mb-3 shadow-sm">
-                <h5 class="mb-2">{{ a.title }}</h5>
-                <div class="mb-2">{{ a.message|safe }}</div>
-                <small class="text-muted">Posted: {{ a.created_at.strftime('%Y-%m-%d') }}</small>
-            </div>
-            {% endfor %}
-        {% else %}
-            <p class="mb-0 text-muted">No announcements currently.</p>
-        {% endif %}
-
-    </div>
-</div>
-
-<!-- =========================
-     RECENT PACKAGES TABLE
-========================= -->
-<div class="card shadow-sm border-0 mb-5">
-
-    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center flex-wrap">
-        <h4 class="mb-0">Your 3 Most Recent Packages</h4>
-        <a href="{{ url_for('main.my_packages') }}" class="btn btn-sm btn-light mt-2 mt-md-0">View All</a>
-    </div>
-
-    <div class="card-body">
-
-        {% if packages %}
-        <div class="table-responsive">
-            <table class="table table-hover table-striped align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Tracking #</th>
-                        <th>Status</th>
-                        <th>Created At</th>
-                        <th>Expected Delivery</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for p in packages %}
-                    <tr>
-                        <td>{{ p.tracking_number }}</td>
-                        <td>
-                            {% if p.status == "Pending" %}
-                                <span class="badge bg-warning text-dark">{{ p.status }}</span>
-                            {% elif p.status == "In Transit" %}
-                                <span class="badge bg-info">{{ p.status }}</span>
-                            {% elif p.status == "Delivered" %}
-                                <span class="badge bg-success">{{ p.status }}</span>
-                            {% elif p.status == "Cancelled" %}
-                                <span class="badge bg-danger">{{ p.status }}</span>
-                            {% elif p.status == "Scheduled" %}
-                                <span class="badge bg-secondary">{{ p.status }}</span>
-                            {% else %}
-                                <span class="badge bg-dark">{{ p.status }}</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ p.created_at.strftime('%Y-%m-%d') }}</td>
-                        <td>
-                            {% if p.expected_delivery %}
-                                {{ p.expected_delivery.strftime('%Y-%m-%d') }}
-                            {% elif p.status in ["Pending", "Scheduled"] %}
-                                <span class="text-muted">Awaiting shipment</span>
-                            {% elif p.status == "In Transit" %}
-                                <span class="text-primary">Estimating delivery...</span>
-                            {% elif p.status == "Delivered" %}
-                                <span class="text-success">Delivered</span>
-                            {% elif p.status == "Cancelled" %}
-                                <span class="text-danger">Cancelled</span>
-                            {% else %}
-                                <span class="text-muted">Not available</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-            <p class="text-muted mb-0">You have no packages yet.</p>
-        {% endif %}
-
-    </div>
-</div>
-
-<!-- =========================
-     AI CHAT WIDGET
-========================= -->
-<div id="ai-chat-widget">
-
-    <div id="ai-chat-header">
-        🤖 Assistant
-        <button onclick="toggleChat()">✖</button>
-    </div>
-
-    <div id="ai-chat-body"></div>
-
-    <div id="ai-chat-input">
-        <input type="text" id="ai-question" placeholder="Ask about your packages...">
-        <button onclick="sendMessage()">Send</button>
-    </div>
-
-</div>
-
 <style>
-#ai-chat-widget {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 300px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.2);
-    overflow: hidden;
-    font-family: Arial;
-    z-index: 9999;
+.customer-dashboard{width:100%;max-width:1900px;margin:0 auto}
+.customer-dashboard .dashboard-header{margin-bottom:45px;padding:10px 5px}
+.customer-dashboard .dashboard-header h1{font-size:48px!important;font-weight:800!important;line-height:1.2!important;margin-bottom:12px!important;color:#172033}
+.customer-dashboard .dashboard-header p{font-size:22px!important;line-height:1.6!important;color:#596575!important}
+.customer-dashboard .dashboard-header .schedule-btn{font-size:21px!important;font-weight:700!important;padding:17px 30px!important;border-radius:12px!important}
+.customer-dashboard .stats-row{margin-bottom:50px}
+.customer-dashboard .stat-card{min-height:190px!important;border:0!important;border-radius:18px!important;box-shadow:0 7px 24px rgba(0,0,0,.12)!important}
+.customer-dashboard .stat-card .card-body{padding:38px!important;display:flex;flex-direction:column;justify-content:center}
+.customer-dashboard .stat-label{font-size:23px!important;font-weight:600!important;color:#596575!important;margin-bottom:18px!important}
+.customer-dashboard .stat-number{font-size:54px!important;font-weight:800!important;line-height:1!important}
+.customer-dashboard .section-card{border:0!important;border-radius:18px!important;box-shadow:0 7px 24px rgba(0,0,0,.12)!important;overflow:hidden;margin-bottom:50px!important}
+.customer-dashboard .section-header{padding:27px 34px!important;background:#344054!important;color:#fff!important;min-height:82px}
+.customer-dashboard .section-header h2{font-size:31px!important;font-weight:800!important;margin:0!important;line-height:1.3!important}
+.customer-dashboard .section-header .view-all{font-size:18px!important;font-weight:700!important;padding:12px 22px!important;border-radius:9px!important}
+.customer-dashboard .section-body{padding:38px!important}
+.customer-dashboard .announcement{border:1px solid #d5dce5!important;border-radius:16px!important;padding:28px 32px!important;margin-bottom:20px!important;background:#fff!important;box-shadow:0 4px 14px rgba(0,0,0,.07)!important;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;min-height:0!important}
+.customer-dashboard .announcement:last-child{margin-bottom:0!important}
+.customer-dashboard .announcement:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.12)!important;border-color:#b8c4d3!important}
+.customer-dashboard .announcement-title{font-size:28px!important;font-weight:800!important;line-height:1.3!important;color:#172033!important;margin-bottom:12px!important}
+.customer-dashboard .announcement-preview{font-size:18px!important;line-height:1.5!important;color:#697586!important;margin-bottom:15px!important}
+.customer-dashboard .announcement-open{display:inline-flex;align-items:center;gap:7px;color:#0d6efd;font-size:17px;font-weight:700;text-decoration:none}
+.customer-dashboard .announcement-open:hover{text-decoration:underline}
+.customer-dashboard .announcement-date{font-size:16px!important;color:#697586!important;margin-top:12px!important}
+.customer-dashboard .empty-message{font-size:21px!important;color:#697586!important;padding:20px 0!important}
+.customer-dashboard .package-table{font-size:19px!important;margin:0!important}
+.customer-dashboard .package-table thead th{font-size:18px!important;font-weight:800!important;color:#253044!important;background:#eef2f6!important;padding:20px 22px!important;white-space:nowrap}
+.customer-dashboard .package-table tbody td{font-size:19px!important;font-weight:500!important;color:#303b4d!important;padding:22px!important;vertical-align:middle!important}
+.customer-dashboard .package-table tbody tr{height:76px!important}
+.customer-dashboard .tracking-number{font-weight:800!important;color:#0d6efd!important;font-size:20px!important}
+.customer-dashboard .status-badge{font-size:16px!important;font-weight:700!important;padding:9px 14px!important;border-radius:8px!important}
+.customer-dashboard .delivery-text{font-size:18px!important}
+.customer-dashboard .mobile-package-list{display:none}
+.customer-dashboard .mobile-package-card{border:1px solid #d5dce5;border-radius:14px;background:#fff;padding:18px;margin-bottom:14px;box-shadow:0 3px 12px rgba(0,0,0,.06)}
+.customer-dashboard .mobile-package-card:last-child{margin-bottom:0}
+.customer-dashboard .mobile-package-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:15px}
+.customer-dashboard .mobile-package-tracking{color:#0d6efd;font-size:17px;font-weight:800;word-break:break-word}
+.customer-dashboard .mobile-package-info{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.customer-dashboard .mobile-package-label{display:block;color:#697586;font-size:13px;font-weight:600;margin-bottom:3px}
+.customer-dashboard .mobile-package-value{color:#303b4d;font-size:15px;font-weight:600}
+#announcementModal .modal-dialog{max-width:1100px}
+#announcementModal .modal-content{border:0;border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.30)}
+#announcementModal .modal-header{background:#0b1f3a;color:#fff;padding:24px 30px;border-bottom:0}
+#announcementModal .modal-title{font-size:28px;font-weight:800;line-height:1.35}
+#announcementModal .btn-close{filter:brightness(0) invert(1);opacity:.9}
+#announcementModal .modal-body{padding:34px;color:#263244;font-size:21px;line-height:1.85;max-height:70vh;overflow-y:auto}
+#announcementModal .modal-body p{font-size:inherit;line-height:inherit;margin-bottom:18px}
+#announcementModal .modal-footer{padding:18px 30px;border-top:1px solid #e3e7ed;color:#697586;font-size:15px}
+#ai-chat-widget{position:fixed;bottom:24px;right:24px;width:420px;background:#fff;border-radius:16px;box-shadow:0 10px 35px rgba(0,0,0,.24);overflow:hidden;font-family:Arial,sans-serif;z-index:9999}
+#ai-chat-header{background:#0b1f3a;color:#fff;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;font-size:19px;font-weight:700}
+#ai-chat-header button{border:0;background:transparent;color:#fff;font-size:21px;cursor:pointer}
+#ai-chat-body{height:340px;overflow-y:auto;padding:18px;font-size:18px;line-height:1.7}
+#ai-chat-input{display:flex;border-top:1px solid #dce2e9}
+#ai-chat-input input{flex:1;border:0;padding:17px;font-size:18px;outline:0}
+#ai-chat-input button{background:#0d6efd;color:#fff;border:0;padding:0 23px;font-size:18px;font-weight:700}
+@media(max-width:1199.98px){
+.customer-dashboard .dashboard-header h1{font-size:42px!important}
+.customer-dashboard .stat-card{min-height:175px!important}
+.customer-dashboard .stat-label{font-size:21px!important}
+.customer-dashboard .stat-number{font-size:48px!important}
+.customer-dashboard .section-header h2{font-size:28px!important}
+.customer-dashboard .announcement{padding:26px!important}
+.customer-dashboard .announcement-title{font-size:26px!important}
+.customer-dashboard .announcement-preview{font-size:17px!important}
+.customer-dashboard .package-table,.customer-dashboard .package-table tbody td{font-size:18px!important}
 }
-#ai-chat-header {
-    background: #111;
-    color: white;
-    padding: 10px;
-    display: flex;
-    justify-content: space-between;
+@media(max-width:991.98px){
+.customer-dashboard .dashboard-header h1{font-size:36px!important}
+.customer-dashboard .dashboard-header p{font-size:19px!important}
+.customer-dashboard .dashboard-header .schedule-btn{font-size:19px!important;padding:15px 24px!important}
+.customer-dashboard .stat-card{min-height:155px!important}
+.customer-dashboard .stat-card .card-body{padding:28px!important}
+.customer-dashboard .stat-label{font-size:19px!important}
+.customer-dashboard .stat-number{font-size:42px!important}
+.customer-dashboard .section-header{padding:22px 25px!important}
+.customer-dashboard .section-header h2{font-size:25px!important}
+.customer-dashboard .section-body{padding:27px!important}
+.customer-dashboard .announcement{padding:24px!important}
+.customer-dashboard .announcement-title{font-size:23px!important}
+.customer-dashboard .announcement-preview{font-size:17px!important;line-height:1.65!important}
+.customer-dashboard .package-table{font-size:17px!important}
+.customer-dashboard .package-table thead th{font-size:16px!important;padding:18px 14px!important}
+.customer-dashboard .package-table tbody td{font-size:17px!important;padding:20px 14px!important}
+.customer-dashboard .package-table tbody tr{height:70px!important}
+.customer-dashboard .status-badge{font-size:15px!important}
+#ai-chat-widget{width:calc(100% - 30px);right:15px;bottom:15px}
 }
-#ai-chat-body {
-    height: 250px;
-    overflow-y: auto;
-    padding: 10px;
-    font-size: 14px;
+@media(max-width:767.98px){
+.customer-dashboard .dashboard-header{margin-bottom:30px}
+.customer-dashboard .dashboard-header h1{font-size:30px!important}
+.customer-dashboard .dashboard-header p{font-size:17px!important}
+.customer-dashboard .dashboard-header .schedule-btn{width:100%;font-size:17px!important}
+.customer-dashboard .stats-row{margin-bottom:35px}
+.customer-dashboard .stat-card{min-height:135px!important}
+.customer-dashboard .stat-card .card-body{padding:24px!important}
+.customer-dashboard .stat-label{font-size:17px!important;margin-bottom:12px!important}
+.customer-dashboard .stat-number{font-size:36px!important}
+.customer-dashboard .section-card{margin-bottom:35px!important}
+.customer-dashboard .section-header{padding:18px!important;min-height:65px!important}
+.customer-dashboard .section-header h2{font-size:21px!important}
+.customer-dashboard .section-body{padding:18px!important}
+.customer-dashboard .announcement{padding:20px!important;margin-bottom:14px!important}
+.customer-dashboard .announcement-title{font-size:20px!important;margin-bottom:8px!important}
+.customer-dashboard .announcement-preview{font-size:16px!important;line-height:1.55!important;margin-bottom:10px!important}
+.customer-dashboard .announcement-open{font-size:15px!important}
+.customer-dashboard .announcement-date{font-size:13px!important;margin-top:9px!important}
+.customer-dashboard .desktop-package-table{display:none!important}
+.customer-dashboard .mobile-package-list{display:block!important}
+.customer-dashboard .view-all{font-size:14px!important;padding:9px 12px!important}
+#announcementModal .modal-dialog{margin:0;max-width:none;width:100%;min-height:100%}
+#announcementModal .modal-content{min-height:100vh;border-radius:0}
+#announcementModal .modal-header{padding:20px}
+#announcementModal .modal-title{font-size:22px}
+#announcementModal .modal-body{padding:22px;font-size:18px;line-height:1.75;max-height:none}
+#announcementModal .modal-footer{padding:15px 20px}
+#ai-chat-widget{width:calc(100% - 20px);right:10px;bottom:10px}
+#ai-chat-body{height:280px}
 }
-#ai-chat-input {
-    display: flex;
-    border-top: 1px solid #eee;
-}
-#ai-chat-input input {
-    flex: 1;
-    border: none;
-    padding: 10px;
-}
-#ai-chat-input button {
-    background: #007bff;
-    color: white;
-    border: none;
-    padding: 10px;
+@media(max-width:575.98px){
+.customer-dashboard .dashboard-header h1{font-size:28px!important}
+.customer-dashboard .dashboard-header p{font-size:16px!important}
+.customer-dashboard .section-header{padding:16px!important}
+.customer-dashboard .section-header h2{font-size:20px!important}
+.customer-dashboard .section-body{padding:15px!important}
+.customer-dashboard .announcement{padding:18px!important}
+.customer-dashboard .announcement-title{font-size:19px!important}
+.customer-dashboard .announcement-preview{font-size:15px!important}
+.customer-dashboard .mobile-package-card{padding:15px}
+.customer-dashboard .mobile-package-info{gap:10px}
+.customer-dashboard .mobile-package-label{font-size:12px}
+.customer-dashboard .mobile-package-value{font-size:14px}
+#announcementModal .modal-title{font-size:20px}
+#announcementModal .modal-body{font-size:17px}
 }
 </style>
-
+<div class="customer-dashboard">
+<div class="dashboard-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+<div>
+<h1>Welcome, {{ current_user.first_name }}</h1>
+<p class="mb-0">Here is an overview of your shipments and account activity.</p>
+</div>
+<a href="{{ url_for('main.schedule') }}" class="btn btn-primary schedule-btn"><i class="bi bi-plus-circle me-2"></i>Schedule Package</a>
+</div>
+<div class="row g-4 stats-row">
+<div class="col-md-4">
+<div class="card stat-card">
+<div class="card-body">
+<div class="stat-label">Total Packages</div>
+<div class="stat-number">{{ total_packages }}</div>
+</div>
+</div>
+</div>
+<div class="col-md-4">
+<div class="card stat-card">
+<div class="card-body">
+<div class="stat-label">Pending Deliveries</div>
+<div class="stat-number text-warning">{{ pending_deliveries }}</div>
+</div>
+</div>
+</div>
+<div class="col-md-4">
+<div class="card stat-card">
+<div class="card-body">
+<div class="stat-label">Delivered Packages</div>
+<div class="stat-number text-success">{{ delivered_packages }}</div>
+</div>
+</div>
+</div>
+</div>
+<div class="card section-card">
+<div class="section-header d-flex align-items-center justify-content-between">
+<h2><i class="bi bi-megaphone me-2"></i>Active Announcements</h2>
+</div>
+<div class="section-body">
+{% if announcements %}
+{% for a in announcements %}
+<div class="announcement" role="button" tabindex="0" data-bs-toggle="modal" data-bs-target="#announcementModal" data-announcement-title="{{ a.title|e }}" data-announcement-message="{{ a.message|e }}" data-announcement-date="{{ a.created_at.strftime('%B %d, %Y') }}" onclick="openAnnouncement(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openAnnouncement(this);}">
+<div class="announcement-title">{{ a.title }}</div>
+<div class="announcement-preview"><i class="bi bi-file-text me-1"></i>Announcement details are available here.</div>
+<div class="announcement-open">Read Full Announcement <i class="bi bi-arrow-right"></i></div>
+<div class="announcement-date"><i class="bi bi-calendar3 me-1"></i>Posted: {{ a.created_at.strftime('%B %d, %Y') }}</div>
+</div>
+{% endfor %}
+{% else %}
+<div class="empty-message"><i class="bi bi-info-circle me-2"></i>No announcements currently.</div>
+{% endif %}
+</div>
+</div>
+<div class="card section-card">
+<div class="section-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+<h2><i class="bi bi-box-seam me-2"></i>Your 3 Most Recent Packages</h2>
+<a href="{{ url_for('main.my_packages') }}" class="btn btn-light view-all">View All Packages</a>
+</div>
+<div class="section-body">
+{% if packages %}
+<div class="table-responsive desktop-package-table">
+<table class="table table-hover table-striped align-middle package-table">
+<thead>
+<tr>
+<th>Tracking Number</th>
+<th>Status</th>
+<th>Created</th>
+<th>Expected Delivery</th>
+</tr>
+</thead>
+<tbody>
+{% for p in packages %}
+<tr>
+<td><span class="tracking-number">{{ p.tracking_number }}</span></td>
+<td>
+{% if p.status == "Pending" %}
+<span class="badge bg-warning text-dark status-badge">{{ p.status }}</span>
+{% elif p.status == "In Transit" %}
+<span class="badge bg-info status-badge">{{ p.status }}</span>
+{% elif p.status == "Delivered" %}
+<span class="badge bg-success status-badge">{{ p.status }}</span>
+{% elif p.status == "Cancelled" %}
+<span class="badge bg-danger status-badge">{{ p.status }}</span>
+{% elif p.status == "Scheduled" %}
+<span class="badge bg-secondary status-badge">{{ p.status }}</span>
+{% else %}
+<span class="badge bg-dark status-badge">{{ p.status }}</span>
+{% endif %}
+</td>
+<td>{{ p.created_at.strftime('%B %d, %Y') }}</td>
+<td class="delivery-text">
+{% if p.expected_delivery %}
+{{ p.expected_delivery.strftime('%B %d, %Y') }}
+{% elif p.status in ["Pending", "Scheduled"] %}
+<span class="text-muted">Awaiting shipment</span>
+{% elif p.status == "In Transit" %}
+<span class="text-primary">Estimating delivery...</span>
+{% elif p.status == "Delivered" %}
+<span class="text-success fw-bold">Delivered</span>
+{% elif p.status == "Cancelled" %}
+<span class="text-danger fw-bold">Cancelled</span>
+{% else %}
+<span class="text-muted">Not available</span>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+<div class="mobile-package-list">
+{% for p in packages %}
+<div class="mobile-package-card">
+<div class="mobile-package-top">
+<div class="mobile-package-tracking">{{ p.tracking_number }}</div>
+<div>
+{% if p.status == "Pending" %}
+<span class="badge bg-warning text-dark status-badge">{{ p.status }}</span>
+{% elif p.status == "In Transit" %}
+<span class="badge bg-info status-badge">{{ p.status }}</span>
+{% elif p.status == "Delivered" %}
+<span class="badge bg-success status-badge">{{ p.status }}</span>
+{% elif p.status == "Cancelled" %}
+<span class="badge bg-danger status-badge">{{ p.status }}</span>
+{% elif p.status == "Scheduled" %}
+<span class="badge bg-secondary status-badge">{{ p.status }}</span>
+{% else %}
+<span class="badge bg-dark status-badge">{{ p.status }}</span>
+{% endif %}
+</div>
+</div>
+<div class="mobile-package-info">
+<div>
+<span class="mobile-package-label">Created</span>
+<span class="mobile-package-value">{{ p.created_at.strftime('%B %d, %Y') }}</span>
+</div>
+<div>
+<span class="mobile-package-label">Expected Delivery</span>
+<span class="mobile-package-value">
+{% if p.expected_delivery %}
+{{ p.expected_delivery.strftime('%B %d, %Y') }}
+{% elif p.status in ["Pending", "Scheduled"] %}
+Awaiting shipment
+{% elif p.status == "In Transit" %}
+Estimating...
+{% elif p.status == "Delivered" %}
+Delivered
+{% elif p.status == "Cancelled" %}
+Cancelled
+{% else %}
+Not available
+{% endif %}
+</span>
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty-message"><i class="bi bi-box me-2"></i>You have no packages yet.</div>
+{% endif %}
+</div>
+</div>
+</div>
+<div class="modal fade" id="announcementModal" tabindex="-1" aria-labelledby="announcementModalTitle" aria-hidden="true">
+<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title" id="announcementModalTitle">Announcement</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body" id="announcementModalBody"></div>
+<div class="modal-footer" id="announcementModalFooter"></div>
+</div>
+</div>
+</div>
+<div id="ai-chat-widget">
+<div id="ai-chat-header">
+<span>🤖 Customer Assistant</span>
+<button type="button" onclick="toggleChat()">✖</button>
+</div>
+<div id="ai-chat-body"></div>
+<div id="ai-chat-input">
+<input type="text" id="ai-question" placeholder="Ask about your packages..." onkeydown="if(event.key==='Enter')sendMessage()">
+<button type="button" onclick="sendMessage()">Send</button>
+</div>
+</div>
 <script>
-function toggleChat() {
-    const widget = document.getElementById("ai-chat-widget");
-    widget.style.display = widget.style.display === "none" ? "block" : "none";
+function openAnnouncement(element){
+const title=element.getAttribute("data-announcement-title")||"Announcement";
+const message=element.getAttribute("data-announcement-message")||"";
+const date=element.getAttribute("data-announcement-date")||"";
+const titleElement=document.getElementById("announcementModalTitle");
+const bodyElement=document.getElementById("announcementModalBody");
+const footerElement=document.getElementById("announcementModalFooter");
+titleElement.textContent=title;
+bodyElement.innerHTML="";
+const temp=document.createElement("div");
+temp.innerHTML=message;
+bodyElement.innerHTML=temp.innerHTML;
+footerElement.innerHTML='<i class="bi bi-calendar3 me-1"></i> Posted: '+escapeHtml(date);
 }
-
-async function sendMessage() {
-    const input = document.getElementById("ai-question");
-    const body = document.getElementById("ai-chat-body");
-
-    const question = input.value;
-    if (!question) return;
-
-    body.innerHTML += `<div><b>You:</b> ${question}</div>`;
-    input.value = "";
-
-   try {
-    const res = await fetch("/customer/chatbot", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ question })
-    });
-
-    console.log("STATUS:", res.status);
-    console.log("URL:", res.url);
-
-    const text = await res.text();
-
-    console.log("RESPONSE:", text);
-
-    const data = JSON.parse(text);
-
-    body.innerHTML += `<div><b>AI:</b> ${data.answer}</div>`;
-    body.scrollTop = body.scrollHeight;
-
-} catch (err) {
-
-    console.error("CHATBOT FAILED:", err);
-
-    body.innerHTML += `
-        <div style="color:red;">
-            AI error: ${err.message}
-        </div>
-    `;
+function escapeHtml(value){
+const div=document.createElement("div");
+div.textContent=value||"";
+return div.innerHTML;
+}
+function toggleChat(){
+const widget=document.getElementById("ai-chat-widget");
+widget.style.display=widget.style.display==="none"?"block":"none";
+}
+async function sendMessage(){
+const input=document.getElementById("ai-question");
+const body=document.getElementById("ai-chat-body");
+const question=input.value.trim();
+if(!question)return;
+const userMessage=document.createElement("div");
+userMessage.style.marginBottom="12px";
+userMessage.innerHTML="<strong>You:</strong> "+escapeHtml(question);
+body.appendChild(userMessage);
+input.value="";
+body.scrollTop=body.scrollHeight;
+try{
+const res=await fetch("/customer/chatbot",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question})});
+const data=await res.json();
+const aiMessage=document.createElement("div");
+aiMessage.style.marginBottom="12px";
+aiMessage.innerHTML="<strong>AI:</strong> "+escapeHtml(data.answer||"I could not process that request.");
+body.appendChild(aiMessage);
+body.scrollTop=body.scrollHeight;
+}catch(err){
+const errorMessage=document.createElement("div");
+errorMessage.style.color="red";
+errorMessage.style.marginBottom="12px";
+errorMessage.textContent="AI error: "+err.message;
+body.appendChild(errorMessage);
+body.scrollTop=body.scrollHeight;
 }
 }
 </script>
-
 {% endblock %}
