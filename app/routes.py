@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from werkzeug.utils import secure_filename
 from sqlalchemy.orm import selectinload
 
+
 from datetime import datetime, timedelta, date
 import json
 import re
@@ -38,6 +39,7 @@ EMAIL_REGEX = r'^[\w\.-]+@[\w\.-]+\.\w+$'
 # Minimum password length
 # -------------------------
 MIN_PASSWORD_LENGTH = 8
+
 
 # -------------------------
 # Generate activation token
@@ -93,6 +95,30 @@ def health():
         return {"status": "ok"}, 200
     except Exception as e:
         return {"status": "error", "details": str(e)}, 500
+
+
+@main.route("/debug/user-columns")
+def debug_user_columns():
+    from sqlalchemy import inspect
+
+    inspector = inspect(db.engine)
+
+    columns = inspector.get_columns("user")
+
+    result = []
+
+    for column in columns:
+        result.append({
+            "name": column["name"],
+            "type": str(column["type"]),
+            "nullable": column["nullable"],
+            "default": str(column["default"])
+        })
+
+    return {
+        "database_url_host": db.engine.url.host,
+        "columns": result
+    }
     
 
     
