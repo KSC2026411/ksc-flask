@@ -30,33 +30,12 @@ html,body{min-height:100%}
 .schedule-page #schedule-submit{min-width:250px;min-height:56px;border-radius:11px;font-size:18px;font-weight:800;padding:14px 32px;box-shadow:0 6px 16px rgba(25,135,84,.22)}
 .schedule-page .required-note{color:#697586;font-size:13px;margin-top:12px}
 .schedule-page .alert{border-radius:10px;font-size:16px}
-@media(max-width:991.98px){
-.schedule-page{padding:35px 0 45px}
-.schedule-page .schedule-header{padding:28px 30px 22px}
-.schedule-page .schedule-header h3{font-size:30px}
-.schedule-page .schedule-body{padding:30px}
-}
-@media(max-width:767.98px){
-.schedule-page{min-height:calc(100vh - 60px);padding:20px 0 30px;background:linear-gradient(rgba(11,31,58,.78),rgba(11,31,58,.78)),url("{{ url_for('static', filename='images/lb8.jpg') }}") center center/cover no-repeat;background-attachment:scroll}
-.schedule-page .schedule-header{padding:24px 20px 20px}
-.schedule-page .schedule-header h3{font-size:27px}
-.schedule-page .schedule-header p{font-size:16px}
-.schedule-page .schedule-body{padding:20px}
-.schedule-page .address-section,.schedule-page .photo-section{padding:18px}
-.schedule-page .section-title{font-size:19px}
-.schedule-page .form-control,.schedule-page .form-select{min-height:50px;font-size:16px}
-.schedule-page #schedule-submit{width:100%;min-width:0}
-.schedule-page .photo-preview-card img{height:130px}
-}
-@media(max-width:575.98px){
-.schedule-page .schedule-header h3{font-size:24px}
-.schedule-page .schedule-body{padding:16px}
-.schedule-page .address-section,.schedule-page .photo-section{padding:16px}
-.schedule-page .photo-preview-card img{height:120px}
-}
+@media(max-width:991.98px){.schedule-page{padding:35px 0 45px}.schedule-page .schedule-header{padding:28px 30px 22px}.schedule-page .schedule-header h3{font-size:30px}.schedule-page .schedule-body{padding:30px}}
+@media(max-width:767.98px){.schedule-page{min-height:calc(100vh - 60px);padding:20px 0 30px;background:linear-gradient(rgba(11,31,58,.78),rgba(11,31,58,.78)),url("{{ url_for('static', filename='images/lb8.jpg') }}") center center/cover no-repeat;background-attachment:scroll}.schedule-page .schedule-header{padding:24px 20px 20px}.schedule-page .schedule-header h3{font-size:27px}.schedule-page .schedule-header p{font-size:16px}.schedule-page .schedule-body{padding:20px}.schedule-page .address-section,.schedule-page .photo-section{padding:18px}.schedule-page .section-title{font-size:19px}.schedule-page .form-control,.schedule-page .form-select{min-height:50px;font-size:16px}.schedule-page #schedule-submit{width:100%;min-width:0}.schedule-page .photo-preview-card img{height:130px}}
+@media(max-width:575.98px){.schedule-page .schedule-header h3{font-size:24px}.schedule-page .schedule-body{padding:16px}.schedule-page .address-section,.schedule-page .photo-section{padding:16px}.schedule-page .photo-preview-card img{height:120px}}
 </style>
 <div class="schedule-page">
-{% with messages = get_flashed_messages() %}
+{% with messages=get_flashed_messages() %}
 {% if messages %}
 <div class="container mb-3">
 {% for msg in messages %}
@@ -164,6 +143,7 @@ html,body{min-height:100%}
 <div class="col-md-4">
 <label class="form-label">Pickup Date</label>
 <input type="date" name="date" id="pickup-date" class="form-control" required>
+<div class="form-text">Today and future dates are available.</div>
 </div>
 </div>
 </div>
@@ -186,15 +166,21 @@ html,body{min-height:100%}
 </div>
 </div>
 </div>
-</div>
 <script>
 document.addEventListener("DOMContentLoaded",function(){
 const fileInput=document.getElementById("package_photos");
 const preview=document.getElementById("photo-preview");
 const form=document.getElementById("schedule-form");
 const button=document.getElementById("schedule-submit");
+const pickupDate=document.getElementById("pickup-date");
 const maxPhotos=3;
 const maxFileSize=10*1024*1024;
+const today=new Date();
+const year=today.getFullYear();
+const month=String(today.getMonth()+1).padStart(2,"0");
+const day=String(today.getDate()).padStart(2,"0");
+const todayString=`${year}-${month}-${day}`;
+pickupDate.min=todayString;
 fileInput.addEventListener("change",function(){
 preview.innerHTML="";
 const files=Array.from(fileInput.files);
@@ -233,6 +219,11 @@ preview.appendChild(col);
 }
 });
 form.addEventListener("submit",function(event){
+if(pickupDate.value&&pickupDate.value<todayString){
+alert("Pickup date cannot be in the past.");
+event.preventDefault();
+return;
+}
 if(fileInput.files.length>maxPhotos){
 alert("You can upload a maximum of 3 photos.");
 event.preventDefault();
