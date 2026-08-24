@@ -69,17 +69,24 @@ def create_app():
     # =====================================================
     db.init_app(app)
     migrate.init_app(app, db)
-    socketio.init_app(app, cors_allowed_origins="*", async_mode="threading")
+    socketio.init_app(
+    app,
+    cors_allowed_origins="*",
+    async_mode="gevent"
+    )
 
     # =====================================================
     # RATE LIMITER (GLOBAL SECURITY)
     # =====================================================
+    redis_url = os.getenv("REDIS_URL")
+
     limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri=os.getenv("REDIS_URL")
+    storage_uri=redis_url,
+    default_limits=["200 per day", "50 per hour"]
         )
+
     app.limiter = limiter
 
     # =====================================================
