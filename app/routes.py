@@ -16,7 +16,7 @@ from openai import OpenAI
 
 from itsdangerous import URLSafeTimedSerializer
 
-from .models import User, Package, PackageContainer, Announcement, PushSubscription, AuditLog, PackagePhoto 
+from .models import User, Package, PackageContainer, Announcement, PushSubscription, AuditLog, PackagePhoto, PackageStatusHistory 
 from .extensions import db, socketio
 from .decorators import admin_required
 from .utils import generate_tracking, send_push_notification
