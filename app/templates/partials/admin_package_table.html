@@ -1,0 +1,197 @@
+<div class="table-responsive">
+<table class="table table-striped table-hover table-bordered align-middle mb-0" style="min-width:1900px;">
+<thead class="table-dark">
+<tr>
+<th>Tracking #</th>
+<th>Description</th>
+<th>Customer</th>
+<th>Phone</th>
+<th>Pickup Date</th>
+<th>Expected Delivery</th>
+<th>Status</th>
+<th style="min-width:320px;">Update Package</th>
+<th style="min-width:220px;">Suggest Reschedule</th>
+<th style="min-width:240px;">Actions</th>
+</tr>
+</thead>
+<tbody id="packages-table-body">
+{% if packages.items %}
+{% for p in packages.items %}
+<tr class="package-row">
+<td class="fw-bold">
+{{ p.tracking_number or "Pending Approval" }}
+</td>
+<td>
+{{ p.description or "N/A" }}
+</td>
+<td>
+{% if p.user %}
+{{ p.user.first_name }} {{ p.user.last_name }}
+{% else %}
+N/A
+{% endif %}
+</td>
+<td>
+{{ p.user.phone if p.user else "N/A" }}
+</td>
+<td>
+{% if p.pickup_date %}
+{{ p.pickup_date.strftime('%Y-%m-%d') }}
+{% else %}
+N/A
+{% endif %}
+</td>
+<td>
+{% if p.expected_delivery %}
+<span class="badge bg-success">
+{{ p.expected_delivery.strftime('%Y-%m-%d') }}
+</span>
+{% else %}
+<span class="text-muted">Not Assigned</span>
+{% endif %}
+</td>
+<td>
+<span class="badge
+{% if p.status == 'Delivered' %}
+bg-success
+{% elif p.status == 'In Transit' %}
+bg-info
+{% elif p.status in ['Pending', 'Pending Approval'] %}
+bg-warning text-dark
+{% elif p.status == 'Cancelled' %}
+bg-danger
+{% elif p.status == 'Archived' %}
+bg-dark
+{% elif p.status == 'In Warehouse' %}
+bg-primary
+{% elif p.status == 'Scheduled' %}
+bg-success
+{% elif p.status == 'Ready for Pickup' %}
+bg-info
+{% elif p.status == 'Loaded' %}
+bg-secondary
+{% elif p.status == 'Picked Up' %}
+bg-info
+{% elif p.status == 'Rescheduled' %}
+bg-warning text-dark
+{% else %}
+bg-secondary
+{% endif %}">
+{{ p.status or "Pending Approval" }}
+</span>
+</td>
+<td>
+<form method="POST" action="{{ url_for('main.admin_update_package', package_id=p.id) }}">
+<select name="status" class="form-select mb-2">
+{% set package_statuses = [
+'Pending Approval',
+'Approved',
+'Pending',
+'Scheduled',
+'In Warehouse',
+'Loaded',
+'Ready for Pickup',
+'Picked Up',
+'In Transit',
+'Shipped',
+'Delivered',
+'Cancelled',
+'Pending Reschedule',
+'Admin Suggested Reschedule',
+'Rescheduled'
+] %}
+{% for s in package_statuses %}
+<option value="{{ s }}" {% if p.status == s %}selected{% endif %}>{{ s }}</option>
+{% endfor %}
+</select>
+<label class="form-label small text-muted mb-1">Expected Delivery Date</label>
+<input type="date" name="expected_delivery" class="form-control mb-2" value="{{ p.expected_delivery.strftime('%Y-%m-%d') if p.expected_delivery else '' }}">
+<button type="submit" class="btn btn-outline-primary w-100">Update Package</button>
+</form>
+</td>
+<td>
+<form method="POST" action="{{ url_for('main.admin_suggest_reschedule', package_id=p.id) }}">
+<input type="date" name="new_date" class="form-control mb-2" required>
+<button type="submit" class="btn btn-warning w-100">Suggest</button>
+</form>
+</td>
+<td>
+{% if not p.tracking_number %}
+<form method="POST" action="{{ url_for('main.approve_package', package_id=p.id) }}" class="mb-2" onsubmit="return confirm('Approve this pickup request?');">
+<button type="submit" class="btn btn-success btn-sm w-100">Approve Pickup</button>
+</form>
+{% else %}
+<div class="mb-2">
+<span class="badge bg-success">Approved</span>
+</div>
+{% endif %}
+{% if p.status == "Pending Reschedule" and p.admin_suggested_date %}
+<div class="small text-muted mb-2">
+Suggested: {{ p.admin_suggested_date.strftime('%Y-%m-%d') }}
+</div>
+<div class="d-flex gap-2 mb-2">
+<form method="POST" action="{{ url_for('main.admin_accept_reschedule', package_id=p.id) }}" onsubmit="return confirm('Accept this reschedule?');">
+<button type="submit" class="btn btn-success btn-sm">Accept</button>
+</form>
+<form method="POST" action="{{ url_for('main.reject_admin_reschedule', package_id=p.id) }}" onsubmit="return confirm('Reject this reschedule?');">
+<button type="submit" class="btn btn-danger btn-sm">Reject</button>
+</form>
+</div>
+{% endif %}
+<form method="POST" action="{{ url_for('main.admin_delete_package', package_id=p.id) }}" onsubmit="return confirm('WARNING: This will permanently delete this package and its related records. This cannot be undone. Continue?');">
+<button type="submit" class="btn btn-danger btn-sm w-100">Delete Package</button>
+</form>
+</td>
+</tr>
+{% endfor %}
+{% else %}
+<tr>
+<td colspan="10" class="text-center py-5 text-muted">
+No active packages found.
+</td>
+</tr>
+{% endif %}
+</tbody>
+</table>
+</div>
+{% if packages.pages > 1 %}
+<nav aria-label="Package pagination" class="mt-4">
+<ul class="pagination justify-content-center">
+{% if packages.has_prev %}
+<li class="page-item">
+<a class="page-link" href="{{ url_for('main.admin_packages', page=packages.prev_num) }}">Previous</a>
+</li>
+{% else %}
+<li class="page-item disabled">
+<span class="page-link">Previous</span>
+</li>
+{% endif %}
+{% for page_num in packages.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+{% if page_num %}
+{% if page_num == packages.page %}
+<li class="page-item active">
+<span class="page-link">{{ page_num }}</span>
+</li>
+{% else %}
+<li class="page-item">
+<a class="page-link" href="{{ url_for('main.admin_packages', page=page_num) }}">{{ page_num }}</a>
+</li>
+{% endif %}
+{% else %}
+<li class="page-item disabled">
+<span class="page-link">…</span>
+</li>
+{% endif %}
+{% endfor %}
+{% if packages.has_next %}
+<li class="page-item">
+<a class="page-link" href="{{ url_for('main.admin_packages', page=packages.next_num) }}">Next</a>
+</li>
+{% else %}
+<li class="page-item disabled">
+<span class="page-link">Next</span>
+</li>
+{% endif %}
+</ul>
+</nav>
+{% endif %}

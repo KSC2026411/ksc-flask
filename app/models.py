@@ -116,6 +116,7 @@ class Package(db.Model):
     delivered_at = db.Column(db.DateTime, nullable=True)
     received_by = db.Column(db.String(120), nullable=True)
     reschedule_attempts = db.Column(db.Integer, default=0)
+    tracking=db.relationship("PackageTracking",back_populates="package",uselist=False,cascade="all,delete-orphan")
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     user = db.relationship(
         "User",
@@ -138,6 +139,19 @@ class Package(db.Model):
     back_populates="package",
     cascade="all, delete-orphan"
 )
+
+class PackageTracking(db.Model):
+    __tablename__="package_tracking"
+    id=db.Column(db.Integer,primary_key=True)
+    package_id=db.Column(db.Integer,db.ForeignKey("package.id"),nullable=False,index=True)
+    carrier=db.Column(db.String(50),nullable=True)
+    container_number=db.Column(db.String(50),nullable=True,index=True)
+    current_status=db.Column(db.String(100),nullable=True)
+    current_location=db.Column(db.String(255),nullable=True)
+    eta=db.Column(db.DateTime,nullable=True)
+    raw_response=db.Column(db.JSON,nullable=True)
+    last_checked=db.Column(db.DateTime,default=datetime.utcnow)
+    package=db.relationship("Package",back_populates="tracking")
 
 class PackageStatusHistory(db.Model):
     __tablename__ = "package_status_history"
