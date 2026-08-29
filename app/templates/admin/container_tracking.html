@@ -1,0 +1,34 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Container Tracking{% endblock %}
+{% block admin_content %}
+<div class="container-fluid mt-4">
+<div class="card shadow-sm border-0">
+<div class="card-header bg-primary text-white">
+<h5 class="mb-0">Container Tracking</h5>
+</div>
+<div class="card-body">
+<div class="mb-3">
+<h6 class="fw-bold">Package</h6>
+<p class="mb-1">{{ package.description }}</p>
+<p class="text-muted mb-0">
+Tracking Number: {{ package.tracking_number }}
+</p>
+</div>
+<hr>
+<h6 class="fw-bold">Tracking Result</h6>
+{% if tracking %}
+<div class="alert alert-light border">
+<pre class="mb-0">{{ tracking | tojson(indent=2) }}</pre>
+</div>
+{% else %}
+<div class="alert alert-warning">
+No tracking information available.
+</div>
+{% endif %}
+<a href="{{ url_for('main.admin_packages') }}" class="btn btn-secondary">
+Back To Packages
+</a>
+</div>
+</div>
+</div>
+{% endblock %}

@@ -1,17 +1,21 @@
 from .carrier_detector import detect_carrier
-from .exceptions import TrackingError
+from .exceptions import CarrierNotSupported, TrackingError
+from .carriers.cma_cgm import track_cma_cgm
+from .carriers.maersk import track_maersk
+from .carriers.msc import track_msc
+from .carriers.generic import track_generic
 
-def track_container(container_number):
-    carrier=detect_carrier(container_number)
-    if carrier=="UNKNOWN":
-        raise TrackingError("Carrier could not be detected")
+
+def track_container(reference):
+    if not reference:
+        raise TrackingError("Container reference is required.")
+    carrier=detect_carrier(reference)
     if carrier=="CMA_CGM":
-        from .cma import track
-        return track(container_number)
-    if carrier=="MSC":
-        from .msc import track
-        return track(container_number)
+        return track_cma_cgm(reference)
     if carrier=="MAERSK":
-        from .maersk import track
-        return track(container_number)
-    raise TrackingError("Carrier tracking not implemented yet")
+        return track_maersk(reference)
+    if carrier=="MSC":
+        return track_msc(reference)
+    if carrier=="UNKNOWN":
+        return track_generic(reference)
+    raise CarrierNotSupported(f"Carrier {carrier} is not supported.")
