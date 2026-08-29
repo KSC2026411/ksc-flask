@@ -12,14 +12,15 @@ import json
 import re
 import os
 import uuid
+import secrets
 from openai import OpenAI
 
 from itsdangerous import URLSafeTimedSerializer
 
-from .models import User, Package, PackageContainer, Announcement, PushSubscription, AuditLog, PackagePhoto, PackageStatusHistory 
+from .models import User, Package, PackageContainer, Announcement, PushSubscription, AuditLog, PackagePhoto, PackageStatusHistory, PasswordResetRequest 
 from .extensions import db, socketio
 from .decorators import admin_required
-from .utils import generate_tracking, send_push_notification
+from .utils import generate_tracking, send_push_notification, generate_temp_password
 
 main = Blueprint("main", __name__)
 csrf = CSRFProtect()
@@ -62,6 +63,10 @@ def schedule_photo_deletion(package):
     delete_at = package.delivered_at + timedelta(days=15)
     for photo in package.photos:
         photo.delete_at = delete_at
+
+def generate_temp_password(length=10):
+    characters=string.ascii_letters+string.digits
+    return "KSC-"+"".join(secrets.choice(characters) for _ in range(length))
 
 # US Federal Holidays dictionary
 US_FEDERAL_HOLIDAYS = {
@@ -145,7 +150,128 @@ def test():
 def offline():
     return render_template("public/offline.html")
 
+### PASSWORD RESET ###
 
+@main.route("/forgot-password", methods=["GET","POST"])
+def forgot_password():
+    if request.method=="POST":
+        email=request.form.get("email")
+        email=email.strip().lower() if email else None
+        user=User.query.filter_by(email=email).first()
+        if not user:
+            flash("No account found with this email.","danger")
+            return redirect(url_for("main.forgot_password"))
+        existing=PasswordResetRequest.query.filter_by(
+            user_id=user.id,
+            status="pending"
+        ).first()
+        if existing:
+            flash("A password reset request already exists.","warning")
+            return redirect(url_for("main.forgot_password"))
+        reset_request=PasswordResetRequest(
+            user_id=user.id,
+            status="pending"
+        )
+        db.session.add(reset_request)
+        db.session.commit()
+        flash("Your password reset request was submitted. Please contact support.","success")
+        return redirect(url_for("main.login"))
+    return render_template("public/forgot_password.html")
+
+@main.route("/admin/password-resets")
+@login_required
+@admin_required
+def password_resets():
+    requests=PasswordResetRequest.query.order_by(PasswordResetRequest.created_at.desc()).all()
+    return render_template("admin/password_resets.html",requests=requests)
+
+@main.route("/admin/password-reset/approve/<int:id>")
+@login_required
+@admin_required
+def approve_reset(id):
+    reset_request=PasswordResetRequest.query.get_or_404(id)
+    if reset_request.status!="pending":
+        flash("This reset request has already been processed.","warning")
+        return redirect(url_for("main.password_resets"))
+    user=reset_request.user
+    temp_password=generate_temp_password()
+    user.password=temp_password
+    user.must_change_password=True
+    user.last_password_reset=datetime.utcnow()
+    reset_request.status="approved"
+    reset_request.handled_by=current_user.id
+    audit=AuditLog(
+        user_id=current_user.id,
+        action="PASSWORD_RESET_REQUEST_APPROVED",
+        details=f"Approved password reset for user {user.email}",
+        ip_address=request.remote_addr,
+        status="success"
+    )
+    db.session.add(audit)
+    db.session.commit()
+    return render_template(
+        "admin/temporary_password.html",
+        user=user,
+        temporary_password=temp_password
+    )
+
+@main.route("/admin/password-reset/reject/<int:id>")
+@login_required
+@admin_required
+def reject_reset(id):
+    reset=PasswordResetRequest.query.get_or_404(id)
+    if reset.status!="pending":
+        flash("This reset request has already been processed.","warning")
+        return redirect(url_for("main.password_resets"))
+    reset.status="rejected"
+    reset.handled_by=current_user.id
+    user=reset.user
+    audit=AuditLog(
+        user_id=current_user.id,
+        action="PASSWORD_RESET_REQUEST_REJECTED",
+        details=f"Rejected password reset request for user {user.email}",
+        ip_address=request.remote_addr,
+        status="success"
+    )
+    db.session.add(audit)
+    db.session.commit()
+    flash("Password reset request rejected.","warning")
+    return redirect(url_for("main.password_resets"))
+
+@main.route("/change-password",methods=["GET","POST"])
+@login_required
+def change_password():
+    if request.method=="POST":
+        password=request.form.get("password")
+        current_user.password=generate_password_hash(password)
+        current_user.must_change_password=False
+        db.session.commit()
+        return redirect(url_for("main.dashboard"))
+    return render_template("change_password.html")
+
+@main.route("/admin/user/<int:user_id>/reset-password", methods=["POST"])
+@login_required
+@admin_required
+def admin_reset_password(user_id):
+    user=User.query.get_or_404(user_id)
+    temp_password=generate_temp_password()
+    user.password=temp_password
+    user.must_change_password=True
+    user.last_password_reset=datetime.utcnow()
+    audit=AuditLog(
+        user_id=current_user.id,
+        action="PASSWORD_RESET",
+        details=f"Admin reset password for user {user.email}",
+        ip_address=request.remote_addr,
+        status="success"
+    )
+    db.session.add(audit)
+    db.session.commit()
+    return render_template(
+        "admin/temporary_password.html",
+        user=user,
+        temporary_password=temp_password
+    )
 @main.route("/", methods=["GET", "POST"])
 def home():
     now = datetime.utcnow()
@@ -396,45 +522,24 @@ def register():
 
 @main.route("/login", methods=["GET", "POST"])
 def login():
-
     if request.method == "POST":
-
         email = request.form.get("email")
         password = request.form.get("password")
-
         email = email.strip().lower() if email else None
-
         user = User.query.filter_by(email=email).first()
-
         if user and user.check_password(password):
-
-            # ----------------------------
-            # Check if account is active
-            # Treat NULL (old accounts) as active
-            # ----------------------------
             if user.is_active is not None and not user.is_active:
                 flash("Your account is not activated. Please contact the admin.", "danger")
                 return redirect(url_for("main.login"))
-
-            # ----------------------------
-            # Log the user in
-            # ----------------------------
             login_user(user)
             flash(f"Welcome back, {user.full_name}!", "success")
-
-            # ----------------------------
-            # Redirect based on role
-            # ----------------------------
+            if user.must_change_password:
+                return redirect(url_for("main.change_password"))
             if user.role == "admin":
                 return redirect(url_for("main.admin_dashboard"))
             else:
                 return redirect(url_for("main.dashboard"))
-
-        # ----------------------------
-        # Invalid credentials
-        # ----------------------------
         flash("Invalid email or password", "danger")
-
     return render_template("public/login.html")
 
 
@@ -1106,46 +1211,33 @@ def admin_online_users():
 @login_required
 @admin_required
 def admin_dashboard():
-
-    page = request.args.get("page", 1, type=int)
-
-    packages = Package.query.order_by(
+    page=request.args.get("page",1,type=int)
+    packages=Package.query.order_by(
         Package.pickup_date.desc()
-    ).paginate(page=page, per_page=20)
-
-    announcements = Announcement.query.order_by(
+    ).paginate(page=page,per_page=20)
+    announcements=Announcement.query.order_by(
         Announcement.created_at.desc()
     ).limit(50).all()
-
-    base_query = Package.query
-
-    # -------------------
-    # ANALYTICS
-    # -------------------
-    total_packages = base_query.count()
-
-    pending_deliveries = base_query.filter(
+    base_query=Package.query
+    total_packages=base_query.count()
+    pending_deliveries=base_query.filter(
         Package.status.ilike("%pending%")
     ).count()
-
-    delivered_today = base_query.filter(
+    delivered_today=base_query.filter(
         Package.status.ilike("%delivered%"),
-        Package.updated_at >= datetime.utcnow().date()
+        Package.updated_at>=datetime.utcnow().date()
     ).count()
-
-    active_users = User.query.filter_by(
+    active_users=User.query.filter_by(
         role="customer",
         is_active=True
     ).count()
-
-    # -------------------
-    # NEW ACCOUNTS PENDING ACTIVATION
-    # -------------------
-    pending_activations = User.query.filter_by(
+    pending_activations=User.query.filter_by(
         role="customer",
         is_active=False
     ).count()
-
+    pending_password_resets=PasswordResetRequest.query.filter_by(
+        status="pending"
+    ).count()
     return render_template(
         "admin/admin_dashboard.html",
         packages=packages,
@@ -1154,7 +1246,8 @@ def admin_dashboard():
         pending_deliveries=pending_deliveries,
         delivered_today=delivered_today,
         active_users=active_users,
-        pending_activations=pending_activations
+        pending_activations=pending_activations,
+        pending_password_resets=pending_password_resets
     )
 
 #

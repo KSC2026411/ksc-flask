@@ -1,275 +1,156 @@
 {% extends "admin/base_admin.html" %}
-
 {% block title %}Admin Dashboard{% endblock %}
-
 {% block admin_content %}
-
 <div class="container-fluid mt-4">
-
-    <!-- ANALYTICS -->
-    <div class="row g-3 mb-4">
-
-        <div class="col-6 col-md-4 col-xl">
-            <div class="card bg-primary text-white text-center shadow-sm h-100">
-                <div class="card-body">
-                    <h6 class="card-title">Total Packages</h6>
-                    <p class="fs-3 fw-bold mb-0">
-                        {{ total_packages or 0 }}
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-6 col-md-4 col-xl">
-            <div class="card bg-warning text-dark text-center shadow-sm h-100">
-                <div class="card-body">
-                    <h6 class="card-title">Pending</h6>
-                    <p class="fs-3 fw-bold mb-0">
-                        {{ pending_deliveries or 0 }}
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-6 col-md-4 col-xl">
-            <div class="card bg-success text-white text-center shadow-sm h-100">
-                <div class="card-body">
-                    <h6 class="card-title">Delivered Today</h6>
-                    <p class="fs-3 fw-bold mb-0">
-                        {{ delivered_today or 0 }}
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-6 col-md-4 col-xl">
-            <div class="card bg-info text-white text-center shadow-sm h-100">
-                <div class="card-body">
-                    <h6 class="card-title">Active Users</h6>
-                    <p class="fs-3 fw-bold mb-0">
-                        {{ active_users or 0 }}
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-6 col-md-4 col-xl">
-            <div class="card bg-danger text-white text-center shadow-sm h-100">
-                <div class="card-body">
-                    <h6 class="card-title">Pending Activations</h6>
-                    <p class="fs-3 fw-bold mb-0">
-                        {{ pending_activations or 0 }}
-                    </p>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- ONLINE USERS -->
-    <div class="card shadow-sm border-0 mb-4">
-
-        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-
-            <h5 class="mb-0">
-                🟢 Users Currently Online
-            </h5>
-
-            <span class="badge bg-light text-dark">
-                <span id="online-count">0</span> Online
-            </span>
-
-        </div>
-
-        <div class="card-body">
-
-            <div id="online-users-empty" class="text-center text-muted py-3">
-                No users currently online.
-            </div>
-
-            <ul id="online-users-list" class="list-group list-group-flush">
-            </ul>
-
-        </div>
-
-    </div>
-
-    <!-- ANNOUNCEMENTS -->
-    <div class="card shadow-sm border-0 mb-4">
-
-        <div class="card-header bg-dark text-white">
-            <h5 class="mb-0">Recent Announcements</h5>
-        </div>
-
-        <div class="card-body">
-
-            {% if announcements %}
-
-                {% for a in announcements %}
-                <div class="border rounded p-3 mb-3">
-
-                    <h6 class="fw-bold mb-2">
-                        {{ a.title }}
-                    </h6>
-
-                    <div class="mb-2">
-                        {{ a.message|safe }}
-                    </div>
-
-                    <small class="text-muted">
-                        Posted: {{ a.created_at.strftime('%Y-%m-%d') }}
-                    </small>
-
-                </div>
-                {% endfor %}
-
-            {% else %}
-
-                <p class="text-muted mb-0">
-                    No announcements available.
-                </p>
-
-            {% endif %}
-
-        </div>
-
-    </div>
-
-    <!-- PACKAGE SEARCH -->
-    <div class="card shadow-sm border-0">
-
-        <div class="card-header bg-dark text-white">
-
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-
-                <h5 class="mb-0">
-                    Search Packages
-                </h5>
-
-                <input
-                    type="text"
-                    id="package-search"
-                    class="form-control"
-                    placeholder="Search tracking number, customer, status..."
-                    style="max-width: 400px;"
-                >
-
-            </div>
-
-        </div>
-
-        <div class="card-body">
-
-            <div id="empty-search-state" class="text-center py-5">
-
-                <h5 class="fw-bold">
-                    Search for a Package
-                </h5>
-
-                <p class="text-muted mb-0">
-                    No packages are shown until you search.
-                </p>
-
-            </div>
-
-            <div id="packages-table" class="d-none"></div>
-
-        </div>
-
-    </div>
-
+<div class="row g-3 mb-4">
+<div class="col-6 col-md-4 col-xl">
+<div class="card bg-primary text-white text-center shadow-sm h-100">
+<div class="card-body">
+<h6 class="card-title">Total Packages</h6>
+<p class="fs-3 fw-bold mb-0">{{ total_packages or 0 }}</p>
 </div>
-
-<!-- SOCKET.IO -->
+</div>
+</div>
+<div class="col-6 col-md-4 col-xl">
+<div class="card bg-warning text-dark text-center shadow-sm h-100">
+<div class="card-body">
+<h6 class="card-title">Pending</h6>
+<p class="fs-3 fw-bold mb-0">{{ pending_deliveries or 0 }}</p>
+</div>
+</div>
+</div>
+<div class="col-6 col-md-4 col-xl">
+<div class="card bg-success text-white text-center shadow-sm h-100">
+<div class="card-body">
+<h6 class="card-title">Delivered Today</h6>
+<p class="fs-3 fw-bold mb-0">{{ delivered_today or 0 }}</p>
+</div>
+</div>
+</div>
+<div class="col-6 col-md-4 col-xl">
+<div class="card bg-info text-white text-center shadow-sm h-100">
+<div class="card-body">
+<h6 class="card-title">Active Users</h6>
+<p class="fs-3 fw-bold mb-0">{{ active_users or 0 }}</p>
+</div>
+</div>
+</div>
+<div class="col-6 col-md-4 col-xl">
+<div class="card bg-danger text-white text-center shadow-sm h-100">
+<div class="card-body">
+<h6 class="card-title">Pending Activations</h6>
+<p class="fs-3 fw-bold mb-0">{{ pending_activations or 0 }}</p>
+</div>
+</div>
+</div>
+<div class="col-6 col-md-4 col-xl">
+<div class="card bg-secondary text-white text-center shadow-sm h-100">
+<div class="card-body">
+<h6 class="card-title">Password Resets</h6>
+<p class="fs-3 fw-bold mb-0">
+<a href="{{ url_for('main.password_resets') }}" class="text-white text-decoration-none">
+{{ pending_password_resets or 0 }}
+</a>
+</p>
+</div>
+</div>
+</div>
+</div>
+<div class="card shadow-sm border-0 mb-4">
+<div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+<h5 class="mb-0">🟢 Users Currently Online</h5>
+<span class="badge bg-light text-dark">
+<span id="online-count">0</span> Online
+</span>
+</div>
+<div class="card-body">
+<div id="online-users-empty" class="text-center text-muted py-3">
+No users currently online.
+</div>
+<ul id="online-users-list" class="list-group list-group-flush"></ul>
+</div>
+</div>
+<div class="card shadow-sm border-0 mb-4">
+<div class="card-header bg-dark text-white">
+<h5 class="mb-0">Recent Announcements</h5>
+</div>
+<div class="card-body">
+{% if announcements %}
+{% for a in announcements %}
+<div class="border rounded p-3 mb-3">
+<h6 class="fw-bold mb-2">{{ a.title }}</h6>
+<div class="mb-2">{{ a.message|safe }}</div>
+<small class="text-muted">Posted: {{ a.created_at.strftime('%Y-%m-%d') }}</small>
+</div>
+{% endfor %}
+{% else %}
+<p class="text-muted mb-0">No announcements available.</p>
+{% endif %}
+</div>
+</div>
+<div class="card shadow-sm border-0">
+<div class="card-header bg-dark text-white">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+<h5 class="mb-0">Search Packages</h5>
+<input type="text" id="package-search" class="form-control" placeholder="Search tracking number, customer, status..." style="max-width:400px;">
+</div>
+</div>
+<div class="card-body">
+<div id="empty-search-state" class="text-center py-5">
+<h5 class="fw-bold">Search for a Package</h5>
+<p class="text-muted mb-0">No packages are shown until you search.</p>
+</div>
+<div id="packages-table" class="d-none"></div>
+</div>
+</div>
+</div>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-
 <script>
-
-const adminSocket = io("/admin");
-
-adminSocket.on("online_users_update", function(data) {
-
-    const count = document.getElementById("online-count");
-    const list = document.getElementById("online-users-list");
-    const empty = document.getElementById("online-users-empty");
-
-    count.textContent = data.count;
-
-    list.innerHTML = "";
-
-    if (data.users.length === 0) {
-
-        empty.style.display = "block";
-        return;
-    }
-
-    empty.style.display = "none";
-
-    data.users.forEach(user => {
-
-        list.innerHTML += `
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-
-                <div>
-                    <strong>${user.name}</strong><br>
-                    <small class="text-muted">${user.email}</small>
-                </div>
-
-                <span class="badge bg-success">
-                    ${user.role}
-                </span>
-
-            </li>
-        `;
-
-    });
-
+const adminSocket=io("/admin");
+adminSocket.on("online_users_update",function(data){
+const count=document.getElementById("online-count");
+const list=document.getElementById("online-users-list");
+const empty=document.getElementById("online-users-empty");
+count.textContent=data.count;
+list.innerHTML="";
+if(data.users.length===0){
+empty.style.display="block";
+return;
+}
+empty.style.display="none";
+data.users.forEach(user=>{
+list.innerHTML+=`
+<li class="list-group-item d-flex justify-content-between align-items-center">
+<div>
+<strong>${user.name}</strong><br>
+<small class="text-muted">${user.email}</small>
+</div>
+<span class="badge bg-success">${user.role}</span>
+</li>`;
 });
-
+});
 </script>
-
-<!-- LIVE SEARCH -->
 <script>
-
-const searchInput = document.getElementById("package-search");
-const packagesTable = document.getElementById("packages-table");
-const emptyState = document.getElementById("empty-search-state");
-
-searchInput.addEventListener("input", async function () {
-
-    const query = this.value.trim();
-
-    if (!query) {
-
-        packagesTable.classList.add("d-none");
-        packagesTable.innerHTML = "";
-
-        emptyState.classList.remove("d-none");
-
-        return;
-    }
-
-    try {
-
-        const response = await fetch(
-            `{{ url_for('main.admin_packages_table') }}?search=${encodeURIComponent(query)}`
-        );
-
-        const html = await response.text();
-
-        packagesTable.innerHTML = html;
-
-        emptyState.classList.add("d-none");
-        packagesTable.classList.remove("d-none");
-
-    } catch (err) {
-
-        console.error("Search error:", err);
-
-    }
-
+const searchInput=document.getElementById("package-search");
+const packagesTable=document.getElementById("packages-table");
+const emptyState=document.getElementById("empty-search-state");
+searchInput.addEventListener("input",async function(){
+const query=this.value.trim();
+if(!query){
+packagesTable.classList.add("d-none");
+packagesTable.innerHTML="";
+emptyState.classList.remove("d-none");
+return;
+}
+try{
+const response=await fetch(`{{ url_for('main.admin_packages_table') }}?search=${encodeURIComponent(query)}`);
+const html=await response.text();
+packagesTable.innerHTML=html;
+emptyState.classList.add("d-none");
+packagesTable.classList.remove("d-none");
+}catch(err){
+console.error("Search error:",err);
+}
 });
-
 </script>
-
 {% endblock %}

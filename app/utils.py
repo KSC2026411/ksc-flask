@@ -1,6 +1,7 @@
 import random
 import string
 import json
+import secrets
 
 from pywebpush import webpush
 from flask import current_app
@@ -29,6 +30,11 @@ def generate_tracking_number():
         random.choices(string.ascii_uppercase + string.digits, k=8)
     )
     return f"{prefix}-{random_part}"
+
+def generate_temp_password():
+    chars=string.ascii_letters+string.digits
+    password="".join(secrets.choice(chars) for _ in range(8))
+    return "KSC-"+password
 
 
 # ==========================================

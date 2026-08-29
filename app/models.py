@@ -15,6 +15,8 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(150), unique=True, nullable=False, index=True)
     phone = db.Column(db.String(50), nullable=True)
     _password = db.Column("password", db.String(255), nullable=False)
+    must_change_password=db.Column(db.Boolean,default=False)
+    last_password_reset=db.Column(db.DateTime,nullable=True)
     is_active = db.Column(
     "active",
     db.Boolean,
@@ -81,6 +83,7 @@ class User(db.Model, UserMixin):
         return f"{self.first_name} {self.last_name}"
     def __repr__(self):
         return f"<User {self.id} | {self.email} | {self.role}>"
+
 
 
 
@@ -311,3 +314,12 @@ def model_to_dict(obj):
         c.key: getattr(obj, c.key)
         for c in inspect(obj).mapper.column_attrs
     }
+
+class PasswordResetRequest(db.Model):
+    __tablename__="password_reset_request"
+    id=db.Column(db.Integer,primary_key=True)
+    user_id=db.Column(db.Integer,db.ForeignKey("user.id"),nullable=False)
+    status=db.Column(db.String(20),nullable=False,default="pending",server_default="pending")
+    created_at=db.Column(db.DateTime,default=datetime.utcnow,nullable=False)
+    handled_by=db.Column(db.Integer,nullable=True)
+    user=db.relationship("User",backref="password_reset_requests")
