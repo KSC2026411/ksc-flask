@@ -1,0 +1,2 @@
+class TrackingError(Exception):
+    pass

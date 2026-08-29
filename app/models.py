@@ -244,7 +244,7 @@ class Container(db.Model):
     __tablename__ = "container"
     id = db.Column(db.Integer, primary_key=True)
     reference = db.Column(db.String(50), unique=True, nullable=False)
-    carrier = db.Column(db.String(50), nullable=False, default="CMA CGM")
+    carrier = db.Column(db.String(50), nullable=False, default="UNKNOWN")
     booking_number = db.Column(db.String(100), nullable=True)
     container_number = db.Column(db.String(100), nullable=True)
     bill_of_lading = db.Column(db.String(100), nullable=True)

@@ -5,8 +5,6 @@ from sqlalchemy import text, or_
 from bs4 import BeautifulSoup
 from werkzeug.utils import secure_filename
 from sqlalchemy.orm import selectinload
-
-
 from datetime import datetime, timedelta, date
 import json
 import re
@@ -15,13 +13,12 @@ import os
 import uuid
 import secrets
 from openai import OpenAI
-
 from itsdangerous import URLSafeTimedSerializer
-
-from .models import User, Package, PackageContainer, Announcement, PushSubscription, AuditLog, PackagePhoto, PackageStatusHistory, PasswordResetRequest 
+from .models import User, Package, PackageContainer, Announcement, PushSubscription, AuditLog, PackagePhoto, PackageStatusHistory, PasswordResetRequest
 from .extensions import db, socketio
 from .decorators import admin_required
 from .utils import generate_tracking, send_push_notification, generate_temp_password
+from app.services.tracking.container_tracker import track_container
 
 main = Blueprint("main", __name__)
 csrf = CSRFProtect()
@@ -1319,28 +1316,22 @@ def admin_packages():
 @login_required
 @admin_required
 def admin_cma_cgm_tracking(package_id):
-
     package = Package.query.get_or_404(package_id)
-
     reference = (
         getattr(package, "container_number", None)
         or getattr(package, "tracking_number", None)
     )
-
     if not reference:
         flash(
             "No CMA CGM tracking reference is assigned to this package.",
             "warning"
         )
         return redirect(url_for("main.admin_packages"))
-
     try:
         tracking = track_cma_cgm(reference)
-
     except CmaCgmError as exc:
         flash(str(exc), "danger")
         return redirect(url_for("main.admin_packages"))
-
     return render_template(
         "admin/cma_cgm_tracking.html",
         package=package,
