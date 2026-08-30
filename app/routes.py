@@ -1333,6 +1333,37 @@ def admin_cma_cgm_tracking(package_id):
         tracking=tracking,
     )
 
+@main.route("/admin/packages/<int:package_id>/container-tracking")
+@login_required
+@admin_required
+def admin_container_tracking(package_id):
+    package = Package.query.get_or_404(package_id)
+    reference = getattr(package, "container_number", None) or getattr(package, "tracking_number", None)
+    if not reference:
+        flash("No container number or tracking reference assigned to this package.", "warning")
+        return redirect(url_for("main.admin_packages"))
+    try:
+        tracking = track_container(reference)
+    except Exception as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("main.admin_packages"))
+    return render_template(
+        "admin/container_tracking.html",
+        package=package,
+        tracking=tracking,
+    )
+
+@main.route("/admin/container/<int:package_id>/track")
+@login_required
+def track_container(package_id):
+
+    package = Package.query.get_or_404(package_id)
+
+    return render_template(
+        "admin/track_container.html",
+        package=package
+    )
+
 @main.route("/admin/package/<int:package_id>/approve", methods=["POST"])
 @login_required
 @admin_required
@@ -1398,7 +1429,6 @@ def admin_update_package(package_id):
     db.session.commit()
     flash("Package updated successfully.", "success")
     return redirect(url_for("main.admin_packages"))
-
 
 
 @main.route("/admin/package/<int:package_id>/suggest-reschedule", methods=["POST"])
