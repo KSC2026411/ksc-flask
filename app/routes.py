@@ -28,7 +28,13 @@ csrf = CSRFProtect()
 # Global OpenAI client
 # ----------------------------
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+if OPENAI_API_KEY:
+    client = OpenAI(api_key=OPENAI_API_KEY)
+else:
+    client = None
+    print("⚠️ OpenAI client disabled: OPENAI_API_KEY is not set")
 
 # -------------------------
 # Email validation regex
@@ -2002,6 +2008,11 @@ def customer_chatbot():
     if not question:
         return jsonify({"answer": "Please ask a question."})
 
+    if client is None:
+        return jsonify({
+            "answer": "The AI assistant is currently unavailable."
+        }), 503
+
     try:
         context = """
 You are a helpful customer support assistant for KSK Cargo.
@@ -2034,7 +2045,6 @@ Rules:
         return jsonify({"answer": answer})
 
     except Exception as e:
-
         import traceback
 
         print("🔥 CHATBOT ERROR:", repr(e))
@@ -2042,9 +2052,9 @@ Rules:
 
         if "insufficient_quota" in str(e):
             return jsonify({
-            "answer": "The AI assistant is temporarily unavailable. Please try again later."
-        }), 200
+                "answer": "The AI assistant is temporarily unavailable. Please try again later."
+            }), 200
 
         return jsonify({
-        "answer": "Sorry, the AI assistant is currently unavailable."
+            "answer": "Sorry, the AI assistant is currently unavailable."
         }), 500
