@@ -1,126 +1,159 @@
 {% extends "public/base_public.html" %}
-
 {% block title %}Home{% endblock %}
-
-{% block header_right %}
-
-<div class="header-search">
-
-    <form method="GET" action="{{ url_for('main.home') }}" class="d-flex gap-2">
-
-        <input
-            type="text"
-            name="search"
-            placeholder="Track package..."
-            value="{{ search_query }}"
-        >
-
-        <!-- optional submit button (safe fallback for mobile) -->
-        <button type="submit" class="btn btn-warning btn-sm">
-            Go
-        </button>
-
-    </form>
-
-</div>
-
-{% endblock %}
-
 {% block content %}
-
 <style>
-
-/* PAGE WRAPPER NOT NEEDED (handled by base), KEEP SIMPLE */
-.welcome-card {
-    max-width: 600px;
-    margin: 40px auto;
-    padding: 30px;
-    border-radius: 20px;
-    background: rgba(0,0,0,0.55);
-    color: white;
-    text-align: center;
+.hero-section{
+min-height:520px;
+display:flex;
+align-items:center;
+justify-content:center;
+text-align:center;
+color:white;
+background:linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.65)),url("/static/images/cargo-bg.jpg");
+background-size:cover;
+background-position:center;
+border-radius:0 0 30px 30px;
 }
-
-.tagline {
-    opacity: 0.9;
+.hero-content{
+max-width:800px;
+padding:30px;
 }
-
-.button-group {
-    margin-top: 20px;
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    flex-wrap: wrap;
+.hero-content h1{
+font-size:48px;
+font-weight:700;
 }
-
-/* RESULTS */
-.search-results {
-    margin-top: 25px;
-    color: white;
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
+.hero-content p{
+font-size:20px;
+opacity:.9;
 }
-
-.package-card {
-    background: rgba(255,255,255,0.08);
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 10px;
+.hero-buttons{
+margin-top:30px;
 }
-
-.status-badge {
-    background: #22c55e;
-    padding: 5px 10px;
-    border-radius: 999px;
-    font-size: 12px;
+.track-box{
+max-width:700px;
+margin:-60px auto 40px;
+background:white;
+padding:30px;
+border-radius:20px;
+box-shadow:0 15px 40px rgba(0,0,0,.15);
 }
-
-.no-results {
-    color: #ffb4b4;
-    text-align: center;
-    margin-top: 20px;
+.service-card{
+border:none;
+border-radius:18px;
+padding:30px;
+height:100%;
+box-shadow:0 10px 25px rgba(0,0,0,.08);
 }
-
+.service-icon{
+font-size:40px;
+}
+.announcement-card{
+border-radius:15px;
+padding:20px;
+background:#f8f9fa;
+}
+.package-card{
+background:white;
+border-radius:15px;
+padding:20px;
+box-shadow:0 10px 20px rgba(0,0,0,.08);
+}
+.status-badge{
+background:#198754;
+color:white;
+padding:5px 12px;
+border-radius:20px;
+font-size:12px;
+}
 </style>
-
-<div class="welcome-card">
-
-    <h1>Welcome to KSC LOGISTICS</h1>
-    <p class="tagline">WE SHIP THEM CHEAP ✅</p>
-
-    <div class="button-group">
-
-        {% if current_user.is_authenticated %}
-            <a href="{{ url_for('main.my_packages') }}" class="btn btn-primary">Dashboard</a>
-        {% else %}
-            <a href="{{ url_for('main.login') }}" class="btn btn-success">Login</a>
-            <a href="{{ url_for('main.register') }}" class="btn btn-outline-light">Register</a>
-        {% endif %}
-
-    </div>
-
-</div>
-
-{% if packages %}
-
-    <div class="search-results">
-
-        {% for package in packages %}
-            <div class="package-card">
-                <p><strong>Tracking:</strong> {{ package.tracking_number }}</p>
-                <p><strong>Name:</strong> {{ package.last_name }}</p>
-                <p><span class="status-badge">{{ package.status }}</span></p>
-            </div>
-        {% endfor %}
-
-    </div>
-
-{% elif search_query %}
-
-    <div class="no-results">
-    </div>
-
+<section class="hero-section">
+<div class="hero-content">
+<h1>KSC LOGISTICS</h1>
+<p>Reliable Ocean Freight Solutions For Your Global Shipping Needs</p>
+<div class="hero-buttons">
+{% if current_user.is_authenticated %}
+<a href="{{ url_for('main.my_packages') }}" class="btn btn-primary btn-lg">My Dashboard</a>
+{% else %}
+<a href="{{ url_for('main.login') }}" class="btn btn-success btn-lg me-2">Login</a>
+<a href="{{ url_for('main.register') }}" class="btn btn-outline-light btn-lg">Create Account</a>
 {% endif %}
-
+</div>
+</div>
+</section>
+<section class="track-box">
+<h3 class="text-center mb-3">Track Your Shipment</h3>
+<p class="text-center text-muted">Enter your tracking number to view your package status</p>
+<form method="GET" action="{{ url_for('main.home') }}" class="d-flex gap-2">
+<input type="text" name="search" class="form-control" placeholder="Enter tracking number" value="{{ search_query }}">
+<button class="btn btn-warning">Track</button>
+</form>
+</section>
+{% if packages %}
+<div class="container mb-5">
+<h3 class="mb-4">Tracking Results</h3>
+<div class="row">
+{% for package in packages %}
+<div class="col-md-4 mb-3">
+<div class="package-card">
+<h5>{{ package.tracking_number }}</h5>
+<p><strong>Status:</strong></p>
+<span class="status-badge">{{ package.status }}</span>
+</div>
+</div>
+{% endfor %}
+</div>
+</div>
+{% endif %}
+<div class="container mb-5">
+<h2 class="text-center mb-4">Our Services</h2>
+<div class="row g-4">
+<div class="col-md-3">
+<div class="service-card text-center">
+<div class="service-icon">🚢</div>
+<h5>Ocean Shipping</h5>
+<p>International cargo transportation.</p>
+</div>
+</div>
+<div class="col-md-3">
+<div class="service-card text-center">
+<div class="service-icon">📦</div>
+<h5>Package Consolidation</h5>
+<p>Combine shipments efficiently.</p>
+</div>
+</div>
+<div class="col-md-3">
+<div class="service-card text-center">
+<div class="service-icon">🌎</div>
+<h5>Global Delivery</h5>
+<p>Reliable worldwide shipping.</p>
+</div>
+</div>
+<div class="col-md-3">
+<div class="service-card text-center">
+<div class="service-icon">📍</div>
+<h5>Live Tracking</h5>
+<p>Follow your shipment progress.</p>
+</div>
+</div>
+</div>
+</div>
+{% if announcements %}
+<div class="container mb-5">
+<h2 class="text-center mb-4">Latest Updates</h2>
+<div class="row">
+{% for announcement in announcements %}
+<div class="col-md-4 mb-3">
+<div class="announcement-card">
+<h5>{{ announcement.title }}</h5>
+<p>{{ announcement.message }}</p>
+</div>
+</div>
+{% endfor %}
+</div>
+</div>
+{% endif %}
+<div class="container text-center mb-5">
+<h2>How It Works</h2>
+<p class="mt-3">1. Schedule your shipment → 2. Receive tracking number → 3. Monitor progress → 4. Receive delivery</p>
+</div>
 {% endblock %}
