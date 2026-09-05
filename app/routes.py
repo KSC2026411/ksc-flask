@@ -401,7 +401,15 @@ def save_subscription():
     except Exception as e:
         print("❌ SAVE SUBSCRIPTION ERROR:", e)
         return jsonify({"success": False}), 500
-    
+
+
+@main.route("/announcement/<int:id>")
+def view_announcement(id):
+    announcement=Announcement.query.get_or_404(id)
+    return render_template(
+        "public/announcement_detail.html",
+        announcement=announcement
+    )
 
     
 @main.route("/register", methods=["GET", "POST"])
