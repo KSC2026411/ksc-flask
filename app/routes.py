@@ -252,7 +252,7 @@ def change_password():
         current_user.must_change_password=False
         db.session.commit()
         return redirect(url_for("main.dashboard"))
-    return render_template("change_password.html")
+    return render_template("public/change_password.html")
 
 @main.route("/admin/user/<int:user_id>/reset-password", methods=["POST"])
 @login_required
