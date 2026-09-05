@@ -4,6 +4,7 @@ from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import text, or_
 from bs4 import BeautifulSoup
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash
 from sqlalchemy.orm import selectinload
 from datetime import datetime, timedelta, date
 import json
