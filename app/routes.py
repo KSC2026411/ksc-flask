@@ -249,7 +249,7 @@ def reject_reset(id):
 def change_password():
     if request.method=="POST":
         password=request.form.get("password")
-        current_user.password=generate_password_hash(password)
+        current_user.password=password
         current_user.must_change_password=False
         db.session.commit()
         return redirect(url_for("main.dashboard"))
