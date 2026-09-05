@@ -2,102 +2,116 @@
 {% block title %}Home{% endblock %}
 {% block content %}
 <style>
-.hero-section{
-min-height:520px;
+.hero{
+min-height:85vh;
 display:flex;
 align-items:center;
 justify-content:center;
 text-align:center;
 color:white;
-background:linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.65)),url("/static/images/cargo-bg.jpg");
-background-size:cover;
-background-position:center;
-border-radius:0 0 30px 30px;
 }
-.hero-content{
-max-width:800px;
-padding:30px;
+.hero-box{
+max-width:850px;
+padding:40px;
+background:rgba(0,0,0,.45);
+border-radius:25px;
 }
-.hero-content h1{
-font-size:48px;
-font-weight:700;
+.hero-box h1{
+font-size:55px;
+font-weight:800;
 }
-.hero-content p{
-font-size:20px;
-opacity:.9;
+.hero-box p{
+font-size:22px;
 }
-.hero-buttons{
-margin-top:30px;
-}
-.track-box{
-max-width:700px;
-margin:-60px auto 40px;
+.track-card{
+max-width:750px;
+margin:-80px auto 50px;
 background:white;
-padding:30px;
-border-radius:20px;
-box-shadow:0 15px 40px rgba(0,0,0,.15);
+padding:35px;
+border-radius:25px;
+box-shadow:0 15px 40px rgba(0,0,0,.25);
 }
 .service-card{
-border:none;
-border-radius:18px;
-padding:30px;
 height:100%;
-box-shadow:0 10px 25px rgba(0,0,0,.08);
+background:rgba(255,255,255,.95);
+padding:30px;
+border-radius:20px;
+text-align:center;
+box-shadow:0 10px 25px rgba(0,0,0,.15);
 }
 .service-icon{
-font-size:40px;
+font-size:45px;
 }
 .announcement-card{
-border-radius:15px;
-padding:20px;
-background:#f8f9fa;
-}
-.package-card{
-background:white;
-border-radius:15px;
-padding:20px;
-box-shadow:0 10px 20px rgba(0,0,0,.08);
-}
-.status-badge{
-background:#198754;
-color:white;
-padding:5px 12px;
+background:rgba(255,255,255,.95);
+padding:25px;
 border-radius:20px;
-font-size:12px;
+height:100%;
+box-shadow:0 10px 25px rgba(0,0,0,.15);
+}
+.step-card{
+background:rgba(255,255,255,.95);
+padding:25px;
+border-radius:20px;
+text-align:center;
+}
+@media(max-width:768px){
+.hero-box h1{
+font-size:36px;
+}
+.hero-box p{
+font-size:18px;
+}
 }
 </style>
-<section class="hero-section">
-<div class="hero-content">
+<section class="hero">
+<div class="hero-box">
 <h1>KSC LOGISTICS</h1>
-<p>Reliable Ocean Freight Solutions For Your Global Shipping Needs</p>
-<div class="hero-buttons">
+<p>Your Trusted Partner For International Ocean Freight And Package Shipping</p>
+<div class="mt-4">
 {% if current_user.is_authenticated %}
-<a href="{{ url_for('main.my_packages') }}" class="btn btn-primary btn-lg">My Dashboard</a>
+<a href="{{ url_for('main.my_packages') }}" class="btn btn-primary btn-lg me-2">
+My Dashboard
+</a>
 {% else %}
-<a href="{{ url_for('main.login') }}" class="btn btn-success btn-lg me-2">Login</a>
-<a href="{{ url_for('main.register') }}" class="btn btn-outline-light btn-lg">Create Account</a>
+<a href="{{ url_for('main.login') }}" class="btn btn-success btn-lg me-2">
+Login
+</a>
+<a href="{{ url_for('main.register') }}" class="btn btn-outline-light btn-lg">
+Register
+</a>
 {% endif %}
 </div>
 </div>
 </section>
-<section class="track-box">
-<h3 class="text-center mb-3">Track Your Shipment</h3>
-<p class="text-center text-muted">Enter your tracking number to view your package status</p>
+<section class="track-card">
+<h2 class="text-center mb-3">
+Track Your Shipment
+</h2>
+<p class="text-center text-muted">
+Enter your tracking number to view your package status
+</p>
 <form method="GET" action="{{ url_for('main.home') }}" class="d-flex gap-2">
-<input type="text" name="search" class="form-control" placeholder="Enter tracking number" value="{{ search_query }}">
-<button class="btn btn-warning">Track</button>
+<input type="text" name="search" class="form-control form-control-lg" placeholder="Tracking number" value="{{ search_query }}">
+<button class="btn btn-warning btn-lg">
+Track
+</button>
 </form>
 </section>
 {% if packages %}
 <div class="container mb-5">
-<h3 class="mb-4">Tracking Results</h3>
+<h2 class="text-white text-center mb-4">
+Tracking Results
+</h2>
 <div class="row">
 {% for package in packages %}
 <div class="col-md-4 mb-3">
-<div class="package-card">
+<div class="announcement-card">
 <h5>{{ package.tracking_number }}</h5>
-<p><strong>Status:</strong></p>
-<span class="status-badge">{{ package.status }}</span>
+<p>
+<strong>Status:</strong>
+{{ package.status }}
+</p>
 </div>
 </div>
 {% endfor %}
@@ -105,55 +119,91 @@ font-size:12px;
 </div>
 {% endif %}
 <div class="container mb-5">
-<h2 class="text-center mb-4">Our Services</h2>
+<h2 class="text-white text-center mb-4">
+Our Services
+</h2>
 <div class="row g-4">
 <div class="col-md-3">
-<div class="service-card text-center">
+<div class="service-card">
 <div class="service-icon">🚢</div>
 <h5>Ocean Shipping</h5>
-<p>International cargo transportation.</p>
+<p>Reliable international cargo transportation.</p>
 </div>
 </div>
 <div class="col-md-3">
-<div class="service-card text-center">
+<div class="service-card">
 <div class="service-icon">📦</div>
 <h5>Package Consolidation</h5>
-<p>Combine shipments efficiently.</p>
+<p>Combine shipments and reduce shipping costs.</p>
 </div>
 </div>
 <div class="col-md-3">
-<div class="service-card text-center">
+<div class="service-card">
 <div class="service-icon">🌎</div>
 <h5>Global Delivery</h5>
-<p>Reliable worldwide shipping.</p>
+<p>Ship packages across international destinations.</p>
 </div>
 </div>
 <div class="col-md-3">
-<div class="service-card text-center">
+<div class="service-card">
 <div class="service-icon">📍</div>
-<h5>Live Tracking</h5>
-<p>Follow your shipment progress.</p>
+<h5>Shipment Tracking</h5>
+<p>Follow your cargo progress anytime.</p>
 </div>
 </div>
 </div>
 </div>
 {% if announcements %}
 <div class="container mb-5">
-<h2 class="text-center mb-4">Latest Updates</h2>
-<div class="row">
+<h2 class="text-white text-center mb-4">
+Latest Updates
+</h2>
+<div class="row g-4">
 {% for announcement in announcements %}
-<div class="col-md-4 mb-3">
+<div class="col-md-4">
 <div class="announcement-card">
 <h5>{{ announcement.title }}</h5>
-<p>{{ announcement.message }}</p>
+<p class="text-muted">
+{{ announcement.created_at.strftime('%B %d, %Y') }}
+</p>
+<a href="{{ url_for('main.view_announcement', id=announcement.id) }}" class="btn btn-primary btn-sm">
+Read More
+</a>
 </div>
 </div>
 {% endfor %}
 </div>
 </div>
 {% endif %}
-<div class="container text-center mb-5">
-<h2>How It Works</h2>
-<p class="mt-3">1. Schedule your shipment → 2. Receive tracking number → 3. Monitor progress → 4. Receive delivery</p>
+<div class="container mb-5">
+<h2 class="text-white text-center mb-4">
+How It Works
+</h2>
+<div class="row g-4">
+<div class="col-md-3">
+<div class="step-card">
+<h4>1</h4>
+<p>Create Shipment</p>
+</div>
+</div>
+<div class="col-md-3">
+<div class="step-card">
+<h4>2</h4>
+<p>Receive Tracking Number</p>
+</div>
+</div>
+<div class="col-md-3">
+<div class="step-card">
+<h4>3</h4>
+<p>Monitor Progress</p>
+</div>
+</div>
+<div class="col-md-3">
+<div class="step-card">
+<h4>4</h4>
+<p>Receive Delivery</p>
+</div>
+</div>
+</div>
 </div>
 {% endblock %}
