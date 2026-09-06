@@ -725,13 +725,10 @@ def dashboard():
 @main.route("/schedule", methods=["GET", "POST"])
 @login_required
 def schedule():
-
     if current_user.role == "admin":
         flash("Admins cannot access customer pages.", "warning")
         return redirect(url_for("main.admin_dashboard"))
-
     if request.method == "POST":
-
         description = request.form.get("description", "").strip()
         street = request.form.get("street", "").strip()
         city = request.form.get("city", "").strip()
@@ -739,8 +736,6 @@ def schedule():
         zip_code = request.form.get("zip", "").strip()
         phone = request.form.get("phone", "").strip()
         pickup_date_str = request.form.get("date", "").strip()
-
-        # Validate required fields
         if not all([
             description,
             street,
@@ -752,8 +747,6 @@ def schedule():
         ]):
             flash("All fields are required!", "warning")
             return redirect(url_for("main.schedule"))
-
-        # Validate pickup date format
         try:
             pickup_datetime = datetime.strptime(
                 pickup_date_str,
@@ -762,72 +755,61 @@ def schedule():
         except ValueError:
             flash("Invalid pickup date!", "danger")
             return redirect(url_for("main.schedule"))
-
-        # Do not allow dates in the past.
-        # Today and all future dates are allowed.
         if pickup_datetime.date() < datetime.now().date():
             flash("Pickup date cannot be in the past.", "warning")
             return redirect(url_for("main.schedule"))
-
-        # Get uploaded photos
         photos = [
             photo
             for photo in request.files.getlist("package_photos")
             if photo and photo.filename
         ]
-
-        # Maximum 3 photos
-        if len(photos) > 3:
-            flash("You can upload a maximum of 3 photos.", "warning")
+        if not photos:
+            flash(
+                "At least one package photo is required before scheduling a pickup.",
+                "warning"
+            )
             return redirect(url_for("main.schedule"))
-
+        if len(photos) > 3:
+            flash(
+                "You can upload a maximum of 3 photos.",
+                "warning"
+            )
+            return redirect(url_for("main.schedule"))
         allowed_extensions = {
             "jpg",
             "jpeg",
             "png",
             "webp"
         }
-
-        max_file_size = 10 * 1024 * 1024  # 10 MB
-
-        # Validate each photo
+        max_file_size = 10 * 1024 * 1024
         for photo in photos:
-
             original_name = secure_filename(photo.filename)
-
             if not original_name:
                 flash(
                     "One of the uploaded files is invalid.",
                     "danger"
                 )
                 return redirect(url_for("main.schedule"))
-
             extension = (
                 original_name.rsplit(".", 1)[1].lower()
                 if "." in original_name
                 else ""
             )
-
             if extension not in allowed_extensions:
                 flash(
                     "Only JPG, JPEG, PNG, and WEBP photos are allowed.",
                     "warning"
                 )
                 return redirect(url_for("main.schedule"))
-
-            # Check file size
             photo.seek(0, os.SEEK_END)
             file_size = photo.tell()
             photo.seek(0)
-
             if file_size > max_file_size:
                 flash(
                     f"{original_name} is larger than 10 MB.",
                     "warning"
                 )
                 return redirect(url_for("main.schedule"))
-
-        # Upload folder
         upload_folder = os.environ.get(
             "UPLOAD_FOLDER",
             os.path.join(
@@ -837,10 +819,7 @@ def schedule():
                 "packages"
             )
         )
-
         os.makedirs(upload_folder, exist_ok=True)
-
-        # Create package
         package = Package(
             tracking_number=None,
             status="Pending Approval",
@@ -852,33 +831,20 @@ def schedule():
             user_id=current_user.id,
             pickup_date=pickup_datetime.date()
         )
-
         saved_files = []
-
         try:
-
             db.session.add(package)
             db.session.flush()
-
-            # Save photos
             for photo in photos:
-
                 original_name = secure_filename(photo.filename)
-
-                extension = (
-                    original_name.rsplit(".", 1)[1].lower()
-                )
-
+                extension = original_name.rsplit(".", 1)[1].lower()
                 filename = f"{uuid.uuid4().hex}.{extension}"
-
                 file_path = os.path.join(
                     upload_folder,
                     filename
                 )
-
                 photo.save(file_path)
                 saved_files.append(file_path)
-
                 package_photo = PackagePhoto(
                     package_id=package.id,
                     filename=filename,
@@ -886,48 +852,28 @@ def schedule():
                     uploaded_at=datetime.utcnow(),
                     delete_at=None
                 )
-
                 db.session.add(package_photo)
-
             db.session.commit()
-
         except Exception as e:
-
             db.session.rollback()
-
-            # Delete any files that were already saved
             for file_path in saved_files:
                 try:
                     if os.path.exists(file_path):
                         os.remove(file_path)
                 except Exception:
                     pass
-
             print("SCHEDULE PACKAGE ERROR:", e)
-
             flash(
                 "Unable to schedule pickup. Please try again.",
                 "danger"
             )
-
             return redirect(url_for("main.schedule"))
-
-        # Success message
-        if photos:
-            flash(
-                f"Pickup scheduled with {len(photos)} photo(s). "
-                "Awaiting admin approval.",
-                "success"
-            )
-        else:
-            flash(
-                "Pickup scheduled successfully. "
-                "Awaiting admin approval.",
-                "success"
-            )
-
+        flash(
+            f"Pickup scheduled with {len(photos)} photo(s). "
+            "Awaiting admin approval.",
+            "success"
+        )
         return redirect(url_for("main.schedule"))
-
     return render_template("customer/schedule.html")
 
 # -------------------

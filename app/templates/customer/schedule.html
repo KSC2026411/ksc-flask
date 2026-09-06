@@ -35,9 +35,11 @@ textarea.form-control{min-height:125px;resize:vertical}
 .form-text{font-size:12px;color:#7a8595;margin-top:6px}
 .photo-section{border:2px dashed #cbd5e1;border-radius:16px;background:#f8fafc;padding:26px;text-align:center;transition:.2s ease}
 .photo-section.drag-over{border-color:#0d6efd;background:#eef6ff}
+.photo-section.photo-error{border-color:#dc3545;background:#fff5f5}
 .photo-upload-icon{width:52px;height:52px;border-radius:50%;background:#eaf3ff;color:#0d6efd;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:22px}
 .photo-section h5{font-size:17px;font-weight:800;color:#253044;margin-bottom:5px}
 .photo-section p{font-size:13px;color:#697586;margin:0 0 16px}
+.photo-required-note{display:inline-flex;align-items:center;gap:5px;margin-bottom:14px;padding:6px 10px;border-radius:999px;background:#fff1f2;color:#b42318;font-size:12px;font-weight:700}
 .photo-input-wrap{max-width:430px;margin:0 auto}
 .photo-input-wrap .form-control{background:#fff;text-align:left}
 .photo-help{font-size:12px;color:#7a8595;line-height:1.6;margin-top:10px}
@@ -55,6 +57,8 @@ textarea.form-control{min-height:125px;resize:vertical}
 .review-item:last-child{border-bottom:0;padding-bottom:0}
 .review-label{color:#697586;font-weight:600}
 .review-value{color:#253044;font-weight:700;text-align:right;max-width:65%;word-break:break-word}
+.review-value.photo-required{color:#dc3545}
+.review-value.photo-selected{color:#198754}
 .submit-area{text-align:center;padding-top:28px}
 #schedule-submit{min-width:270px;min-height:56px;border-radius:11px;font-size:17px;font-weight:800;padding:14px 30px;box-shadow:0 7px 18px rgba(25,135,84,.2);transition:.2s}
 #schedule-submit:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 22px rgba(25,135,84,.27)}
@@ -116,7 +120,7 @@ textarea.form-control{min-height:125px;resize:vertical}
 <div class="schedule-header-top">
 <div>
 <h2><i class="bi bi-calendar-check text-primary me-2"></i>Schedule a Pickup</h2>
-<p>Tell us about your package, provide the pickup address, and upload photos for our team to review.</p>
+<p>Tell us about your package, provide the pickup address, and upload at least one photo for our team to review.</p>
 </div>
 <div class="header-icon">
 <i class="bi bi-truck"></i>
@@ -253,18 +257,22 @@ textarea.form-control{min-height:125px;resize:vertical}
 <div class="section-heading">
 <div class="section-icon"><i class="bi bi-camera"></i></div>
 <div>
-<h4>Package Photos</h4>
-<p>Photos help our team review your pickup request.</p>
+<h4>Package Photos <span class="required">*</span></h4>
+<p>At least one clear package photo is required for pickup approval.</p>
 </div>
 </div>
 <div class="photo-section" id="photo-dropzone">
 <div class="photo-upload-icon"><i class="bi bi-cloud-arrow-up"></i></div>
 <h5>Upload package photos</h5>
-<p>Choose up to 3 clear photos of your package.</p>
-<div class="photo-input-wrap">
-<input type="file" name="package_photos" id="package_photos" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
+<p>Upload at least 1 and up to 3 clear photos of your package.</p>
+<div class="photo-required-note">
+<i class="bi bi-exclamation-circle"></i>
+At least 1 photo required
 </div>
-<div class="photo-help">JPG, JPEG, PNG, or WEBP · Maximum 3 photos · Maximum 10 MB per photo</div>
+<div class="photo-input-wrap">
+<input type="file" name="package_photos" id="package_photos" class="form-control" accept="image/jpeg,image/png,image/webp" multiple required>
+</div>
+<div class="photo-help">JPG, JPEG, PNG, or WEBP · Minimum 1 photo · Maximum 3 photos · Maximum 10 MB per photo</div>
 <div id="photo-preview" class="row g-3 text-start"></div>
 </div>
 </div>
@@ -296,7 +304,7 @@ textarea.form-control{min-height:125px;resize:vertical}
 </div>
 <div class="review-item">
 <span class="review-label">Photos</span>
-<span class="review-value" id="review-photos">No photos selected</span>
+<span class="review-value photo-required" id="review-photos">At least 1 photo required</span>
 </div>
 </div>
 <div class="process-note">
@@ -336,6 +344,7 @@ const reviewDate=document.getElementById("review-date");
 const reviewPhotos=document.getElementById("review-photos");
 const maxPhotos=3;
 const maxFileSize=10*1024*1024;
+const allowedTypes=["image/jpeg","image/png","image/webp"];
 let selectedFiles=[];
 let submitting=false;
 const now=new Date();
@@ -356,6 +365,12 @@ return (bytes/(1024*1024)).toFixed(1)+" MB";
 }
 function renderPhotos(){
 preview.innerHTML="";
+if(selectedFiles.length===0){
+reviewPhotos.textContent="At least 1 photo required";
+reviewPhotos.classList.remove("photo-selected");
+reviewPhotos.classList.add("photo-required");
+return;
+}
 selectedFiles.forEach(function(file,index){
 const col=document.createElement("div");
 col.className="col-6 col-md-4";
@@ -377,6 +392,7 @@ selectedFiles.splice(index,1);
 syncFileInput();
 renderPhotos();
 updateReview();
+updatePhotoValidation();
 });
 const info=document.createElement("div");
 info.className="photo-preview-info";
@@ -394,6 +410,9 @@ card.appendChild(info);
 col.appendChild(card);
 preview.appendChild(col);
 });
+reviewPhotos.textContent=selectedFiles.length+" photo"+(selectedFiles.length===1?"":"s")+" selected";
+reviewPhotos.classList.remove("photo-required");
+reviewPhotos.classList.add("photo-selected");
 }
 function syncFileInput(){
 const dataTransfer=new DataTransfer();
@@ -402,6 +421,13 @@ dataTransfer.items.add(file);
 });
 fileInput.files=dataTransfer.files;
 }
+function updatePhotoValidation(){
+if(selectedFiles.length===0){
+dropzone.classList.add("photo-error");
+}else{
+dropzone.classList.remove("photo-error");
+}
+}
 function addFiles(files){
 const incoming=Array.from(files);
 if(selectedFiles.length+incoming.length>maxPhotos){
@@ -409,7 +435,7 @@ alert("You can upload a maximum of 3 photos.");
 return;
 }
 for(const file of incoming){
-if(!["image/jpeg","image/png","image/webp"].includes(file.type)){
+if(!allowedTypes.includes(file.type)){
 alert("Only JPG, JPEG, PNG, and WEBP photos are allowed.");
 return;
 }
@@ -417,7 +443,9 @@ if(file.size>maxFileSize){
 alert(file.name+" is larger than 10 MB.");
 return;
 }
-if(selectedFiles.some(function(existing){return existing.name===file.name&&existing.size===file.size})){
+if(selectedFiles.some(function(existing){
+return existing.name===file.name&&existing.size===file.size
+})){
 continue;
 }
 selectedFiles.push(file);
@@ -425,6 +453,7 @@ selectedFiles.push(file);
 syncFileInput();
 renderPhotos();
 updateReview();
+updatePhotoValidation();
 }
 fileInput.addEventListener("change",function(){
 addFiles(this.files);
@@ -466,7 +495,15 @@ if(zipValue)addressParts.push(zipValue);
 reviewAddress.textContent=addressParts.length?addressParts.join(", "):"Not entered";
 reviewPhone.textContent=phoneValue||"Not entered";
 reviewDate.textContent=formatDate(pickupDate.value);
-reviewPhotos.textContent=selectedFiles.length?selectedFiles.length+" photo"+(selectedFiles.length===1?"":"s")+" selected":"No photos selected";
+if(selectedFiles.length){
+reviewPhotos.textContent=selectedFiles.length+" photo"+(selectedFiles.length===1?"":"s")+" selected";
+reviewPhotos.classList.remove("photo-required");
+reviewPhotos.classList.add("photo-selected");
+}else{
+reviewPhotos.textContent="At least 1 photo required";
+reviewPhotos.classList.remove("photo-selected");
+reviewPhotos.classList.add("photo-required");
+}
 }
 [description,street,city,state,zip,phone,pickupDate].forEach(function(field){
 field.addEventListener("input",updateReview);
@@ -475,6 +512,13 @@ field.addEventListener("change",updateReview);
 form.addEventListener("submit",function(event){
 if(submitting){
 event.preventDefault();
+return;
+}
+if(selectedFiles.length===0){
+event.preventDefault();
+dropzone.classList.add("photo-error");
+alert("At least one package photo is required before scheduling a pickup.");
+fileInput.focus();
 return;
 }
 if(pickupDate.value&&pickupDate.value<todayString){
@@ -489,7 +533,7 @@ alert("You can upload a maximum of 3 photos.");
 return;
 }
 for(const file of selectedFiles){
-if(!["image/jpeg","image/png","image/webp"].includes(file.type)){
+if(!allowedTypes.includes(file.type)){
 event.preventDefault();
 alert("Only JPG, JPEG, and WEBP photos are allowed.");
 return;
@@ -505,6 +549,7 @@ button.disabled=true;
 button.innerHTML='<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Submitting Request...';
 });
 updateReview();
+updatePhotoValidation();
 });
 </script>
 {% endblock %}
