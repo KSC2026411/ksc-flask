@@ -1,108 +1,332 @@
 {% extends "admin/base_admin.html" %}
 {% block title %}Admin Dashboard{% endblock %}
 {% block admin_content %}
-<div class="container-fluid mt-4">
-<div class="row g-3 mb-4">
-<div class="col-6 col-md-4 col-xl">
-<div class="card bg-primary text-white text-center shadow-sm h-100">
-<div class="card-body">
-<h6 class="card-title">Total Packages</h6>
-<p class="fs-3 fw-bold mb-0">{{ total_packages or 0 }}</p>
-</div>
-</div>
-</div>
-<div class="col-6 col-md-4 col-xl">
-<div class="card bg-warning text-dark text-center shadow-sm h-100">
-<div class="card-body">
-<h6 class="card-title">Pending</h6>
-<p class="fs-3 fw-bold mb-0">{{ pending_deliveries or 0 }}</p>
-</div>
-</div>
-</div>
-<div class="col-6 col-md-4 col-xl">
-<div class="card bg-success text-white text-center shadow-sm h-100">
-<div class="card-body">
-<h6 class="card-title">Delivered Today</h6>
-<p class="fs-3 fw-bold mb-0">{{ delivered_today or 0 }}</p>
-</div>
-</div>
-</div>
-<div class="col-6 col-md-4 col-xl">
-<div class="card bg-info text-white text-center shadow-sm h-100">
-<div class="card-body">
-<h6 class="card-title">Active Users</h6>
-<p class="fs-3 fw-bold mb-0">{{ active_users or 0 }}</p>
-</div>
-</div>
-</div>
-<div class="col-6 col-md-4 col-xl">
-<div class="card bg-danger text-white text-center shadow-sm h-100">
-<div class="card-body">
-<h6 class="card-title">Pending Activations</h6>
-<p class="fs-3 fw-bold mb-0">{{ pending_activations or 0 }}</p>
-</div>
-</div>
-</div>
-<div class="col-6 col-md-4 col-xl">
-<div class="card bg-secondary text-white text-center shadow-sm h-100">
-<div class="card-body">
-<h6 class="card-title">Password Resets</h6>
-<p class="fs-3 fw-bold mb-0">
-<a href="{{ url_for('main.password_resets') }}" class="text-white text-decoration-none">
-{{ pending_password_resets or 0 }}
-</a>
-</p>
-</div>
-</div>
-</div>
-</div>
-<div class="card shadow-sm border-0 mb-4">
-<div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-<h5 class="mb-0">🟢 Users Currently Online</h5>
-<span class="badge bg-light text-dark">
-<span id="online-count">0</span> Online
-</span>
-</div>
-<div class="card-body">
-<div id="online-users-empty" class="text-center text-muted py-3">
-No users currently online.
-</div>
-<ul id="online-users-list" class="list-group list-group-flush"></ul>
-</div>
-</div>
-<div class="card shadow-sm border-0 mb-4">
-<div class="card-header bg-dark text-white">
-<h5 class="mb-0">Recent Announcements</h5>
-</div>
-<div class="card-body">
-{% if announcements %}
-{% for a in announcements %}
-<div class="border rounded p-3 mb-3">
-<h6 class="fw-bold mb-2">{{ a.title }}</h6>
-<div class="mb-2">{{ a.message|safe }}</div>
-<small class="text-muted">Posted: {{ a.created_at.strftime('%Y-%m-%d') }}</small>
-</div>
-{% endfor %}
-{% else %}
-<p class="text-muted mb-0">No announcements available.</p>
-{% endif %}
-</div>
-</div>
-<div class="card shadow-sm border-0">
-<div class="card-header bg-dark text-white">
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-<h5 class="mb-0">Search Packages</h5>
-<input type="text" id="package-search" class="form-control" placeholder="Search tracking number, customer, status..." style="max-width:400px;">
-</div>
-</div>
-<div class="card-body">
-<div id="empty-search-state" class="text-center py-5">
-<h5 class="fw-bold">Search for a Package</h5>
-<p class="text-muted mb-0">No packages are shown until you search.</p>
-</div>
-<div id="packages-table" class="d-none"></div>
-</div>
-</div>
+<style>
+.admin-dashboard {
+    padding: 1.25rem 0;
+}
+.dashboard-header {
+    margin-bottom: 1.5rem;
+}
+.dashboard-header h2 {
+    font-weight: 700;
+    margin-bottom: .25rem;
+}
+.dashboard-header p {
+    margin-bottom: 0;
+}
+.stat-card {
+    border: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    height: 100%;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .75rem 1.5rem rgba(0,0,0,.10) !important;
+}
+.stat-card-body {
+    padding: 1.25rem;
+}
+.stat-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+.stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+.stat-label {
+    font-size: .82rem;
+    font-weight: 600;
+    opacity: .85;
+    margin-bottom: .4rem;
+}
+.stat-number {
+    font-size: 1.9rem;
+    line-height: 1;
+    font-weight: 700;
+}
+.stat-link {
+    text-decoration: none;
+    color: inherit;
+}
+.dashboard-panel {
+    border: 0;
+    border-radius: 16px;
+    overflow: hidden;
+}
+.dashboard-panel .card-header {
+    border: 0;
+    padding: 1rem 1.25rem;
+}
+.dashboard-panel .card-body {
+    padding: 1.25rem;
+}
+.panel-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+}
+.online-header {
+    background: linear-gradient(135deg,#198754,#157347);
+}
+.online-badge {
+    font-size: .78rem;
+    font-weight: 600;
+    padding: .45rem .7rem;
+}
+.online-user {
+    padding: .9rem 0;
+    border-bottom: 1px solid rgba(0,0,0,.07);
+}
+.online-user:last-child {
+    border-bottom: 0;
+}
+.online-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e9f7ef;
+    color: #198754;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.online-status {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #198754;
+    display: inline-block;
+    margin-right: .35rem;
+}
+.announcement-item {
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: .75rem;
+    background: #fff;
+}
+.announcement-item:last-child {
+    margin-bottom: 0;
+}
+.announcement-title {
+    font-weight: 700;
+    margin-bottom: .4rem;
+}
+.announcement-date {
+    font-size: .78rem;
+}
+.search-header {
+    background: #212529;
+}
+.search-box {
+    max-width: 430px;
+}
+.search-box .form-control {
+    border-radius: 10px;
+    border: 0;
+    padding: .7rem .9rem;
+}
+.search-box .form-control:focus {
+    box-shadow: 0 0 0 .2rem rgba(255,255,255,.18);
+}
+.search-empty {
+    padding: 3rem 1rem;
+}
+.search-empty-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 16px;
+    background: #f1f3f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 1.5rem;
+}
+.dashboard-section {
+    margin-bottom: 1.5rem;
+}
+@media (max-width: 767.98px) {
+    .admin-dashboard {
+        padding-top: .75rem;
+    }
+    .dashboard-header h2 {
+        font-size: 1.5rem;
+    }
+    .stat-number {
+        font-size: 1.65rem;
+    }
+    .stat-card-body {
+        padding: 1rem;
+    }
+    .dashboard-panel .card-header,
+    .dashboard-panel .card-body {
+        padding: 1rem;
+    }
+    .search-box {
+        max-width: none;
+        width: 100%;
+    }
+}
+</style>
+<div class="container-fluid admin-dashboard">
+    <div class="dashboard-header">
+        <h2>Admin Dashboard</h2>
+        <p class="text-muted">Monitor shipments, customers, activity, and system requests.</p>
+    </div>
+    <div class="row g-3 dashboard-section">
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card stat-card shadow-sm bg-primary text-white">
+                <div class="stat-card-body">
+                    <div class="stat-top">
+                        <div>
+                            <div class="stat-label">Total Packages</div>
+                            <div class="stat-number">{{ total_packages or 0 }}</div>
+                        </div>
+                        <div class="stat-icon bg-white bg-opacity-25">📦</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card stat-card shadow-sm bg-warning text-dark">
+                <div class="stat-card-body">
+                    <div class="stat-top">
+                        <div>
+                            <div class="stat-label">Pending</div>
+                            <div class="stat-number">{{ pending_deliveries or 0 }}</div>
+                        </div>
+                        <div class="stat-icon bg-white bg-opacity-50">⏳</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card stat-card shadow-sm bg-success text-white">
+                <div class="stat-card-body">
+                    <div class="stat-top">
+                        <div>
+                            <div class="stat-label">Delivered Today</div>
+                            <div class="stat-number">{{ delivered_today or 0 }}</div>
+                        </div>
+                        <div class="stat-icon bg-white bg-opacity-25">✓</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card stat-card shadow-sm bg-info text-white">
+                <div class="stat-card-body">
+                    <div class="stat-top">
+                        <div>
+                            <div class="stat-label">Active Users</div>
+                            <div class="stat-number">{{ active_users or 0 }}</div>
+                        </div>
+                        <div class="stat-icon bg-white bg-opacity-25">👥</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card stat-card shadow-sm bg-danger text-white">
+                <div class="stat-card-body">
+                    <div class="stat-top">
+                        <div>
+                            <div class="stat-label">Pending Activations</div>
+                            <div class="stat-number">{{ pending_activations or 0 }}</div>
+                        </div>
+                        <div class="stat-icon bg-white bg-opacity-25">🔔</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <a href="{{ url_for('main.password_resets') }}" class="stat-link">
+                <div class="card stat-card shadow-sm bg-secondary text-white">
+                    <div class="stat-card-body">
+                        <div class="stat-top">
+                            <div>
+                                <div class="stat-label">Password Resets</div>
+                                <div class="stat-number">{{ pending_password_resets or 0 }}</div>
+                            </div>
+                            <div class="stat-icon bg-white bg-opacity-25">🔑</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="card dashboard-panel shadow-sm dashboard-section">
+        <div class="card-header online-header text-white d-flex justify-content-between align-items-center">
+            <h5 class="panel-title">🟢 Users Currently Online</h5>
+            <span class="badge bg-light text-dark online-badge"><span id="online-count">0</span> Online</span>
+        </div>
+        <div class="card-body">
+            <div id="online-users-empty" class="text-center text-muted py-4">
+                <div class="mb-2 fs-3">👤</div>
+                <div class="fw-semibold">No users currently online</div>
+                <small>Online users will appear here automatically.</small>
+            </div>
+            <div id="online-users-list"></div>
+        </div>
+    </div>
+    <div class="card dashboard-panel shadow-sm dashboard-section">
+        <div class="card-header bg-dark text-white">
+            <h5 class="panel-title">Recent Announcements</h5>
+        </div>
+        <div class="card-body">
+            {% if announcements %}
+            {% for a in announcements %}
+            <div class="announcement-item">
+                <div class="announcement-title">{{ a.title }}</div>
+                <div class="mb-2">{{ a.message|safe }}</div>
+                <small class="text-muted announcement-date">Posted: {{ a.created_at.strftime('%Y-%m-%d') }}</small>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="text-center text-muted py-4">
+                <div class="fs-3 mb-2">📢</div>
+                <div class="fw-semibold">No announcements available</div>
+                <small>New announcements will appear here.</small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card dashboard-panel shadow-sm">
+        <div class="card-header search-header text-white">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <div>
+                    <h5 class="panel-title">Search Packages</h5>
+                    <small class="text-white-50">Search by tracking number, customer, or status.</small>
+                </div>
+                <div class="search-box w-100">
+                    <input type="text" id="package-search" class="form-control" placeholder="Search packages...">
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="empty-search-state" class="search-empty text-center">
+                <div class="search-empty-icon">🔎</div>
+                <h5 class="fw-bold mb-2">Search for a Package</h5>
+                <p class="text-muted mb-0">Enter a tracking number, customer name, or status to begin.</p>
+            </div>
+            <div id="packages-table" class="d-none"></div>
+        </div>
+    </div>
 </div>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
@@ -111,22 +335,35 @@ adminSocket.on("online_users_update",function(data){
 const count=document.getElementById("online-count");
 const list=document.getElementById("online-users-list");
 const empty=document.getElementById("online-users-empty");
-count.textContent=data.count;
+const users=Array.isArray(data.users)?data.users:[];
+count.textContent=data.count||users.length;
 list.innerHTML="";
-if(data.users.length===0){
+if(users.length===0){
 empty.style.display="block";
 return;
 }
 empty.style.display="none";
-data.users.forEach(user=>{
-list.innerHTML+=`
-<li class="list-group-item d-flex justify-content-between align-items-center">
+users.forEach(function(user){
+const name=user.name||"Unknown User";
+const email=user.email||"";
+const role=user.role||"User";
+const initial=name.charAt(0).toUpperCase();
+const item=document.createElement("div");
+item.className="online-user d-flex justify-content-between align-items-center";
+item.innerHTML=`
+<div class="d-flex align-items-center gap-3">
+<div class="online-avatar">${initial}</div>
 <div>
-<strong>${user.name}</strong><br>
-<small class="text-muted">${user.email}</small>
+<div class="fw-semibold">${name}</div>
+<div class="small text-muted">${email}</div>
 </div>
-<span class="badge bg-success">${user.role}</span>
-</li>`;
+</div>
+<div class="text-end">
+<div><span class="online-status"></span><span class="small text-success fw-semibold">Online</span></div>
+<span class="badge bg-light text-dark mt-1">${role}</span>
+</div>
+`;
+list.appendChild(item);
 });
 });
 </script>
@@ -134,23 +371,33 @@ list.innerHTML+=`
 const searchInput=document.getElementById("package-search");
 const packagesTable=document.getElementById("packages-table");
 const emptyState=document.getElementById("empty-search-state");
-searchInput.addEventListener("input",async function(){
+let searchTimer=null;
+searchInput.addEventListener("input",function(){
 const query=this.value.trim();
+clearTimeout(searchTimer);
 if(!query){
 packagesTable.classList.add("d-none");
 packagesTable.innerHTML="";
 emptyState.classList.remove("d-none");
 return;
 }
+searchTimer=setTimeout(async function(){
 try{
 const response=await fetch(`{{ url_for('main.admin_packages_table') }}?search=${encodeURIComponent(query)}`);
+if(!response.ok){
+throw new Error("Search request failed");
+}
 const html=await response.text();
 packagesTable.innerHTML=html;
 emptyState.classList.add("d-none");
 packagesTable.classList.remove("d-none");
 }catch(err){
 console.error("Search error:",err);
+packagesTable.innerHTML='<div class="alert alert-danger mb-0">Unable to load package results. Please try again.</div>';
+emptyState.classList.add("d-none");
+packagesTable.classList.remove("d-none");
 }
+},250);
 });
 </script>
 {% endblock %}
