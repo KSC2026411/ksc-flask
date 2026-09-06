@@ -1,0 +1,304 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Package Details{% endblock %}
+{% block admin_content %}
+<style>
+.package-view-page{padding:1.25rem 0 2rem}
+.package-view-header{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.package-view-header h2{font-weight:800;margin:0 0 .3rem;color:#212529}
+.package-view-header p{margin:0;color:#6c757d}
+.package-view-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+.package-view-actions .btn{border-radius:9px;font-weight:600}
+.package-card{border:0;border-radius:16px;overflow:hidden;box-shadow:0 .3rem 1rem rgba(0,0,0,.06);margin-bottom:1.25rem}
+.package-card-header{padding:1rem 1.25rem;background:#212529;color:#fff;font-weight:700;display:flex;align-items:center;gap:.6rem}
+.package-card-header i{font-size:1.05rem}
+.package-card-body{padding:1.35rem}
+.info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.info-item{padding:.9rem 1rem;border:1px solid #e5e7eb;border-radius:11px;background:#f8fafc}
+.info-label{display:block;color:#6c757d;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.035em;margin-bottom:.3rem}
+.info-value{display:block;color:#212529;font-size:.95rem;font-weight:600;word-break:break-word}
+.info-value.muted{color:#6c757d;font-weight:500}
+.tracking-box{padding:1.15rem 1.25rem;border-radius:13px;background:#eef5ff;border:1px solid #d7e8ff;margin-bottom:1.25rem}
+.tracking-label{font-size:.72rem;color:#5b6b7d;text-transform:uppercase;letter-spacing:.04em;font-weight:700;margin-bottom:.3rem}
+.tracking-number{font-size:1.45rem;font-weight:800;color:#0d6efd;letter-spacing:.025em;word-break:break-word}
+.status-badge{display:inline-flex;align-items:center;justify-content:center;padding:.48rem .8rem;border-radius:999px;font-size:.78rem;font-weight:700;white-space:nowrap}
+.address-box{line-height:1.65;color:#343a40}
+.description-box{white-space:pre-wrap;line-height:1.65;color:#343a40;min-height:70px}
+.notes-box{white-space:pre-wrap;line-height:1.65;color:#343a40;min-height:50px}
+.photo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
+.photo-card{border:1px solid #e1e5ea;border-radius:13px;overflow:hidden;background:#fff;box-shadow:0 .2rem .7rem rgba(0,0,0,.05)}
+.photo-card a{display:block;text-decoration:none}
+.photo-card img{display:block;width:100%;height:210px;object-fit:cover;background:#f1f3f5}
+.photo-info{padding:.75rem}
+.photo-name{font-size:.8rem;font-weight:600;color:#495057;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.photo-date{font-size:.72rem;color:#8a94a0;margin-top:.2rem}
+.no-photos{padding:2rem 1rem;text-align:center;border:1px dashed #ced4da;border-radius:13px;background:#f8f9fa;color:#6c757d}
+.no-photos i{font-size:2rem;display:block;margin-bottom:.5rem}
+.action-buttons{display:flex;flex-wrap:wrap;gap:.6rem}
+.action-buttons .btn{border-radius:9px;font-weight:600}
+@media(max-width:767.98px){
+.package-view-page{padding:.75rem 0 1.5rem}
+.package-view-header h2{font-size:1.45rem}
+.package-view-actions{width:100%}
+.package-view-actions .btn{flex:1 1 auto}
+.info-grid{grid-template-columns:1fr}
+.package-card-body{padding:1rem}
+.photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.photo-card img{height:160px}
+.tracking-number{font-size:1.2rem}
+}
+@media(max-width:450px){
+.photo-grid{grid-template-columns:1fr}
+.photo-card img{height:220px}
+.package-view-actions .btn{width:100%;flex:1 1 100%}
+}
+</style>
+<div class="container-fluid package-view-page">
+<div class="package-view-header">
+<div>
+<h2><i class="bi bi-box-seam text-primary me-2"></i>Package Details</h2>
+<p>View package information, customer details, pickup information, and uploaded photos.</p>
+</div>
+<div class="package-view-actions">
+<a href="{{ url_for('main.admin_packages') }}" class="btn btn-outline-secondary">
+<i class="bi bi-arrow-left me-1"></i>Back to Packages
+</a>
+<a href="{{ url_for('main.admin_container_tracking', package_id=package.id) }}" class="btn btn-primary">
+<i class="bi bi-box-seam me-1"></i>Track Container
+</a>
+</div>
+</div>
+<div class="tracking-box">
+<div class="tracking-label">Tracking Number</div>
+{% if package.tracking_number %}
+<div class="tracking-number">{{ package.tracking_number }}</div>
+{% else %}
+<div class="tracking-number text-muted">Pending Approval</div>
+{% endif %}
+</div>
+<div class="row g-4">
+<div class="col-12 col-xl-6">
+<div class="card package-card">
+<div class="package-card-header">
+<i class="bi bi-person-circle"></i>
+Customer Information
+</div>
+<div class="package-card-body">
+<div class="info-grid">
+<div class="info-item">
+<span class="info-label">Customer</span>
+<span class="info-value">{{ package.user.full_name if package.user else "N/A" }}</span>
+</div>
+<div class="info-item">
+<span class="info-label">Email</span>
+<span class="info-value">{{ package.user.email if package.user else "N/A" }}</span>
+</div>
+<div class="info-item">
+<span class="info-label">Phone</span>
+<span class="info-value">{{ package.user.phone if package.user and package.user.phone else "N/A" }}</span>
+</div>
+<div class="info-item">
+<span class="info-label">Customer ID</span>
+<span class="info-value">{{ package.user.id if package.user else "N/A" }}</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="col-12 col-xl-6">
+<div class="card package-card">
+<div class="package-card-header">
+<i class="bi bi-info-circle"></i>
+Package Status
+</div>
+<div class="package-card-body">
+<div class="info-grid">
+<div class="info-item">
+<span class="info-label">Current Status</span>
+<span class="info-value">
+{% if package.status == "Delivered" %}
+<span class="status-badge bg-success-subtle text-success">{{ package.status }}</span>
+{% elif package.status == "In Transit" %}
+<span class="status-badge bg-info-subtle text-info-emphasis">{{ package.status }}</span>
+{% elif package.status in ["Pending","Pending Approval"] %}
+<span class="status-badge bg-warning-subtle text-warning-emphasis">{{ package.status or "Pending Approval" }}</span>
+{% elif package.status == "Cancelled" %}
+<span class="status-badge bg-danger-subtle text-danger">{{ package.status }}</span>
+{% elif package.status == "Archived" %}
+<span class="status-badge bg-dark text-white">{{ package.status }}</span>
+{% elif package.status == "In Warehouse" %}
+<span class="status-badge bg-primary-subtle text-primary">{{ package.status }}</span>
+{% elif package.status == "Scheduled" %}
+<span class="status-badge bg-success-subtle text-success">{{ package.status }}</span>
+{% elif package.status == "Ready for Pickup" %}
+<span class="status-badge bg-info-subtle text-info-emphasis">{{ package.status }}</span>
+{% elif package.status == "Loaded" %}
+<span class="status-badge bg-secondary-subtle text-secondary">{{ package.status }}</span>
+{% elif package.status == "Picked Up" %}
+<span class="status-badge bg-info-subtle text-info-emphasis">{{ package.status }}</span>
+{% elif package.status == "Rescheduled" %}
+<span class="status-badge bg-warning-subtle text-warning-emphasis">{{ package.status }}</span>
+{% else %}
+<span class="status-badge bg-secondary-subtle text-secondary">{{ package.status or "Pending Approval" }}</span>
+{% endif %}
+</span>
+</div>
+<div class="info-item">
+<span class="info-label">Pickup Date</span>
+<span class="info-value">
+{% if package.pickup_date %}
+{{ package.pickup_date.strftime("%Y-%m-%d") }}
+{% else %}
+<span class="muted">N/A</span>
+{% endif %}
+</span>
+</div>
+<div class="info-item">
+<span class="info-label">Expected Delivery</span>
+<span class="info-value">
+{% if package.expected_delivery %}
+{{ package.expected_delivery.strftime("%Y-%m-%d") }}
+{% else %}
+<span class="muted">Not scheduled</span>
+{% endif %}
+</span>
+</div>
+<div class="info-item">
+<span class="info-label">Package ID</span>
+<span class="info-value">{{ package.id }}</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="col-12">
+<div class="card package-card">
+<div class="package-card-header">
+<i class="bi bi-box"></i>
+Package Information
+</div>
+<div class="package-card-body">
+<div class="mb-4">
+<div class="info-label">Description</div>
+<div class="description-box">
+{{ package.description or "No package description provided." }}
+</div>
+</div>
+<div>
+<div class="info-label">Notes</div>
+<div class="notes-box">
+{{ package.notes or "No notes available." }}
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="col-12">
+<div class="card package-card">
+<div class="package-card-header">
+<i class="bi bi-geo-alt"></i>
+Pickup Information
+</div>
+<div class="package-card-body">
+<div class="row g-3">
+<div class="col-12 col-md-6">
+<div class="info-item h-100">
+<span class="info-label">Pickup Address</span>
+<div class="info-value address-box">
+{% if package.street %}{{ package.street }}<br>{% endif %}
+{% if package.city %}{{ package.city }}{% endif %}
+{% if package.city and package.state %}, {% endif %}
+{% if package.state %}{{ package.state }}{% endif %}
+{% if package.zip_code %} {{ package.zip_code }}{% endif %}
+{% if not package.street and not package.city and not package.state and not package.zip_code %}
+<span class="muted">No pickup address provided.</span>
+{% endif %}
+</div>
+</div>
+</div>
+<div class="col-12 col-md-6">
+<div class="info-item h-100">
+<span class="info-label">Pickup Date</span>
+<span class="info-value">
+{% if package.pickup_date %}
+{{ package.pickup_date.strftime("%A, %B %d, %Y") }}
+{% else %}
+<span class="muted">Not specified</span>
+{% endif %}
+</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="col-12">
+<div class="card package-card">
+<div class="package-card-header">
+<i class="bi bi-camera"></i>
+Package Photos
+</div>
+<div class="package-card-body">
+{% if photos %}
+<div class="photo-grid">
+{% for photo in photos %}
+<div class="photo-card">
+<a href="{{ url_for('main.package_photo', photo_id=photo.id) }}" target="_blank" rel="noopener noreferrer">
+<img src="{{ url_for('main.package_photo', photo_id=photo.id) }}" alt="Package photo {{ loop.index }}" loading="lazy">
+</a>
+<div class="photo-info">
+<div class="photo-name" title="{{ photo.original_filename or photo.filename }}">
+{{ photo.original_filename or photo.filename }}
+</div>
+{% if photo.uploaded_at %}
+<div class="photo-date">
+Uploaded {{ photo.uploaded_at.strftime("%Y-%m-%d %H:%M") }}
+</div>
+{% endif %}
+</div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="no-photos">
+<i class="bi bi-camera-slash"></i>
+<div class="fw-bold mb-1">No package photos available</div>
+<div class="small">No photos have been uploaded for this package.</div>
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+<div class="col-12">
+<div class="card package-card">
+<div class="package-card-header">
+<i class="bi bi-lightning-charge"></i>
+Package Actions
+</div>
+<div class="package-card-body">
+<div class="action-buttons">
+<a href="{{ url_for('main.admin_packages') }}" class="btn btn-outline-secondary">
+<i class="bi bi-arrow-left me-1"></i>Back to Active Packages
+</a>
+<a href="{{ url_for('main.admin_container_tracking', package_id=package.id) }}" class="btn btn-primary">
+<i class="bi bi-box-seam me-1"></i>Track Container
+</a>
+{% if not package.tracking_number %}
+<form method="POST" action="{{ url_for('main.approve_package', package_id=package.id) }}" onsubmit="return confirm('Approve this pickup request?');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<button type="submit" class="btn btn-success">
+<i class="bi bi-check-circle me-1"></i>Approve Pickup
+</button>
+</form>
+{% endif %}
+<form method="POST" action="{{ url_for('main.admin_delete_package', package_id=package.id) }}" onsubmit="return confirm('WARNING: This will permanently delete this package and its related records. This cannot be undone. Continue?');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<button type="submit" class="btn btn-outline-danger">
+<i class="bi bi-trash me-1"></i>Delete Package
+</button>
+</form>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}
