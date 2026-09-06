@@ -3,43 +3,106 @@
 {% block customer_content %}
 <style>
 html,body{min-height:100%}
-.schedule-page{position:relative;width:100%;min-height:calc(100vh - 80px);padding:45px 0 60px;background:linear-gradient(rgba(11,31,58,.72),rgba(11,31,58,.72)),url("{{ url_for('static', filename='images/lb8.jpg') }}") center center/cover no-repeat;background-attachment:fixed}
-.schedule-page .schedule-container{width:100%;max-width:1150px;margin:0 auto}
-.schedule-page .schedule-card{border:0!important;border-radius:20px!important;overflow:hidden;background:rgba(255,255,255,.97);box-shadow:0 20px 60px rgba(0,0,0,.28)!important}
-.schedule-page .schedule-header{padding:32px 38px 26px;border-bottom:1px solid #e4e8ee}
-.schedule-page .schedule-header h3{font-size:36px;font-weight:800;color:#172033;margin:0 0 8px}
-.schedule-page .schedule-header p{font-size:18px;line-height:1.6;color:#697586;margin:0}
-.schedule-page .schedule-body{padding:38px}
-.schedule-page .form-section{margin-bottom:30px}
-.schedule-page .section-title{display:flex;align-items:center;gap:10px;margin-bottom:20px;color:#253044;font-size:21px;font-weight:800}
-.schedule-page .section-title i{color:#0d6efd}
-.schedule-page .form-label{color:#344054;font-size:16px;font-weight:700;margin-bottom:8px}
-.schedule-page .form-control,.schedule-page .form-select{min-height:52px;border:1px solid #cfd6df;border-radius:10px;font-size:16px;color:#253044;padding:12px 15px;box-shadow:none;transition:border-color .18s ease,box-shadow .18s ease}
-.schedule-page textarea.form-control{min-height:120px;resize:vertical}
-.schedule-page .form-control:focus,.schedule-page .form-select:focus{border-color:#0d6efd;box-shadow:0 0 0 3px rgba(13,110,253,.12)}
-.schedule-page .form-control::placeholder{color:#98a2b3}
-.schedule-page .address-section{background:#f7f9fb;border:1px solid #e2e7ed;border-radius:14px;padding:25px}
-.schedule-page .photo-section{background:#f7f9fb;border:1px solid #e2e7ed;border-radius:14px;padding:25px}
-.schedule-page .photo-section .form-control{background:#fff}
-.schedule-page .photo-help{font-size:14px;color:#697586;line-height:1.6;margin-top:7px}
-.schedule-page #photo-preview{margin-top:18px!important}
-.schedule-page .photo-preview-card{border:1px solid #dce2e9;border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 3px 12px rgba(0,0,0,.07)}
-.schedule-page .photo-preview-card img{width:100%;height:160px;object-fit:cover;display:block}
-.schedule-page .photo-preview-name{padding:9px 10px;font-size:13px;color:#697586;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.schedule-page .submit-area{padding-top:8px;text-align:center}
-.schedule-page #schedule-submit{min-width:250px;min-height:56px;border-radius:11px;font-size:18px;font-weight:800;padding:14px 32px;box-shadow:0 6px 16px rgba(25,135,84,.22)}
-.schedule-page .required-note{color:#697586;font-size:13px;margin-top:12px}
-.schedule-page .alert{border-radius:10px;font-size:16px}
-@media(max-width:991.98px){.schedule-page{padding:35px 0 45px}.schedule-page .schedule-header{padding:28px 30px 22px}.schedule-page .schedule-header h3{font-size:30px}.schedule-page .schedule-body{padding:30px}}
-@media(max-width:767.98px){.schedule-page{min-height:calc(100vh - 60px);padding:20px 0 30px;background:linear-gradient(rgba(11,31,58,.78),rgba(11,31,58,.78)),url("{{ url_for('static', filename='images/lb8.jpg') }}") center center/cover no-repeat;background-attachment:scroll}.schedule-page .schedule-header{padding:24px 20px 20px}.schedule-page .schedule-header h3{font-size:27px}.schedule-page .schedule-header p{font-size:16px}.schedule-page .schedule-body{padding:20px}.schedule-page .address-section,.schedule-page .photo-section{padding:18px}.schedule-page .section-title{font-size:19px}.schedule-page .form-control,.schedule-page .form-select{min-height:50px;font-size:16px}.schedule-page #schedule-submit{width:100%;min-width:0}.schedule-page .photo-preview-card img{height:130px}}
-@media(max-width:575.98px){.schedule-page .schedule-header h3{font-size:24px}.schedule-page .schedule-body{padding:16px}.schedule-page .address-section,.schedule-page .photo-section{padding:16px}.schedule-page .photo-preview-card img{height:120px}}
+.schedule-page{position:relative;width:100%;min-height:calc(100vh - 80px);padding:40px 15px 60px;background:linear-gradient(rgba(9,27,51,.78),rgba(9,27,51,.78)),url("{{ url_for('static',filename='images/lb8.jpg') }}") center center/cover no-repeat;background-attachment:fixed}
+.schedule-container{width:100%;max-width:1120px;margin:0 auto}
+.schedule-card{border:0!important;border-radius:22px!important;overflow:hidden;background:rgba(255,255,255,.98);box-shadow:0 24px 70px rgba(0,0,0,.3)!important}
+.schedule-header{padding:32px 40px 28px;border-bottom:1px solid #e5e7eb}
+.schedule-header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.schedule-header h2{font-size:32px;font-weight:800;color:#172033;margin:0 0 7px;letter-spacing:-.02em}
+.schedule-header p{font-size:16px;line-height:1.6;color:#697586;margin:0;max-width:700px}
+.header-icon{width:52px;height:52px;border-radius:14px;background:#eaf3ff;color:#0d6efd;display:flex;align-items:center;justify-content:center;font-size:25px;flex-shrink:0}
+.steps{display:flex;align-items:center;margin-top:28px;max-width:720px}
+.step{display:flex;align-items:center;gap:9px;color:#98a2b3;font-size:14px;font-weight:700;white-space:nowrap}
+.step-number{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#e9ecef;color:#667085;font-size:13px;font-weight:800}
+.step.active{color:#0d6efd}
+.step.active .step-number{background:#0d6efd;color:#fff}
+.step-line{height:2px;background:#e1e5ea;flex:1;margin:0 12px}
+.schedule-body{padding:38px 40px}
+.form-section{margin-bottom:34px}
+.section-heading{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.section-icon{width:38px;height:38px;border-radius:10px;background:#eef5ff;color:#0d6efd;display:flex;align-items:center;justify-content:center;font-size:18px}
+.section-heading h4{font-size:20px;font-weight:800;color:#253044;margin:0}
+.section-heading p{font-size:13px;color:#7a8595;margin:3px 0 0}
+.form-label{color:#344054;font-size:15px;font-weight:700;margin-bottom:8px}
+.required{color:#dc3545}
+.form-control,.form-select{min-height:52px;border:1px solid #cfd6df;border-radius:10px;font-size:16px;color:#253044;padding:12px 15px;box-shadow:none;transition:border-color .18s ease,box-shadow .18s ease}
+textarea.form-control{min-height:125px;resize:vertical}
+.form-control:focus,.form-select:focus{border-color:#0d6efd;box-shadow:0 0 0 3px rgba(13,110,253,.12)}
+.form-control::placeholder{color:#98a2b3}
+.address-section{background:#f8fafc;border:1px solid #e3e8ef;border-radius:15px;padding:25px}
+.address-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:#475467;margin-bottom:18px}
+.address-title i{color:#0d6efd}
+.form-text{font-size:12px;color:#7a8595;margin-top:6px}
+.photo-section{border:2px dashed #cbd5e1;border-radius:16px;background:#f8fafc;padding:26px;text-align:center;transition:.2s ease}
+.photo-section.drag-over{border-color:#0d6efd;background:#eef6ff}
+.photo-upload-icon{width:52px;height:52px;border-radius:50%;background:#eaf3ff;color:#0d6efd;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:22px}
+.photo-section h5{font-size:17px;font-weight:800;color:#253044;margin-bottom:5px}
+.photo-section p{font-size:13px;color:#697586;margin:0 0 16px}
+.photo-input-wrap{max-width:430px;margin:0 auto}
+.photo-input-wrap .form-control{background:#fff;text-align:left}
+.photo-help{font-size:12px;color:#7a8595;line-height:1.6;margin-top:10px}
+.photo-preview{margin-top:22px}
+.photo-preview-card{position:relative;border:1px solid #dce2e9;border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 4px 15px rgba(0,0,0,.07)}
+.photo-preview-card img{width:100%;height:145px;object-fit:cover;display:block}
+.photo-preview-info{padding:9px 10px;text-align:left}
+.photo-preview-name{font-size:12px;font-weight:600;color:#475467;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.photo-preview-size{font-size:11px;color:#98a2b3;margin-top:2px}
+.remove-photo{position:absolute;top:8px;right:8px;width:30px;height:30px;border:0;border-radius:50%;background:rgba(0,0,0,.72);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;transition:.2s}
+.remove-photo:hover{background:#dc3545;transform:scale(1.05)}
+.review-section{background:#f8fafc;border:1px solid #e1e6ed;border-radius:16px;padding:24px;margin-top:4px}
+.review-title{font-size:17px;font-weight:800;color:#253044;margin-bottom:18px}
+.review-item{display:flex;justify-content:space-between;gap:20px;padding:11px 0;border-bottom:1px solid #e7ebf0;font-size:14px}
+.review-item:last-child{border-bottom:0;padding-bottom:0}
+.review-label{color:#697586;font-weight:600}
+.review-value{color:#253044;font-weight:700;text-align:right;max-width:65%;word-break:break-word}
+.submit-area{text-align:center;padding-top:28px}
+#schedule-submit{min-width:270px;min-height:56px;border-radius:11px;font-size:17px;font-weight:800;padding:14px 30px;box-shadow:0 7px 18px rgba(25,135,84,.2);transition:.2s}
+#schedule-submit:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 22px rgba(25,135,84,.27)}
+.required-note{color:#7a8595;font-size:12px;margin-top:12px}
+.process-note{display:flex;align-items:flex-start;gap:10px;background:#eef6ff;border:1px solid #d7e8ff;border-radius:11px;padding:13px 15px;margin-top:22px;color:#47617d;font-size:13px;line-height:1.5}
+.process-note i{color:#0d6efd;font-size:17px;margin-top:1px}
+.alert{border-radius:11px}
+.alert-container{max-width:1120px;margin:0 auto 18px}
+@media(max-width:767.98px){
+.schedule-page{padding:20px 10px 35px;background-attachment:scroll}
+.schedule-header{padding:24px 20px 22px}
+.schedule-header-top{gap:12px}
+.schedule-header h2{font-size:25px}
+.schedule-header p{font-size:14px}
+.header-icon{width:44px;height:44px;font-size:20px;border-radius:11px}
+.steps{margin-top:22px}
+.step{font-size:11px;gap:5px}
+.step-number{width:27px;height:27px;font-size:12px}
+.step-line{margin:0 6px}
+.schedule-body{padding:25px 18px}
+.form-section{margin-bottom:28px}
+.section-heading h4{font-size:18px}
+.section-heading p{font-size:12px}
+.address-section{padding:18px}
+.photo-section{padding:20px 14px}
+.photo-preview-card img{height:125px}
+.review-section{padding:18px}
+.review-item{font-size:13px}
+#schedule-submit{width:100%;min-width:0}
+}
+@media(max-width:450px){
+.schedule-page{padding-left:0;padding-right:0}
+.schedule-card{border-radius:0!important}
+.schedule-header{padding:22px 16px 20px}
+.schedule-body{padding:22px 15px}
+.steps{width:100%}
+.step span:not(.step-number){display:none}
+.step{flex:0 0 auto}
+.step-line{margin:0 8px}
+.header-icon{display:none}
+}
 </style>
 <div class="schedule-page">
-{% with messages=get_flashed_messages() %}
+{% with messages=get_flashed_messages(with_categories=true) %}
 {% if messages %}
-<div class="container mb-3">
-{% for msg in messages %}
-<div class="alert alert-info alert-dismissible fade show" role="alert">
+<div class="alert-container">
+{% for category,msg in messages %}
+<div class="alert alert-{{ 'warning' if category == 'message' else category }} alert-dismissible fade show shadow-sm mb-2" role="alert">
 {{ msg }}
 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
@@ -47,38 +110,76 @@ html,body{min-height:100%}
 </div>
 {% endif %}
 {% endwith %}
-<div class="container schedule-container">
+<div class="schedule-container">
 <div class="card schedule-card">
 <div class="schedule-header">
-<h3><i class="bi bi-calendar-check me-2 text-primary"></i>Schedule a Pickup</h3>
-<p>Enter your package information and upload photos for our review.</p>
+<div class="schedule-header-top">
+<div>
+<h2><i class="bi bi-calendar-check text-primary me-2"></i>Schedule a Pickup</h2>
+<p>Tell us about your package, provide the pickup address, and upload photos for our team to review.</p>
+</div>
+<div class="header-icon">
+<i class="bi bi-truck"></i>
+</div>
+</div>
+<div class="steps">
+<div class="step active">
+<span class="step-number">1</span>
+<span>Package</span>
+</div>
+<div class="step-line"></div>
+<div class="step active">
+<span class="step-number">2</span>
+<span>Pickup</span>
+</div>
+<div class="step-line"></div>
+<div class="step active">
+<span class="step-number">3</span>
+<span>Photos & Submit</span>
+</div>
+</div>
 </div>
 <div class="schedule-body">
 <form method="POST" enctype="multipart/form-data" id="schedule-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 <div class="form-section">
-<div class="section-title"><i class="bi bi-box-seam"></i>Package Information</div>
+<div class="section-heading">
+<div class="section-icon"><i class="bi bi-box-seam"></i></div>
+<div>
+<h4>Package Information</h4>
+<p>Give us a clear description of what you are shipping.</p>
+</div>
+</div>
 <div class="row g-3">
 <div class="col-12">
-<label class="form-label">Package Description</label>
-<textarea name="description" class="form-control" rows="3" placeholder="Describe what you're shipping (e.g. 2 boxes of clothing, TV, etc.)" required></textarea>
+<label for="description" class="form-label">Package Description <span class="required">*</span></label>
+<textarea id="description" name="description" class="form-control" rows="4" maxlength="2000" placeholder="Example: 2 boxes of clothing, one television, and household items." required></textarea>
+<div class="form-text">Please be as specific as possible so our team can properly review your request.</div>
 </div>
 </div>
 </div>
 <div class="form-section">
-<div class="section-title"><i class="bi bi-geo-alt"></i>Pickup Information</div>
+<div class="section-heading">
+<div class="section-icon"><i class="bi bi-geo-alt"></i></div>
+<div>
+<h4>Pickup Information</h4>
+<p>Where should we collect your package?</p>
+</div>
+</div>
 <div class="address-section">
+<div class="address-title"><i class="bi bi-house-door"></i> Pickup Address</div>
 <div class="row g-3">
-<div class="col-md-6">
-<label class="form-label">Street</label>
-<input type="text" name="street" class="form-control" required>
+<div class="col-12">
+<label for="street" class="form-label">Street Address <span class="required">*</span></label>
+<input type="text" id="street" name="street" class="form-control" maxlength="255" autocomplete="street-address" placeholder="Enter your street address" required>
 </div>
 <div class="col-md-6">
-<label class="form-label">City</label>
-<input type="text" name="city" class="form-control" required>
+<label for="city" class="form-label">City <span class="required">*</span></label>
+<input type="text" id="city" name="city" class="form-control" maxlength="100" autocomplete="address-level2" placeholder="Enter city" required>
 </div>
-<div class="col-md-4">
-<label class="form-label">State</label>
-<select name="state" class="form-select" required>
+<div class="col-md-3 col-sm-6">
+<label for="state" class="form-label">State <span class="required">*</span></label>
+<select id="state" name="state" class="form-select" autocomplete="address-level1" required>
 <option value="">Select State</option>
 <option value="AL">Alabama</option>
 <option value="AK">Alaska</option>
@@ -132,16 +233,16 @@ html,body{min-height:100%}
 <option value="WY">Wyoming</option>
 </select>
 </div>
-<div class="col-md-4">
-<label class="form-label">ZIP</label>
-<input type="text" name="zip" class="form-control" required>
+<div class="col-md-3 col-sm-6">
+<label for="zip" class="form-label">ZIP Code <span class="required">*</span></label>
+<input type="text" id="zip" name="zip" class="form-control" maxlength="20" autocomplete="postal-code" inputmode="numeric" placeholder="ZIP code" required>
 </div>
-<div class="col-md-4">
-<label class="form-label">Phone Number</label>
-<input type="text" name="phone" class="form-control" required>
+<div class="col-md-6">
+<label for="phone" class="form-label">Phone Number <span class="required">*</span></label>
+<input type="tel" id="phone" name="phone" class="form-control" maxlength="30" autocomplete="tel" inputmode="tel" placeholder="Best phone number for pickup" required>
 </div>
-<div class="col-md-4">
-<label class="form-label">Pickup Date</label>
+<div class="col-md-6">
+<label for="pickup-date" class="form-label">Pickup Date <span class="required">*</span></label>
 <input type="date" name="date" id="pickup-date" class="form-control" required>
 <div class="form-text">Today and future dates are available.</div>
 </div>
@@ -149,17 +250,65 @@ html,body{min-height:100%}
 </div>
 </div>
 <div class="form-section">
-<div class="section-title"><i class="bi bi-camera"></i>Package Photos</div>
-<div class="photo-section">
-<p class="mb-2">Upload up to 3 clear photos of your package.</p>
-<div class="photo-help mb-3">Photos help us review your pickup request. JPG, JPEG, PNG, or WEBP. Maximum 3 photos.</div>
+<div class="section-heading">
+<div class="section-icon"><i class="bi bi-camera"></i></div>
+<div>
+<h4>Package Photos</h4>
+<p>Photos help our team review your pickup request.</p>
+</div>
+</div>
+<div class="photo-section" id="photo-dropzone">
+<div class="photo-upload-icon"><i class="bi bi-cloud-arrow-up"></i></div>
+<h5>Upload package photos</h5>
+<p>Choose up to 3 clear photos of your package.</p>
+<div class="photo-input-wrap">
 <input type="file" name="package_photos" id="package_photos" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
-<div id="photo-preview" class="row g-3"></div>
+</div>
+<div class="photo-help">JPG, JPEG, PNG, or WEBP · Maximum 3 photos · Maximum 10 MB per photo</div>
+<div id="photo-preview" class="row g-3 text-start"></div>
+</div>
+</div>
+<div class="form-section">
+<div class="section-heading">
+<div class="section-icon"><i class="bi bi-check2-circle"></i></div>
+<div>
+<h4>Review Your Request</h4>
+<p>Please make sure everything is correct before submitting.</p>
+</div>
+</div>
+<div class="review-section">
+<div class="review-title">Pickup Request Summary</div>
+<div class="review-item">
+<span class="review-label">Package</span>
+<span class="review-value" id="review-description">Not entered</span>
+</div>
+<div class="review-item">
+<span class="review-label">Pickup Address</span>
+<span class="review-value" id="review-address">Not entered</span>
+</div>
+<div class="review-item">
+<span class="review-label">Phone</span>
+<span class="review-value" id="review-phone">Not entered</span>
+</div>
+<div class="review-item">
+<span class="review-label">Pickup Date</span>
+<span class="review-value" id="review-date">Not selected</span>
+</div>
+<div class="review-item">
+<span class="review-label">Photos</span>
+<span class="review-value" id="review-photos">No photos selected</span>
+</div>
+</div>
+<div class="process-note">
+<i class="bi bi-info-circle-fill"></i>
+<div>After you submit your request, our team will review the information and photos. Your package will remain <strong>Pending Approval</strong> until it has been approved.</div>
 </div>
 </div>
 <div class="submit-area">
-<button type="submit" id="schedule-submit" class="btn btn-success btn-lg"><i class="bi bi-calendar-check me-2"></i>Schedule Pickup</button>
-<div class="required-note">Please review your information before submitting.</div>
+<button type="submit" id="schedule-submit" class="btn btn-success btn-lg">
+<i class="bi bi-calendar-check me-2"></i>Schedule Pickup
+</button>
+<div class="required-note">Fields marked with <span class="required">*</span> are required.</div>
 </div>
 </form>
 </div>
@@ -168,70 +317,194 @@ html,body{min-height:100%}
 </div>
 <script>
 document.addEventListener("DOMContentLoaded",function(){
+const form=document.getElementById("schedule-form");
 const fileInput=document.getElementById("package_photos");
 const preview=document.getElementById("photo-preview");
-const form=document.getElementById("schedule-form");
+const dropzone=document.getElementById("photo-dropzone");
 const button=document.getElementById("schedule-submit");
 const pickupDate=document.getElementById("pickup-date");
+const description=document.getElementById("description");
+const street=document.getElementById("street");
+const city=document.getElementById("city");
+const state=document.getElementById("state");
+const zip=document.getElementById("zip");
+const phone=document.getElementById("phone");
+const reviewDescription=document.getElementById("review-description");
+const reviewAddress=document.getElementById("review-address");
+const reviewPhone=document.getElementById("review-phone");
+const reviewDate=document.getElementById("review-date");
+const reviewPhotos=document.getElementById("review-photos");
 const maxPhotos=3;
 const maxFileSize=10*1024*1024;
-const today=new Date();
-const year=today.getFullYear();
-const month=String(today.getMonth()+1).padStart(2,"0");
-const day=String(today.getDate()).padStart(2,"0");
-const todayString=`${year}-${month}-${day}`;
+let selectedFiles=[];
+let submitting=false;
+const now=new Date();
+const year=now.getFullYear();
+const month=String(now.getMonth()+1).padStart(2,"0");
+const day=String(now.getDate()).padStart(2,"0");
+const todayString=year+"-"+month+"-"+day;
 pickupDate.min=todayString;
-fileInput.addEventListener("change",function(){
-preview.innerHTML="";
-const files=Array.from(fileInput.files);
-if(files.length>maxPhotos){
-alert("You can upload a maximum of 3 photos.");
-fileInput.value="";
-return;
+function escapeHtml(value){
+const div=document.createElement("div");
+div.textContent=value||"";
+return div.innerHTML;
 }
-for(const file of files){
-if(!file.type.startsWith("image/")){
-alert("Only image files are allowed.");
-fileInput.value="";
-preview.innerHTML="";
-return;
+function formatFileSize(bytes){
+if(bytes<1024)return bytes+" B";
+if(bytes<1024*1024)return (bytes/1024).toFixed(1)+" KB";
+return (bytes/(1024*1024)).toFixed(1)+" MB";
 }
-if(file.size>maxFileSize){
-alert(file.name+" is larger than 10 MB.");
-fileInput.value="";
+function renderPhotos(){
 preview.innerHTML="";
-return;
-}
+selectedFiles.forEach(function(file,index){
 const col=document.createElement("div");
 col.className="col-6 col-md-4";
 const card=document.createElement("div");
 card.className="photo-preview-card";
 const image=document.createElement("img");
-image.src=URL.createObjectURL(file);
 image.alt="Package photo preview";
+const url=URL.createObjectURL(file);
+image.src=url;
+image.onload=function(){URL.revokeObjectURL(url)};
+const remove=document.createElement("button");
+remove.type="button";
+remove.className="remove-photo";
+remove.innerHTML='<i class="bi bi-x-lg"></i>';
+remove.title="Remove photo";
+remove.setAttribute("aria-label","Remove "+file.name);
+remove.addEventListener("click",function(){
+selectedFiles.splice(index,1);
+syncFileInput();
+renderPhotos();
+updateReview();
+});
+const info=document.createElement("div");
+info.className="photo-preview-info";
 const name=document.createElement("div");
 name.className="photo-preview-name";
 name.textContent=file.name;
+const size=document.createElement("div");
+size.className="photo-preview-size";
+size.textContent=formatFileSize(file.size);
+info.appendChild(name);
+info.appendChild(size);
 card.appendChild(image);
-card.appendChild(name);
+card.appendChild(remove);
+card.appendChild(info);
 col.appendChild(card);
 preview.appendChild(col);
+});
 }
+function syncFileInput(){
+const dataTransfer=new DataTransfer();
+selectedFiles.forEach(function(file){
+dataTransfer.items.add(file);
+});
+fileInput.files=dataTransfer.files;
+}
+function addFiles(files){
+const incoming=Array.from(files);
+if(selectedFiles.length+incoming.length>maxPhotos){
+alert("You can upload a maximum of 3 photos.");
+return;
+}
+for(const file of incoming){
+if(!["image/jpeg","image/png","image/webp"].includes(file.type)){
+alert("Only JPG, JPEG, PNG, and WEBP photos are allowed.");
+return;
+}
+if(file.size>maxFileSize){
+alert(file.name+" is larger than 10 MB.");
+return;
+}
+if(selectedFiles.some(function(existing){return existing.name===file.name&&existing.size===file.size})){
+continue;
+}
+selectedFiles.push(file);
+}
+syncFileInput();
+renderPhotos();
+updateReview();
+}
+fileInput.addEventListener("change",function(){
+addFiles(this.files);
+});
+["dragenter","dragover"].forEach(function(eventName){
+dropzone.addEventListener(eventName,function(event){
+event.preventDefault();
+dropzone.classList.add("drag-over");
+});
+});
+["dragleave","drop"].forEach(function(eventName){
+dropzone.addEventListener(eventName,function(event){
+event.preventDefault();
+dropzone.classList.remove("drag-over");
+});
+});
+dropzone.addEventListener("drop",function(event){
+addFiles(event.dataTransfer.files);
+});
+function formatDate(value){
+if(!value)return "Not selected";
+const parts=value.split("-");
+if(parts.length!==3)return value;
+return parts[1]+"/"+parts[2]+"/"+parts[0];
+}
+function updateReview(){
+const desc=description.value.trim();
+const streetValue=street.value.trim();
+const cityValue=city.value.trim();
+const stateValue=state.value;
+const zipValue=zip.value.trim();
+const phoneValue=phone.value.trim();
+reviewDescription.textContent=desc||"Not entered";
+let addressParts=[];
+if(streetValue)addressParts.push(streetValue);
+if(cityValue)addressParts.push(cityValue);
+if(stateValue)addressParts.push(stateValue);
+if(zipValue)addressParts.push(zipValue);
+reviewAddress.textContent=addressParts.length?addressParts.join(", "):"Not entered";
+reviewPhone.textContent=phoneValue||"Not entered";
+reviewDate.textContent=formatDate(pickupDate.value);
+reviewPhotos.textContent=selectedFiles.length?selectedFiles.length+" photo"+(selectedFiles.length===1?"":"s")+" selected":"No photos selected";
+}
+[description,street,city,state,zip,phone,pickupDate].forEach(function(field){
+field.addEventListener("input",updateReview);
+field.addEventListener("change",updateReview);
 });
 form.addEventListener("submit",function(event){
+if(submitting){
+event.preventDefault();
+return;
+}
 if(pickupDate.value&&pickupDate.value<todayString){
+event.preventDefault();
 alert("Pickup date cannot be in the past.");
-event.preventDefault();
+pickupDate.focus();
 return;
 }
-if(fileInput.files.length>maxPhotos){
+if(selectedFiles.length>maxPhotos){
+event.preventDefault();
 alert("You can upload a maximum of 3 photos.");
-event.preventDefault();
 return;
 }
+for(const file of selectedFiles){
+if(!["image/jpeg","image/png","image/webp"].includes(file.type)){
+event.preventDefault();
+alert("Only JPG, JPEG, and WEBP photos are allowed.");
+return;
+}
+if(file.size>maxFileSize){
+event.preventDefault();
+alert(file.name+" is larger than 10 MB.");
+return;
+}
+}
+submitting=true;
 button.disabled=true;
-button.innerHTML='<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+button.innerHTML='<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Submitting Request...';
 });
+updateReview();
 });
 </script>
 {% endblock %}
