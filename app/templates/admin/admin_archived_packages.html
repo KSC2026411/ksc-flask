@@ -1,76 +1,252 @@
 {% extends "admin/base_admin.html" %}
-
+{% block title %}Archived Packages{% endblock %}
 {% block admin_content %}
-
-<div class="container-fluid mt-4">
-
-    <h2 class="mb-4">Archived Packages</h2>
-
-    <div class="table-responsive">
-
-        <table class="table table-striped table-bordered align-middle">
-
-            <thead class="table-dark">
-                <tr>
-                    <th>Tracking</th>
-                    <th>Description</th>
-                    <th>User</th>
-                    <th>Phone</th>
-                    <th>Pickup Date</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                {% for p in packages %}
-                <tr>
-
-                    <td>{{ p.tracking_number }}</td>
-                    <td>{{ p.description }}</td>
-                    <td>{{ p.user.name if p.user else "N/A" }}</td>
-                    <td>{{ p.user.phone if p.user else "N/A" }}</td>
-
-                    <td>
-                        {{ p.pickup_date.strftime('%Y-%m-%d') if p.pickup_date else "N/A" }}
-                    </td>
-
-                    <td>
-                        <span class="badge bg-secondary">
-                            Archived
-                        </span>
-                    </td>
-
-                    <td>
-
-                        <form method="POST"
-                              action="{{ url_for('main.admin_restore_package', package_id=p.id) }}"
-                              onsubmit="return confirm('Restore this package?');">
-
-                            <button class="btn btn-success btn-sm">
-                                Restore
-                            </button>
-
-                        </form>
-
-                    </td>
-
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="7" class="text-center">
-                        No archived packages found.
-                    </td>
-                </tr>
-                {% endfor %}
-
-            </tbody>
-
-        </table>
-
+<style>
+    .archived-page {
+        padding: 1.5rem 0 2rem;
+    }
+    .page-header {
+        margin-bottom: 1.5rem;
+    }
+    .page-title {
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin-bottom: .25rem;
+    }
+    .page-subtitle {
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+    .package-count {
+        display: inline-flex;
+        align-items: center;
+        padding: .45rem .8rem;
+        border-radius: 999px;
+        background: #f1f3f5;
+        color: #495057;
+        font-size: .85rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .table-card {
+        border: 1px solid #e9ecef;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 .35rem 1rem rgba(0,0,0,.05);
+        overflow: hidden;
+    }
+    .table-wrapper {
+        overflow-x: auto;
+    }
+    .archived-table {
+        margin-bottom: 0;
+        min-width: 900px;
+    }
+    .archived-table thead th {
+        background: #212529;
+        color: #fff;
+        border: 0;
+        padding: .9rem .85rem;
+        font-size: .78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        white-space: nowrap;
+    }
+    .archived-table tbody td {
+        padding: .9rem .85rem;
+        border-color: #edf0f2;
+        vertical-align: middle;
+    }
+    .archived-table tbody tr {
+        transition: background-color .15s ease, transform .15s ease;
+    }
+    .archived-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    .tracking-number {
+        font-weight: 700;
+        color: #212529;
+        white-space: nowrap;
+    }
+    .description-cell {
+        max-width: 280px;
+    }
+    .description-text {
+        display: block;
+        max-width: 280px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #495057;
+    }
+    .user-name {
+        font-weight: 600;
+        color: #343a40;
+        white-space: nowrap;
+    }
+    .phone-number {
+        color: #6c757d;
+        white-space: nowrap;
+    }
+    .pickup-date {
+        color: #495057;
+        white-space: nowrap;
+    }
+    .archived-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .45rem .7rem;
+        border-radius: 999px;
+        background: #e9ecef;
+        color: #495057;
+        font-size: .78rem;
+        font-weight: 700;
+    }
+    .archived-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #6c757d;
+    }
+    .restore-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .4rem;
+        min-width: 92px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all .15s ease;
+    }
+    .restore-btn:hover {
+        transform: translateY(-1px);
+    }
+    .empty-state {
+        padding: 4rem 1.5rem !important;
+        text-align: center;
+    }
+    .empty-icon {
+        width: 58px;
+        height: 58px;
+        margin: 0 auto 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: #f1f3f5;
+        color: #6c757d;
+        font-size: 1.35rem;
+    }
+    .empty-title {
+        font-weight: 700;
+        margin-bottom: .35rem;
+        color: #343a40;
+    }
+    .empty-text {
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+    @media (max-width: 767.98px) {
+        .archived-page {
+            padding-top: 1rem;
+        }
+        .page-header {
+            gap: 1rem;
+        }
+        .page-title {
+            font-size: 1.5rem;
+        }
+        .table-card {
+            border-radius: 10px;
+        }
+    }
+</style>
+<div class="container-fluid archived-page">
+    <div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div>
+            <h2 class="page-title">Archived Packages</h2>
+            <p class="page-subtitle">Review archived packages and restore them when needed.</p>
+        </div>
+        <div class="package-count">
+            {{ packages|length }} archived package{% if packages|length != 1 %}s{% endif %}
+        </div>
     </div>
-
+    <div class="table-card">
+        <div class="table-wrapper">
+            <table class="table archived-table align-middle">
+                <thead>
+                    <tr>
+                        <th>Tracking</th>
+                        <th>Description</th>
+                        <th>User</th>
+                        <th>Phone</th>
+                        <th>Pickup Date</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in packages %}
+                    <tr>
+                        <td>
+                            <span class="tracking-number">
+                                {{ p.tracking_number or "N/A" }}
+                            </span>
+                        </td>
+                        <td class="description-cell">
+                            <span class="description-text" title="{{ p.description or 'N/A' }}">
+                                {{ p.description or "N/A" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="user-name">
+                                {{ p.user.name if p.user else "N/A" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="phone-number">
+                                {{ p.user.phone if p.user else "N/A" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="pickup-date">
+                                {{ p.pickup_date.strftime('%Y-%m-%d') if p.pickup_date else "N/A" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="archived-badge">
+                                <span class="archived-dot"></span>
+                                Archived
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <form method="POST"
+                                  action="{{ url_for('main.admin_restore_package', package_id=p.id) }}"
+                                  onsubmit="return confirm('Restore this package?');"
+                                  class="d-inline">
+                                <button type="submit" class="btn btn-success btn-sm restore-btn">
+                                    <span>↩</span>
+                                    <span>Restore</span>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <div class="empty-icon">📦</div>
+                            <div class="empty-title">No archived packages</div>
+                            <p class="empty-text">
+                                There are currently no packages in the archive.
+                            </p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-
 {% endblock %}

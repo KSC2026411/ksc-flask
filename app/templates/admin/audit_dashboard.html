@@ -1,78 +1,292 @@
 {% extends "admin/base_admin.html" %}
-
 {% block title %}Audit Dashboard{% endblock %}
-
 {% block admin_content %}
-
-<div class="container mt-4">
-
-    <h2 class="mb-3">🔐 System Audit Dashboard</h2>
-
-    <p class="text-muted">
-        Showing latest system activity (last 200 events)
-    </p>
-
-    <div class="table-responsive">
-
-        <table class="table table-dark table-striped table-hover">
-
-            <thead>
-                <tr>
-                    <th>Time</th>
-                    <th>User ID</th>
-                    <th>Action</th>
-                    <th>Details</th>
-                    <th>IP</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                {% for log in logs %}
-
-                <tr>
-
-                    <td>{{ log.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-
-                    <td>
-                        {{ log.user_id if log.user_id else 'System' }}
-                    </td>
-
-                    <td>
-                        <span class="badge bg-primary">
-                            {{ log.action }}
-                        </span>
-                    </td>
-
-                    <td>
-                        {{ log.details }}
-                    </td>
-
-                    <td>
-                        {{ log.ip_address or 'N/A' }}
-                    </td>
-
-                    <td>
-
-                        {% if log.status == "success" %}
-                            <span class="badge bg-success">Success</span>
-                        {% else %}
-                            <span class="badge bg-danger">Failed</span>
-                        {% endif %}
-
-                    </td>
-
-                </tr>
-
-                {% endfor %}
-
-            </tbody>
-
-        </table>
-
+<style>
+    .audit-page {
+        padding: 1.5rem 0 2rem;
+    }
+    .audit-header {
+        margin-bottom: 1.5rem;
+    }
+    .audit-title {
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin-bottom: .25rem;
+    }
+    .audit-subtitle {
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+    .audit-count {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .5rem .85rem;
+        border-radius: 999px;
+        background: #f1f3f5;
+        color: #495057;
+        font-size: .85rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .audit-card {
+        border: 1px solid #e9ecef;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 .35rem 1rem rgba(0,0,0,.05);
+        overflow: hidden;
+    }
+    .audit-card-header {
+        padding: 1rem 1.15rem;
+        border-bottom: 1px solid #e9ecef;
+        background: #fff;
+    }
+    .audit-card-title {
+        font-weight: 700;
+        margin: 0;
+        color: #343a40;
+    }
+    .audit-card-subtitle {
+        margin: .2rem 0 0;
+        color: #6c757d;
+        font-size: .85rem;
+    }
+    .audit-table-wrapper {
+        overflow-x: auto;
+    }
+    .audit-table {
+        margin-bottom: 0;
+        min-width: 1000px;
+    }
+    .audit-table thead th {
+        background: #212529;
+        color: #fff;
+        border: 0;
+        padding: .85rem .9rem;
+        font-size: .76rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        white-space: nowrap;
+    }
+    .audit-table tbody td {
+        padding: .85rem .9rem;
+        border-color: #edf0f2;
+        vertical-align: middle;
+    }
+    .audit-table tbody tr {
+        transition: background-color .15s ease;
+    }
+    .audit-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    .audit-time {
+        color: #495057;
+        font-size: .85rem;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+    .audit-user {
+        font-weight: 600;
+        color: #343a40;
+        white-space: nowrap;
+    }
+    .system-user {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        color: #6c757d;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .action-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: .42rem .65rem;
+        border-radius: 7px;
+        background: #e7f1ff;
+        color: #0d6efd;
+        font-size: .76rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .details-cell {
+        max-width: 420px;
+        color: #495057;
+    }
+    .details-text {
+        display: block;
+        max-width: 420px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .ip-address {
+        color: #6c757d;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font-size: .8rem;
+        white-space: nowrap;
+    }
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .42rem .65rem;
+        border-radius: 999px;
+        font-size: .76rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+    }
+    .status-success {
+        background: #d1e7dd;
+        color: #146c43;
+    }
+    .status-success .status-dot {
+        background: #198754;
+    }
+    .status-failed {
+        background: #f8d7da;
+        color: #b02a37;
+    }
+    .status-failed .status-dot {
+        background: #dc3545;
+    }
+    .empty-state {
+        padding: 4rem 1.5rem !important;
+        text-align: center;
+    }
+    .empty-icon {
+        width: 58px;
+        height: 58px;
+        margin: 0 auto 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: #f1f3f5;
+        color: #6c757d;
+        font-size: 1.35rem;
+    }
+    .empty-title {
+        font-weight: 700;
+        color: #343a40;
+        margin-bottom: .35rem;
+    }
+    .empty-text {
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+    @media (max-width: 767.98px) {
+        .audit-page {
+            padding-top: 1rem;
+        }
+        .audit-title {
+            font-size: 1.5rem;
+        }
+        .audit-card {
+            border-radius: 10px;
+        }
+    }
+</style>
+<div class="container-fluid audit-page">
+    <div class="audit-header d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div>
+            <h2 class="audit-title">🔐 System Audit Dashboard</h2>
+            <p class="audit-subtitle">
+                Review recent system activity, administrative actions, and security events.
+            </p>
+        </div>
+        <div class="audit-count">
+            <span>●</span>
+            {{ logs|length }} event{% if logs|length != 1 %}s{% endif %}
+        </div>
     </div>
-
+    <div class="audit-card">
+        <div class="audit-card-header">
+            <h5 class="audit-card-title">Recent Activity</h5>
+            <p class="audit-card-subtitle">
+                Showing the latest system activity (last 200 events)
+            </p>
+        </div>
+        <div class="audit-table-wrapper">
+            <table class="table audit-table align-middle">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>User ID</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                        <th>IP Address</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>
+                            <span class="audit-time">
+                                {{ log.created_at.strftime('%Y-%m-%d %H:%M') }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if log.user_id %}
+                                <span class="audit-user">
+                                    {{ log.user_id }}
+                                </span>
+                            {% else %}
+                                <span class="system-user">
+                                    ⚙ System
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="action-badge">
+                                {{ log.action }}
+                            </span>
+                        </td>
+                        <td class="details-cell">
+                            <span class="details-text" title="{{ log.details or 'N/A' }}">
+                                {{ log.details or "N/A" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="ip-address">
+                                {{ log.ip_address or "N/A" }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if log.status == "success" %}
+                                <span class="status-badge status-success">
+                                    <span class="status-dot"></span>
+                                    Success
+                                </span>
+                            {% else %}
+                                <span class="status-badge status-failed">
+                                    <span class="status-dot"></span>
+                                    Failed
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <div class="empty-icon">🔐</div>
+                            <div class="empty-title">No audit events found</div>
+                            <p class="empty-text">
+                                There is currently no system activity to display.
+                            </p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-
 {% endblock %}
