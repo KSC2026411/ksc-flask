@@ -1,97 +1,345 @@
 {% extends "admin/base_admin.html" %}
+{% block title %}All Users{% endblock %}
 {% block admin_content %}
-<div class="container-fluid mt-4">
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-<div>
-<h2 class="mb-1">All Users</h2>
-<p class="text-muted mb-0">Manage customer accounts, roles, and account access</p>
-</div>
-</div>
-<div class="card shadow-sm border-0">
-<div class="card-body p-0">
-<div class="table-responsive">
-<table class="table table-striped table-bordered align-middle mb-0">
-<thead class="table-dark">
-<tr>
-<th>ID</th>
-<th>Full Name</th>
-<th>Email</th>
-<th>Phone</th>
-<th>Role</th>
-<th>Status</th>
-<th style="min-width:350px;">Actions</th>
-</tr>
-</thead>
-<tbody>
-{% if users %}
-{% for user in users %}
-<tr>
-<td>{{ user.id }}</td>
-<td class="fw-semibold">{{ user.full_name }}</td>
-<td>{{ user.email }}</td>
-<td>{{ user.phone or "N/A" }}</td>
-<td>
-<span class="badge {% if user.role == 'admin' %}bg-danger{% else %}bg-primary{% endif %}">
-{{ user.role|capitalize }}
-</span>
-</td>
-<td>
-{% if user.is_active %}
-<span class="badge bg-success">Active</span>
-{% else %}
-<span class="badge bg-danger">Deactivated</span>
-{% endif %}
-</td>
-<td>
-<div class="d-flex flex-wrap gap-2">
-<form method="POST"
- action="{{ url_for('main.admin_reset_password', user_id=user.id) }}"
- onsubmit="return confirm('Generate a temporary password for this user?');">
-<button type="submit" class="btn btn-outline-warning btn-sm">
-Reset Password
-</button>
-</form>
-{% if user.role == 'admin' %}
-<form method="POST" action="{{ url_for('main.demote_user', user_id=user.id) }}" onsubmit="return confirm('Demote this admin user?');">
-<button type="submit" class="btn btn-outline-danger btn-sm">
-Demote
-</button>
-</form>
-{% else %}
-<form method="POST" action="{{ url_for('main.promote_user', user_id=user.id) }}" onsubmit="return confirm('Promote this user to admin?');">
-<button type="submit" class="btn btn-outline-success btn-sm">
-Promote
-</button>
-</form>
-{% endif %}
-{% if user.is_active %}
-<form method="POST" action="{{ url_for('main.deactivate_user', user_id=user.id) }}" onsubmit="return confirm('Deactivate this account?');">
-<button type="submit" class="btn btn-outline-danger btn-sm">
-Deactivate
-</button>
-</form>
-{% else %}
-<form method="POST" action="{{ url_for('main.activate_user', user_id=user.id) }}" onsubmit="return confirm('Activate this account?');">
-<button type="submit" class="btn btn-outline-success btn-sm">
-Activate
-</button>
-</form>
-{% endif %}
-</div>
-</td>
-</tr>
-{% endfor %}
-{% else %}
-<tr>
-<td colspan="7" class="text-center py-4 text-muted">
-No users found.
-</td>
-</tr>
-{% endif %}
-</tbody>
-</table>
-</div>
-</div>
-</div>
+<style>
+    .users-page {
+        padding: 1.5rem 0 2rem;
+    }
+    .page-header {
+        margin-bottom: 1.5rem;
+    }
+    .page-title {
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin-bottom: .25rem;
+    }
+    .page-subtitle {
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+    .user-count {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .45rem .8rem;
+        border-radius: 999px;
+        background: #f1f3f5;
+        color: #495057;
+        font-size: .85rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .users-card {
+        border: 1px solid #e9ecef;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 .35rem 1rem rgba(0,0,0,.05);
+        overflow: hidden;
+    }
+    .users-card-header {
+        padding: 1rem 1.15rem;
+        border-bottom: 1px solid #e9ecef;
+        background: #fff;
+    }
+    .users-card-title {
+        font-weight: 700;
+        margin: 0;
+        color: #343a40;
+    }
+    .users-card-subtitle {
+        margin: .2rem 0 0;
+        color: #6c757d;
+        font-size: .85rem;
+    }
+    .users-table-wrapper {
+        overflow-x: auto;
+    }
+    .users-table {
+        margin-bottom: 0;
+        min-width: 1100px;
+    }
+    .users-table thead th {
+        background: #212529;
+        color: #fff;
+        border: 0;
+        padding: .85rem .9rem;
+        font-size: .76rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        white-space: nowrap;
+    }
+    .users-table tbody td {
+        padding: .9rem;
+        border-color: #edf0f2;
+        vertical-align: middle;
+    }
+    .users-table tbody tr {
+        transition: background-color .15s ease;
+    }
+    .users-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    .user-id {
+        color: #6c757d;
+        font-size: .82rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .user-name {
+        color: #343a40;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .user-email {
+        color: #495057;
+        white-space: nowrap;
+    }
+    .user-phone {
+        color: #6c757d;
+        white-space: nowrap;
+    }
+    .role-badge,
+    .account-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .42rem .65rem;
+        border-radius: 999px;
+        font-size: .76rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .role-admin {
+        background: #f8d7da;
+        color: #b02a37;
+    }
+    .role-customer {
+        background: #e7f1ff;
+        color: #0d6efd;
+    }
+    .status-active {
+        background: #d1e7dd;
+        color: #146c43;
+    }
+    .status-inactive {
+        background: #f8d7da;
+        color: #b02a37;
+    }
+    .badge-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+    }
+    .role-admin .badge-dot {
+        background: #dc3545;
+    }
+    .role-customer .badge-dot {
+        background: #0d6efd;
+    }
+    .status-active .badge-dot {
+        background: #198754;
+    }
+    .status-inactive .badge-dot {
+        background: #dc3545;
+    }
+    .actions-cell {
+        min-width: 350px;
+    }
+    .user-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .45rem;
+    }
+    .user-actions form {
+        margin: 0;
+    }
+    .user-actions .btn {
+        border-radius: 7px;
+        font-size: .76rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .empty-state {
+        padding: 4rem 1.5rem !important;
+        text-align: center;
+    }
+    .empty-icon {
+        width: 58px;
+        height: 58px;
+        margin: 0 auto 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: #f1f3f5;
+        font-size: 1.35rem;
+    }
+    .empty-title {
+        font-weight: 700;
+        color: #343a40;
+        margin-bottom: .35rem;
+    }
+    .empty-text {
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+    @media (max-width: 767.98px) {
+        .users-page {
+            padding-top: 1rem;
+        }
+        .page-title {
+            font-size: 1.5rem;
+        }
+        .users-card {
+            border-radius: 10px;
+        }
+    }
+</style>
+<div class="container-fluid users-page">
+    <div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div>
+            <h2 class="page-title">All Users</h2>
+            <p class="page-subtitle">
+                Manage customer accounts, roles, and account access.
+            </p>
+        </div>
+        <div class="user-count">
+            <span>●</span>
+            {{ users|length }} user{% if users|length != 1 %}s{% endif %}
+        </div>
+    </div>
+    <div class="users-card">
+        <div class="users-card-header">
+            <h5 class="users-card-title">User Accounts</h5>
+            <p class="users-card-subtitle">
+                Review account information and manage access permissions.
+            </p>
+        </div>
+        <div class="users-table-wrapper">
+            <table class="table users-table align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th class="actions-cell">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if users %}
+                        {% for user in users %}
+                        <tr>
+                            <td>
+                                <span class="user-id">
+                                    #{{ user.id }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="user-name">
+                                    {{ user.full_name }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="user-email">
+                                    {{ user.email }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="user-phone">
+                                    {{ user.phone or "N/A" }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if user.role == 'admin' %}
+                                    <span class="role-badge role-admin">
+                                        <span class="badge-dot"></span>
+                                        Admin
+                                    </span>
+                                {% else %}
+                                    <span class="role-badge role-customer">
+                                        <span class="badge-dot"></span>
+                                        Customer
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.is_active %}
+                                    <span class="account-badge status-active">
+                                        <span class="badge-dot"></span>
+                                        Active
+                                    </span>
+                                {% else %}
+                                    <span class="account-badge status-inactive">
+                                        <span class="badge-dot"></span>
+                                        Deactivated
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="actions-cell">
+                                <div class="user-actions">
+                                    <form method="POST"
+                                          action="{{ url_for('main.admin_reset_password', user_id=user.id) }}"
+                                          onsubmit="return confirm('Generate a temporary password for this user?');">
+                                        <button type="submit" class="btn btn-outline-warning btn-sm">
+                                            Reset Password
+                                        </button>
+                                    </form>
+                                    {% if user.role == 'admin' %}
+                                        <form method="POST"
+                                              action="{{ url_for('main.demote_user', user_id=user.id) }}"
+                                              onsubmit="return confirm('Demote this admin user?');">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                Demote
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <form method="POST"
+                                              action="{{ url_for('main.promote_user', user_id=user.id) }}"
+                                              onsubmit="return confirm('Promote this user to admin?');">
+                                            <button type="submit" class="btn btn-outline-success btn-sm">
+                                                Promote
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                    {% if user.is_active %}
+                                        <form method="POST"
+                                              action="{{ url_for('main.deactivate_user', user_id=user.id) }}"
+                                              onsubmit="return confirm('Deactivate this account?');">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                Deactivate
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <form method="POST"
+                                              action="{{ url_for('main.activate_user', user_id=user.id) }}"
+                                              onsubmit="return confirm('Activate this account?');">
+                                            <button type="submit" class="btn btn-outline-success btn-sm">
+                                                Activate
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                <div class="empty-icon">👥</div>
+                                <div class="empty-title">No users found</div>
+                                <p class="empty-text">
+                                    There are currently no user accounts to display.
+                                </p>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}
