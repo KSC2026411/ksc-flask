@@ -172,29 +172,39 @@ def offline():
 
 ### PASSWORD RESET ###
 
-@main.route("/forgot-password", methods=["GET","POST"])
+@main.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
-    if request.method=="POST":
-        email=request.form.get("email")
-        email=email.strip().lower() if email else None
-        user=User.query.filter_by(email=email).first()
-        if not user:
-            flash("No account found with this email.","danger")
+    if request.method == "POST":
+        email = request.form.get("email")
+        email = email.strip().lower() if email else ""
+        if not email:
+            flash("Please enter your email address.", "danger")
             return redirect(url_for("main.forgot_password"))
-        existing=PasswordResetRequest.query.filter_by(
-            user_id=user.id,
-            status="pending"
-        ).first()
-        if existing:
-            flash("A password reset request already exists.","warning")
-            return redirect(url_for("main.forgot_password"))
-        reset_request=PasswordResetRequest(
-            user_id=user.id,
-            status="pending"
+        user = User.query.filter_by(email=email).first()
+        if user:
+            existing = PasswordResetRequest.query.filter_by(
+                user_id=user.id,
+                status="pending"
+            ).first()
+            if not existing:
+                reset_request = PasswordResetRequest(
+                    user_id=user.id,
+                    status="pending"
+                )
+                db.session.add(reset_request)
+                audit = AuditLog(
+                    user_id=user.id,
+                    action="PASSWORD_RESET_REQUESTED",
+                    details="Password reset request submitted.",
+                    ip_address=request.remote_addr,
+                    status="success"
+                )
+                db.session.add(audit)
+                db.session.commit()
+        flash(
+            "If an account exists with that email, your password reset request has been submitted. Please contact support.",
+            "success"
         )
-        db.session.add(reset_request)
-        db.session.commit()
-        flash("Your password reset request was submitted. Please contact support.","success")
         return redirect(url_for("main.login"))
     return render_template("public/forgot_password.html")
 
@@ -202,25 +212,44 @@ def forgot_password():
 @login_required
 @admin_required
 def password_resets():
-    requests=PasswordResetRequest.query.order_by(PasswordResetRequest.created_at.desc()).all()
-    return render_template("admin/password_resets.html",requests=requests)
+    requests = PasswordResetRequest.query.order_by(
+        PasswordResetRequest.created_at.desc()
+    ).all()
+    return render_template(
+        "admin/password_resets.html",
+        requests=requests
+    )
 
-@main.route("/admin/password-reset/approve/<int:id>")
+@main.route("/admin/password-reset/approve/<int:id>", methods=["POST"])
 @login_required
 @admin_required
 def approve_reset(id):
-    reset_request=PasswordResetRequest.query.get_or_404(id)
-    if reset_request.status!="pending":
-        flash("This reset request has already been processed.","warning")
+    reset_request = PasswordResetRequest.query.get_or_404(id)
+    if reset_request.status != "pending":
+        flash(
+            "This reset request has already been processed.",
+            "warning"
+        )
         return redirect(url_for("main.password_resets"))
-    user=reset_request.user
-    temp_password=generate_temp_password()
-    user.password=temp_password
-    user.must_change_password=True
-    user.last_password_reset=datetime.utcnow()
-    reset_request.status="approved"
-    reset_request.handled_by=current_user.id
-    audit=AuditLog(
+    user = reset_request.user
+    if not user:
+        reset_request.status = "rejected"
+        reset_request.handled_by = current_user.id
+        db.session.commit()
+        flash(
+            "The user associated with this request could not be found.",
+            "danger"
+        )
+        return redirect(url_for("main.password_resets"))
+    temp_password = generate_temp_password()
+    user.password = temp_password
+    user.must_change_password = True
+    user.last_password_reset = datetime.utcnow()
+    user.failed_attempts = 0
+    user.next_allowed_login = None
+    reset_request.status = "approved"
+    reset_request.handled_by = current_user.id
+    audit = AuditLog(
         user_id=current_user.id,
         action="PASSWORD_RESET_REQUEST_APPROVED",
         details=f"Approved password reset for user {user.email}",
@@ -235,50 +264,87 @@ def approve_reset(id):
         temporary_password=temp_password
     )
 
-@main.route("/admin/password-reset/reject/<int:id>")
+@main.route("/admin/password-reset/reject/<int:id>", methods=["POST"])
 @login_required
 @admin_required
 def reject_reset(id):
-    reset=PasswordResetRequest.query.get_or_404(id)
-    if reset.status!="pending":
-        flash("This reset request has already been processed.","warning")
+    reset = PasswordResetRequest.query.get_or_404(id)
+    if reset.status != "pending":
+        flash(
+            "This reset request has already been processed.",
+            "warning"
+        )
         return redirect(url_for("main.password_resets"))
-    reset.status="rejected"
-    reset.handled_by=current_user.id
-    user=reset.user
-    audit=AuditLog(
+    reset.status = "rejected"
+    reset.handled_by = current_user.id
+    user = reset.user
+    audit = AuditLog(
         user_id=current_user.id,
         action="PASSWORD_RESET_REQUEST_REJECTED",
-        details=f"Rejected password reset request for user {user.email}",
+        details=f"Rejected password reset request for user {user.email if user else 'unknown user'}",
         ip_address=request.remote_addr,
         status="success"
     )
     db.session.add(audit)
     db.session.commit()
-    flash("Password reset request rejected.","warning")
+    flash(
+        "Password reset request rejected.",
+        "warning"
+    )
     return redirect(url_for("main.password_resets"))
 
-@main.route("/change-password",methods=["GET","POST"])
+@main.route("/change-password", methods=["GET", "POST"])
 @login_required
 def change_password():
-    if request.method=="POST":
-        password=request.form.get("password")
-        current_user.password=password
-        current_user.must_change_password=False
+    if request.method == "POST":
+        password = request.form.get("password") or ""
+        confirm_password = request.form.get("confirm_password") or ""
+        if len(password) < 8:
+            flash(
+                "Password must be at least 8 characters long.",
+                "danger"
+            )
+            return redirect(url_for("main.change_password"))
+        if password != confirm_password:
+            flash(
+                "Passwords do not match.",
+                "danger"
+            )
+            return redirect(url_for("main.change_password"))
+        current_user.password = password
+        current_user.must_change_password = False
+        current_user.failed_attempts = 0
+        current_user.next_allowed_login = None
         db.session.commit()
+        flash(
+            "Your password has been changed successfully.",
+            "success"
+        )
+        if current_user.role == "admin":
+            return redirect(url_for("main.admin_dashboard"))
         return redirect(url_for("main.dashboard"))
-    return render_template("public/change_password.html")
+    return render_template(
+        "public/change_password.html"
+    )
 
 @main.route("/admin/user/<int:user_id>/reset-password", methods=["POST"])
 @login_required
 @admin_required
 def admin_reset_password(user_id):
-    user=User.query.get_or_404(user_id)
-    temp_password=generate_temp_password()
-    user.password=temp_password
-    user.must_change_password=True
-    user.last_password_reset=datetime.utcnow()
-    audit=AuditLog(
+    user = User.query.get_or_404(user_id)
+    if user.id == current_user.id:
+        flash(
+            "Use the change-password page to change your own password.",
+            "warning"
+        )
+        return redirect(url_for("main.password_resets"))
+    temp_password = generate_temp_password()
+    user.password = temp_password
+    user.must_change_password = True
+    user.last_password_reset = datetime.utcnow()
+    user.failed_attempts = 0
+    user.next_allowed_login = None
+    audit = AuditLog(
         user_id=current_user.id,
         action="PASSWORD_RESET",
         details=f"Admin reset password for user {user.email}",
@@ -292,6 +358,7 @@ def admin_reset_password(user_id):
         user=user,
         temporary_password=temp_password
     )
+
 @main.route("/", methods=["GET", "POST"])
 def home():
     now = datetime.utcnow()
