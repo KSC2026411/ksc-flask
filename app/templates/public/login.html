@@ -12,12 +12,11 @@
 {% endif %}
 {% endwith %}
 <form method="POST" action="{{ url_for('main.login') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 <input type="text" name="email" class="form-control mb-3" placeholder="Email" required>
 <input type="password" name="password" class="form-control mb-3" placeholder="Password" required>
 <div class="text-end mb-3">
-<a href="{{ url_for('main.forgot_password') }}" class="text-decoration-none">
-Forgot Password?
-</a>
+<a href="{{ url_for('main.forgot_password') }}" class="text-decoration-none">Forgot Password?</a>
 </div>
 <button type="submit" class="btn btn-primary w-100">Login</button>
 </form>
