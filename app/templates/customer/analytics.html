@@ -1,54 +1,265 @@
 {% extends "customer/base_customer.html" %}
-
 {% block title %}Customer Analytics{% endblock %}
-
 {% block customer_content %}
-
-<div class="container-fluid mt-4">
-
-    <!-- =========================
-         ANALYTICS CARDS
-    ========================= -->
-    <div class="row g-3 mb-5">
-
-        <div class="col-md-3">
-            <div class="card text-white bg-primary text-center shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Total Packages</h5>
-                    <p class="card-text fs-3 fw-bold">{{ total_packages }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card text-dark bg-warning text-center shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Pending Deliveries</h5>
-                    <p class="card-text fs-3 fw-bold">{{ pending_deliveries }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card text-white bg-success text-center shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Delivered Packages</h5>
-                    <p class="card-text fs-3 fw-bold">{{ delivered_packages }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card text-white bg-info text-center shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">In Transit</h5>
-                    <p class="card-text fs-3 fw-bold">{{ in_transit_packages }}</p>
-                </div>
-            </div>
-        </div>
-
+{% set total = total_packages|int %}
+{% set pending = pending_deliveries|int %}
+{% set delivered = delivered_packages|int %}
+{% set transit = in_transit_packages|int %}
+{% set active = total - delivered %}
+{% if active < 0 %}
+{% set active = 0 %}
+{% endif %}
+{% if total > 0 %}
+{% set delivery_percent = ((delivered * 100) / total)|round|int %}
+{% else %}
+{% set delivery_percent = 0 %}
+{% endif %}
+{% if delivery_percent < 0 %}
+{% set delivery_percent = 0 %}
+{% endif %}
+{% if delivery_percent > 100 %}
+{% set delivery_percent = 100 %}
+{% endif %}
+{% set other = total - pending - transit - delivered %}
+{% if other < 0 %}
+{% set other = 0 %}
+{% endif %}
+<style>
+.analytics-header {
+    margin-bottom: 1.5rem;
+}
+.analytics-card {
+    border: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+.analytics-card:hover {
+    transform: translateY(-2px);
+}
+.analytics-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+.analytics-number {
+    font-size: 2rem;
+    line-height: 1;
+    font-weight: 700;
+}
+.analytics-label {
+    font-size: .88rem;
+}
+.analytics-panel {
+    border: 0;
+    border-radius: 16px;
+}
+.analytics-panel h5 {
+    font-weight: 600;
+}
+.progress {
+    height: 10px;
+    border-radius: 20px;
+    overflow: hidden;
+}
+.progress-bar {
+    border-radius: 20px;
+    transition: width .6s ease;
+}
+.status-row {
+    padding: .8rem 0;
+    border-bottom: 1px solid rgba(0,0,0,.07);
+}
+.status-row:last-child {
+    border-bottom: 0;
+}
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: .5rem;
+}
+.quick-action {
+    border-radius: 12px;
+}
+.metric-box {
+    border-radius: 12px;
+}
+@media (max-width: 575.98px) {
+    .analytics-number {
+        font-size: 1.6rem;
+    }
+    .analytics-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+    }
+}
+</style>
+<div class="container-fluid px-0">
+    <div class="analytics-header">
+        <h2 class="mb-1">Shipment Analytics</h2>
+        <p class="text-muted mb-0">Get a quick overview of your shipments and delivery progress.</p>
     </div>
-
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-xl-3">
+            <div class="card analytics-card shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="analytics-icon bg-primary text-white">📦</div>
+                        <div>
+                            <div class="text-muted analytics-label">Total Packages</div>
+                            <div class="analytics-number">{{ total }}</div>
+                        </div>
+                    </div>
+                    <div class="small text-muted mt-3">All shipments associated with your account</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="card analytics-card shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="analytics-icon bg-warning text-dark">⏳</div>
+                        <div>
+                            <div class="text-muted analytics-label">Pending</div>
+                            <div class="analytics-number">{{ pending }}</div>
+                        </div>
+                    </div>
+                    <div class="small text-muted mt-3">Shipments awaiting further processing</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="card analytics-card shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="analytics-icon bg-info text-white">🚢</div>
+                        <div>
+                            <div class="text-muted analytics-label">In Transit</div>
+                            <div class="analytics-number">{{ transit }}</div>
+                        </div>
+                    </div>
+                    <div class="small text-muted mt-3">Packages currently moving through delivery</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="card analytics-card shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="analytics-icon bg-success text-white">✓</div>
+                        <div>
+                            <div class="text-muted analytics-label">Delivered</div>
+                            <div class="analytics-number">{{ delivered }}</div>
+                        </div>
+                    </div>
+                    <div class="small text-muted mt-3">Shipments successfully delivered</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-lg-7">
+            <div class="card analytics-panel shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="mb-1">Delivery Progress</h5>
+                            <p class="text-muted small mb-0">Your completed shipments compared with your total shipments.</p>
+                        </div>
+                        <span class="badge bg-success text-white">{{ delivery_percent }}%</span>
+                    </div>
+                    <div class="progress mb-3">
+                        <div class="progress-bar bg-success" role="progressbar" aria-valuenow="{{ delivery_percent }}" aria-valuemin="0" aria-valuemax="100" data-progress="{{ delivery_percent }}"></div>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span>{{ delivered }} delivered</span>
+                        <span>{{ total }} total</span>
+                    </div>
+                    <hr class="my-4">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="p-3 bg-light metric-box">
+                                <small class="text-muted d-block">Active Shipments</small>
+                                <strong class="fs-4">{{ active }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-light metric-box">
+                                <small class="text-muted d-block">Currently Moving</small>
+                                <strong class="fs-4">{{ transit }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-5">
+            <div class="card analytics-panel shadow-sm h-100">
+                <div class="card-body p-4">
+                    <h5 class="mb-1">Shipment Status</h5>
+                    <p class="text-muted small mb-3">Current overview of your shipments.</p>
+                    <div class="status-row d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="status-dot bg-warning"></span>
+                            <span>Pending</span>
+                        </div>
+                        <strong>{{ pending }}</strong>
+                    </div>
+                    <div class="status-row d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="status-dot bg-info"></span>
+                            <span>In Transit</span>
+                        </div>
+                        <strong>{{ transit }}</strong>
+                    </div>
+                    <div class="status-row d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="status-dot bg-success"></span>
+                            <span>Delivered</span>
+                        </div>
+                        <strong>{{ delivered }}</strong>
+                    </div>
+                    <div class="status-row d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="status-dot bg-primary"></span>
+                            <span>Other</span>
+                        </div>
+                        <strong>{{ other }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card analytics-panel shadow-sm mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h5 class="mb-1">Manage Your Shipments</h5>
+                    <p class="text-muted mb-0">View your packages or track a shipment using its tracking number.</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('main.my_packages') }}" class="btn btn-dark quick-action">📦 My Packages</a>
+                    <a href="{{ url_for('main.track_page') }}" class="btn btn-outline-dark quick-action">📍 Track Shipment</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".progress-bar[data-progress]").forEach(function(bar) {
+        var value = parseInt(bar.getAttribute("data-progress"), 10) || 0;
+        value = Math.max(0, Math.min(100, value));
+        bar.style.width = value + "%";
+    });
+});
+</script>
 {% endblock %}
