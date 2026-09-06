@@ -74,20 +74,34 @@ def generate_temp_password(length=10):
     characters=string.ascii_letters+string.digits
     return "KSC-"+"".join(secrets.choice(characters) for _ in range(length))
 
-# US Federal Holidays dictionary
-US_FEDERAL_HOLIDAYS = {
-    "01-01": "Happy New Year! 🎉",
-    "01-20": "Happy Martin Luther King Jr. Day! ✊",
-    "02-17": "Happy Presidents' Day! 🇺🇸",
-    "05-25": "Happy Memorial Day! 🇺🇸",
-    "06-19": "Happy Juneteenth! ✊",
-    "07-04": "Happy Independence Day! 🎆",
-    "09-07": "Happy Labor Day! 🛠️",
-    "10-12": "Happy Columbus Day! ⛵",
-    "11-11": "Happy Veterans Day! 🇺🇸",
-    "11-26": "Happy Thanksgiving! 🦃",
-    "12-25": "Merry Christmas! 🎄"
-}
+# -----------------------------------
+# US Federal Holidays
+# -----------------------------------
+def get_us_federal_holidays(year):
+    holidays = {}
+    def nth_weekday(month, weekday, n):
+        first_day = datetime(year, month, 1)
+        days_until = (weekday - first_day.weekday()) % 7
+        return first_day + timedelta(days=days_until + (n - 1) * 7)
+    def last_weekday(month, weekday):
+        if month == 12:
+            last_day = datetime(year, 12, 31)
+        else:
+            last_day = datetime(year, month + 1, 1) - timedelta(days=1)
+        days_back = (last_day.weekday() - weekday) % 7
+        return last_day - timedelta(days=days_back)
+    holidays[datetime(year, 1, 1).strftime("%m-%d")] = "Happy New Year! 🎉"
+    holidays[nth_weekday(1, 0, 3).strftime("%m-%d")] = "Happy Martin Luther King Jr. Day! ✊"
+    holidays[nth_weekday(2, 0, 3).strftime("%m-%d")] = "Happy Presidents' Day! 🇺🇸"
+    holidays[last_weekday(5, 0).strftime("%m-%d")] = "Happy Memorial Day! 🇺🇸"
+    holidays[datetime(year, 6, 19).strftime("%m-%d")] = "Happy Juneteenth! ✊"
+    holidays[datetime(year, 7, 4).strftime("%m-%d")] = "Happy Independence Day! 🎆"
+    holidays[nth_weekday(9, 0, 1).strftime("%m-%d")] = "Happy Labor Day! 🛠️"
+    holidays[nth_weekday(10, 0, 2).strftime("%m-%d")] = "Happy Columbus Day! ⛵"
+    holidays[datetime(year, 11, 11).strftime("%m-%d")] = "Happy Veterans Day! 🇺🇸"
+    holidays[nth_weekday(11, 3, 4).strftime("%m-%d")] = "Happy Thanksgiving! 🦃"
+    holidays[datetime(year, 12, 25).strftime("%m-%d")] = "Merry Christmas! 🎄"
+    return holidays
 
 UPLOAD_FOLDER = os.environ.get(
     "PACKAGE_PHOTO_UPLOAD_FOLDER",
@@ -281,7 +295,6 @@ def admin_reset_password(user_id):
 @main.route("/", methods=["GET", "POST"])
 def home():
     now = datetime.utcnow()
-
     try:
         # -----------------------------------
         # Delete expired announcements
@@ -290,12 +303,9 @@ def home():
             Announcement.expires_at.isnot(None),
             Announcement.expires_at <= now
         ).all()
-
         for a in expired:
             db.session.delete(a)
-
         db.session.commit()
-
         # -----------------------------------
         # Fetch active announcements
         # -----------------------------------
@@ -305,30 +315,27 @@ def home():
         ).order_by(
             Announcement.created_at.desc()
         ).all()
-
     except Exception as e:
         db.session.rollback()
         print("DB ERROR:", e)
         announcements = []
-
     # -----------------------------------
     # Package Search Logic
     # -----------------------------------
     packages = []
     search_query = ""
-
     # Handle GET search
     if request.method == "GET":
         search_query = request.args.get(
-            "search", ""
+            "search",
+            ""
         ).strip()
-
     # Handle POST search
     elif request.method == "POST":
         search_query = request.form.get(
-            "search", ""
+            "search",
+            ""
         ).strip()
-
     # Run package search
     if search_query:
         try:
@@ -344,20 +351,18 @@ def home():
             ).order_by(
                 Package.id.desc()
             ).all()
-
             print(f"SEARCH QUERY: {search_query}")
             print(f"PACKAGES FOUND: {len(packages)}")
-
         except Exception as e:
             print("PACKAGE SEARCH ERROR:", e)
             packages = []
-
     # -----------------------------------
     # Holiday Logic
     # -----------------------------------
-    today_str = datetime.now().strftime("%m-%d")
-    holiday_message = US_FEDERAL_HOLIDAYS.get(today_str)
-
+    today = datetime.utcnow()
+    today_str = today.strftime("%m-%d")
+    us_federal_holidays = get_us_federal_holidays(today.year)
+    holiday_message = us_federal_holidays.get(today_str)
     # -----------------------------------
     # Render Page
     # -----------------------------------
