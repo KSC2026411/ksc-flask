@@ -1,232 +1,374 @@
 {% extends "customer/base_customer.html" %}
-
+{% block title %}My Packages{% endblock %}
 {% block customer_content %}
-
-<h2 class="mb-4">My Packages</h2>
-
-{% if packages %}
-
-<div class="row g-3">
-
-    {% for pkg in packages %}
-
-    <div class="col-12 col-md-6 col-lg-4">
-
-        <div class="card shadow-sm package-card h-100">
-
-            <!-- HEADER -->
-            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-
-                <div>
-                    <small class="d-block text-light">Tracking</small>
-                    <strong>{{ pkg.tracking_number or "Pending" }}</strong>
-                </div>
-
-                <span class="badge
-                    {% if pkg.status == 'Delivered' %}bg-success
-                    {% elif pkg.status == 'Scheduled' %}bg-primary
-                    {% elif pkg.status == 'In Transit' %}bg-info
-                    {% elif pkg.status == 'Pending' %}bg-warning text-dark
-                    {% elif pkg.status == 'Cancelled' %}bg-danger
-                    {% else %}bg-secondary
-                    {% endif %}">
-                    {{ pkg.status or "Pending" }}
-                </span>
-
-            </div>
-
-            <!-- BODY -->
-            <div class="card-body">
-
-                <!-- DESCRIPTION WITH AI SUGGESTION -->
-                <div class="mb-3">
-                    <strong>Description:</strong><br>
-                    <input type="text" class="form-control form-control-sm mb-1 description-input"
-                           value="{{ pkg.description or '' }}" data-package-id="{{ pkg.id }}">
-                    <button type="button" class="btn btn-outline-secondary btn-sm w-100 suggest-btn" 
-                            data-package-id="{{ pkg.id }}">
-                        Suggest Description
-                    </button>
-                    <small class="text-muted suggestion-text d-block mt-1" id="suggestion-{{ pkg.id }}"></small>
-                </div>
-
-                <p class="mb-3">
-                    <strong>Pickup Date:</strong><br>
-                    {{ pkg.pickup_date.strftime('%Y-%m-%d') if pkg.pickup_date else "N/A" }}
-                </p>
-
-                <!-- ACTION TOGGLE -->
-                <button class="btn btn-outline-dark btn-sm w-100 toggle-btn">
-                    View Actions
-                </button>
-
-                <div class="package-actions d-none mt-3">
-
-                    <!-- EDIT PACKAGE -->
-                    {% if pkg.status not in [
-                        'Picked Up',
-                        'In Transit',
-                        'Out for Delivery',
-                        'At warehouse',
-                        'Loaded',
-                        'Shipped',
-                        'Delivered',
-                        'Cancelled'
-                    ] %}
-                    <a href="{{ url_for('main.edit_package', package_id=pkg.id) }}"
-                       class="btn btn-primary btn-sm w-100 mb-2">
-                        Edit Package
-                    </a>
-                    {% endif %}
-
-                    <!-- CANCEL PACKAGE -->
-                    {% if pkg.status not in [
-                        'Delivered',
-                        'Picked Up',
-                        'In Transit',
-                        'Out for Delivery',
-                        'At warehouse',
-                        'Shipped',
-                        'Loaded',
-                        'Cancelled'
-                    ] %}
-                    <form method="POST"
-                          action="{{ url_for('main.cancel_package', package_id=pkg.id) }}">
-
-                        <button class="btn btn-danger btn-sm w-100 mb-2">
-                            Cancel Package
-                        </button>
-
-                    </form>
-                    {% endif %}
-
-                    <!-- REQUEST RESCHEDULE -->
-                    {% if pkg.status in [
-                        'Pending',
-                        'Approved',
-                        'Scheduled',
-                        'Awaiting Pickup'
-                    ] %}
-                    <form method="POST"
-                          action="{{ url_for('main.reschedule_package', package_id=pkg.id) }}">
-
-                        <input type="date"
-                               name="new_date"
-                               required
-                               class="form-control form-control-sm mb-2">
-
-                        <button class="btn btn-warning btn-sm w-100">
-                            Request Reschedule
-                        </button>
-
-                    </form>
-                    {% endif %}
-
-                    <!-- CUSTOMER PICKUP CONFIRMATION -->
-                    {% if pkg.status == 'Ready for Pickup' %}
-                    <form method="POST"
-                          action="{{ url_for('main.customer_confirm_pickup', package_id=pkg.id) }}">
-
-                        <button class="btn btn-success btn-sm w-100">
-                            Mark as Picked Up
-                        </button>
-
-                    </form>
-                    {% endif %}
-
-                    <!-- ADMIN SUGGESTED RESCHEDULE -->
-                    {% if pkg.status == "Admin Suggested Reschedule" %}
-
-                        <form method="POST"
-                              action="{{ url_for('main.accept_admin_reschedule', package_id=pkg.id) }}">
-
-                            <button class="btn btn-success btn-sm w-100 mb-2">
-                                Accept New Date
-                            </button>
-
-                        </form>
-
-                        <form method="POST"
-                              action="{{ url_for('main.customer_reject_admin_reschedule', package_id=pkg.id) }}">
-
-                            <button class="btn btn-danger btn-sm w-100 mb-2">
-                                Reject
-                            </button>
-
-                        </form>
-
-                        <form method="POST"
-                              action="{{ url_for('main.propose_reschedule', package_id=pkg.id) }}">
-
-                            <input type="date"
-                                   name="new_date"
-                                   required
-                                   class="form-control form-control-sm mb-2">
-
-                            <button class="btn btn-warning btn-sm w-100">
-                                Propose New Date
-                            </button>
-
-                        </form>
-
-                    {% endif %}
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    {% endfor %}
-
+<style>
+.my-packages-page{width:100%;max-width:1900px;margin:0 auto;padding-bottom:40px}
+.packages-header{margin-bottom:32px}
+.packages-header h1{font-size:42px;font-weight:800;color:#172033;margin:0 0 8px}
+.packages-header p{font-size:18px;color:#697586;margin:0}
+.summary-row{margin-bottom:30px}
+.summary-card{border:0;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,.10);overflow:hidden;height:100%}
+.summary-card .card-body{padding:24px}
+.summary-label{font-size:15px;font-weight:700;color:#697586;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+.summary-number{font-size:34px;font-weight:800;color:#172033;line-height:1}
+.summary-icon{font-size:27px;opacity:.85}
+.toolbar-card{border:0;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,.10);margin-bottom:30px}
+.toolbar-card .card-body{padding:22px}
+.search-box{position:relative}
+.search-box i{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:#697586;font-size:17px;pointer-events:none}
+.search-box input{padding-left:42px;border-radius:10px;border:1px solid #d5dce5;min-height:46px}
+.filter-select{min-height:46px;border-radius:10px;border:1px solid #d5dce5}
+.package-card{border:0!important;border-radius:18px!important;box-shadow:0 7px 24px rgba(0,0,0,.11)!important;overflow:hidden;transition:transform .18s ease,box-shadow .18s ease}
+.package-card:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(0,0,0,.15)!important}
+.package-card .card-header{padding:19px 21px;border:0}
+.tracking-label{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.68);font-weight:700;margin-bottom:4px}
+.tracking-number{font-size:18px;font-weight:800;color:#fff;word-break:break-word}
+.status-badge{font-size:13px;font-weight:700;padding:8px 11px;border-radius:8px;white-space:nowrap}
+.package-card .card-body{padding:23px}
+.package-description{background:#f7f9fb;border:1px solid #e1e6ec;border-radius:11px;padding:14px;margin-bottom:20px}
+.package-description-label{font-size:13px;font-weight:700;color:#697586;text-transform:uppercase;letter-spacing:.3px;margin-bottom:7px}
+.package-description-value{font-size:15px;color:#303b4d;line-height:1.5;word-break:break-word}
+.package-meta{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.meta-item{background:#f7f9fb;border:1px solid #e1e6ec;border-radius:11px;padding:13px}
+.meta-label{display:block;font-size:12px;font-weight:700;color:#697586;text-transform:uppercase;letter-spacing:.25px;margin-bottom:5px}
+.meta-value{display:block;font-size:15px;font-weight:700;color:#303b4d;word-break:break-word}
+.track-btn{font-weight:700;border-radius:10px;padding:11px 15px}
+.toggle-btn{font-weight:700;border-radius:10px;padding:10px 15px}
+.package-actions{border-top:1px solid #e1e6ec;padding-top:18px}
+.action-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#697586;margin-bottom:12px}
+.description-input{border-radius:9px;min-height:40px}
+.suggest-btn{border-radius:9px;font-weight:600}
+.suggestion-text{font-size:13px;line-height:1.5}
+.empty-state{border:0;border-radius:18px;box-shadow:0 7px 24px rgba(0,0,0,.10);padding:60px 25px;text-align:center;background:#fff}
+.empty-state-icon{font-size:52px;color:#adb5bd;margin-bottom:15px}
+.empty-state h3{font-size:24px;font-weight:800;color:#303b4d;margin-bottom:8px}
+.empty-state p{font-size:16px;color:#697586;margin-bottom:20px}
+.no-results{display:none;padding:35px;text-align:center;color:#697586}
+.no-results i{font-size:38px;display:block;margin-bottom:10px}
+@media(max-width:991.98px){
+.packages-header h1{font-size:36px}
+.summary-card .card-body{padding:20px}
+.summary-number{font-size:30px}
+}
+@media(max-width:767.98px){
+.my-packages-page{padding-bottom:25px}
+.packages-header{margin-bottom:24px}
+.packages-header h1{font-size:30px}
+.packages-header p{font-size:16px;line-height:1.5}
+.summary-row{margin-bottom:22px}
+.summary-card .card-body{padding:17px}
+.summary-label{font-size:12px}
+.summary-number{font-size:27px}
+.summary-icon{font-size:22px}
+.toolbar-card{margin-bottom:22px}
+.toolbar-card .card-body{padding:16px}
+.package-card .card-header{padding:16px}
+.tracking-number{font-size:16px}
+.status-badge{font-size:11px;padding:7px 9px}
+.package-card .card-body{padding:18px}
+.package-meta{gap:10px}
+.meta-item{padding:11px}
+.meta-label{font-size:11px}
+.meta-value{font-size:14px}
+}
+@media(max-width:575.98px){
+.summary-label{font-size:11px}
+.summary-number{font-size:24px}
+.summary-card .card-body{padding:15px}
+.package-meta{grid-template-columns:1fr}
+.package-card .card-header{align-items:flex-start!important;gap:10px}
+}
+</style>
+<div class="my-packages-page">
+<div class="packages-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+<div>
+<h1>My Packages</h1>
+<p>Manage, review, and track all of your shipments.</p>
 </div>
-
+<a href="{{ url_for('main.schedule') }}" class="btn btn-primary fw-bold px-4 py-3">
+<i class="bi bi-plus-circle me-2"></i>Schedule Package
+</a>
+</div>
+{% set total_count=packages|length %}
+{% set pending_count=packages|selectattr("status","equalto","Pending")|list|length %}
+{% set transit_count=packages|selectattr("status","equalto","In Transit")|list|length %}
+{% set delivered_count=packages|selectattr("status","equalto","Delivered")|list|length %}
+<div class="row g-3 summary-row">
+<div class="col-6 col-lg-3">
+<div class="card summary-card">
+<div class="card-body d-flex justify-content-between align-items-center">
+<div>
+<div class="summary-label">Total</div>
+<div class="summary-number">{{ total_count }}</div>
+</div>
+<div class="summary-icon text-primary"><i class="bi bi-box-seam"></i></div>
+</div>
+</div>
+</div>
+<div class="col-6 col-lg-3">
+<div class="card summary-card">
+<div class="card-body d-flex justify-content-between align-items-center">
+<div>
+<div class="summary-label">Pending</div>
+<div class="summary-number text-warning">{{ pending_count }}</div>
+</div>
+<div class="summary-icon text-warning"><i class="bi bi-hourglass-split"></i></div>
+</div>
+</div>
+</div>
+<div class="col-6 col-lg-3">
+<div class="card summary-card">
+<div class="card-body d-flex justify-content-between align-items-center">
+<div>
+<div class="summary-label">In Transit</div>
+<div class="summary-number text-info">{{ transit_count }}</div>
+</div>
+<div class="summary-icon text-info"><i class="bi bi-truck"></i></div>
+</div>
+</div>
+</div>
+<div class="col-6 col-lg-3">
+<div class="card summary-card">
+<div class="card-body d-flex justify-content-between align-items-center">
+<div>
+<div class="summary-label">Delivered</div>
+<div class="summary-number text-success">{{ delivered_count }}</div>
+</div>
+<div class="summary-icon text-success"><i class="bi bi-check-circle"></i></div>
+</div>
+</div>
+</div>
+</div>
+<div class="card toolbar-card">
+<div class="card-body">
+<div class="row g-3 align-items-center">
+<div class="col-12 col-md-8">
+<div class="search-box">
+<i class="bi bi-search"></i>
+<input type="text" id="packageSearch" class="form-control" placeholder="Search by tracking number or description...">
+</div>
+</div>
+<div class="col-12 col-md-4">
+<select id="statusFilter" class="form-select filter-select">
+<option value="all">All Statuses</option>
+<option value="Pending">Pending</option>
+<option value="Approved">Approved</option>
+<option value="Scheduled">Scheduled</option>
+<option value="Awaiting Pickup">Awaiting Pickup</option>
+<option value="Ready for Pickup">Ready for Pickup</option>
+<option value="Picked Up">Picked Up</option>
+<option value="In Transit">In Transit</option>
+<option value="Out for Delivery">Out for Delivery</option>
+<option value="At warehouse">At Warehouse</option>
+<option value="Loaded">Loaded</option>
+<option value="Shipped">Shipped</option>
+<option value="Delivered">Delivered</option>
+<option value="Cancelled">Cancelled</option>
+<option value="Admin Suggested Reschedule">Admin Suggested Reschedule</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+{% if packages %}
+<div class="row g-4" id="packagesGrid">
+{% for pkg in packages %}
+<div class="col-12 col-md-6 col-xl-4 package-item" data-status="{{ pkg.status or 'Pending' }}" data-search="{{ ((pkg.tracking_number or '') ~ ' ' ~ (pkg.description or '') ~ ' ' ~ (pkg.status or ''))|lower }}">
+<div class="card package-card h-100">
+<div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+<div class="me-2">
+<div class="tracking-label">Tracking Number</div>
+<div class="tracking-number">{{ pkg.tracking_number or "Pending" }}</div>
+</div>
+{% if pkg.status == 'Delivered' %}
+<span class="badge bg-success status-badge">{{ pkg.status }}</span>
+{% elif pkg.status == 'Scheduled' %}
+<span class="badge bg-primary status-badge">{{ pkg.status }}</span>
+{% elif pkg.status == 'In Transit' %}
+<span class="badge bg-info text-dark status-badge">{{ pkg.status }}</span>
+{% elif pkg.status == 'Pending' %}
+<span class="badge bg-warning text-dark status-badge">{{ pkg.status }}</span>
+{% elif pkg.status == 'Cancelled' %}
+<span class="badge bg-danger status-badge">{{ pkg.status }}</span>
+{% elif pkg.status == 'Ready for Pickup' %}
+<span class="badge bg-success status-badge">{{ pkg.status }}</span>
+{% elif pkg.status == 'Admin Suggested Reschedule' %}
+<span class="badge bg-warning text-dark status-badge">Action Required</span>
 {% else %}
-
-<p class="text-muted">
-    No packages scheduled.
-</p>
-
+<span class="badge bg-secondary status-badge">{{ pkg.status or "Pending" }}</span>
 {% endif %}
-
+</div>
+<div class="card-body d-flex flex-column">
+<div class="package-description">
+<div class="package-description-label"><i class="bi bi-card-text me-1"></i>Description</div>
+<div class="package-description-value">{{ pkg.description or "No description provided." }}</div>
+</div>
+<div class="package-meta">
+<div class="meta-item">
+<span class="meta-label"><i class="bi bi-calendar3 me-1"></i>Pickup Date</span>
+<span class="meta-value">{{ pkg.pickup_date.strftime('%b %d, %Y') if pkg.pickup_date else "N/A" }}</span>
+</div>
+<div class="meta-item">
+<span class="meta-label"><i class="bi bi-clock-history me-1"></i>Created</span>
+<span class="meta-value">{{ pkg.created_at.strftime('%b %d, %Y') if pkg.created_at else "N/A" }}</span>
+</div>
+</div>
+{% if pkg.tracking_number %}
+<a href="{{ url_for('main.track_page') }}?tracking_number={{ pkg.tracking_number|urlencode }}" class="btn btn-primary track-btn w-100 mb-2">
+<i class="bi bi-geo-alt me-2"></i>Track Shipment
+</a>
+{% endif %}
+<button type="button" class="btn btn-outline-dark toggle-btn w-100" data-package-id="{{ pkg.id }}">
+<i class="bi bi-sliders me-2"></i><span class="toggle-text">View Actions</span>
+</button>
+<div class="package-actions d-none mt-3" data-actions-id="{{ pkg.id }}">
+<div class="action-title">Package Actions</div>
+<div class="mb-3">
+<div class="package-description-label mb-1">AI Description Suggestion</div>
+<input type="text" class="form-control form-control-sm mb-2 description-input" value="{{ pkg.description or '' }}" data-package-id="{{ pkg.id }}" placeholder="Enter package description">
+<button type="button" class="btn btn-outline-secondary btn-sm w-100 suggest-btn" data-package-id="{{ pkg.id }}">
+<i class="bi bi-stars me-1"></i>Suggest Description
+</button>
+<small class="text-muted suggestion-text d-block mt-2" id="suggestion-{{ pkg.id }}"></small>
+</div>
+{% if pkg.status not in ['Picked Up','In Transit','Out for Delivery','At warehouse','Loaded','Shipped','Delivered','Cancelled'] %}
+<a href="{{ url_for('main.edit_package', package_id=pkg.id) }}" class="btn btn-primary btn-sm w-100 mb-2">
+<i class="bi bi-pencil me-2"></i>Edit Package
+</a>
+{% endif %}
+{% if pkg.status not in ['Delivered','Picked Up','In Transit','Out for Delivery','At warehouse','Shipped','Loaded','Cancelled'] %}
+<form method="POST" action="{{ url_for('main.cancel_package', package_id=pkg.id) }}" class="mb-2">
+<button type="submit" class="btn btn-danger btn-sm w-100" onclick="return confirm('Are you sure you want to cancel this package?')">
+<i class="bi bi-x-circle me-2"></i>Cancel Package
+</button>
+</form>
+{% endif %}
+{% if pkg.status in ['Pending','Approved','Scheduled','Awaiting Pickup'] %}
+<form method="POST" action="{{ url_for('main.reschedule_package', package_id=pkg.id) }}" class="mb-2">
+<label class="form-label small fw-bold text-muted">Request a new pickup date</label>
+<input type="date" name="new_date" required class="form-control form-control-sm mb-2">
+<button type="submit" class="btn btn-warning btn-sm w-100">
+<i class="bi bi-calendar-event me-2"></i>Request Reschedule
+</button>
+</form>
+{% endif %}
+{% if pkg.status == 'Ready for Pickup' %}
+<form method="POST" action="{{ url_for('main.customer_confirm_pickup', package_id=pkg.id) }}">
+<button type="submit" class="btn btn-success btn-sm w-100">
+<i class="bi bi-check-circle me-2"></i>Mark as Picked Up
+</button>
+</form>
+{% endif %}
+{% if pkg.status == 'Admin Suggested Reschedule' %}
+<div class="alert alert-warning small mb-3">
+<i class="bi bi-exclamation-triangle me-1"></i>
+<strong>Action required:</strong> The administrator suggested a new date for this shipment.
+</div>
+<form method="POST" action="{{ url_for('main.accept_admin_reschedule', package_id=pkg.id) }}" class="mb-2">
+<button type="submit" class="btn btn-success btn-sm w-100">
+<i class="bi bi-check-lg me-2"></i>Accept New Date
+</button>
+</form>
+<form method="POST" action="{{ url_for('main.customer_reject_admin_reschedule', package_id=pkg.id) }}" class="mb-2">
+<button type="submit" class="btn btn-danger btn-sm w-100">
+<i class="bi bi-x-lg me-2"></i>Reject
+</button>
+</form>
+<form method="POST" action="{{ url_for('main.propose_reschedule', package_id=pkg.id) }}">
+<label class="form-label small fw-bold text-muted">Propose another date</label>
+<input type="date" name="new_date" required class="form-control form-control-sm mb-2">
+<button type="submit" class="btn btn-warning btn-sm w-100">
+<i class="bi bi-calendar-plus me-2"></i>Propose New Date
+</button>
+</form>
+{% endif %}
+</div>
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+<div class="no-results" id="noResults">
+<i class="bi bi-search"></i>
+<strong>No packages match your search.</strong>
+<div>Try a different tracking number, description, or status.</div>
+</div>
+{% else %}
+<div class="empty-state">
+<div class="empty-state-icon"><i class="bi bi-box-seam"></i></div>
+<h3>No Packages Yet</h3>
+<p>You have not scheduled any packages yet.</p>
+<a href="{{ url_for('main.schedule') }}" class="btn btn-primary fw-bold px-4 py-2">
+<i class="bi bi-plus-circle me-2"></i>Schedule Your First Package
+</a>
+</div>
+{% endif %}
+</div>
 <script>
-document.querySelectorAll(".toggle-btn").forEach(btn => {
-    btn.addEventListener("click", function () {
-        const card = this.closest(".package-card");
-        const actions = card.querySelector(".package-actions");
-        const isOpen = !actions.classList.contains("d-none");
-        document.querySelectorAll(".package-actions")
-            .forEach(a => a.classList.add("d-none"));
-        if (!isOpen) actions.classList.remove("d-none");
-    });
+document.addEventListener("DOMContentLoaded",function(){
+const searchInput=document.getElementById("packageSearch");
+const statusFilter=document.getElementById("statusFilter");
+const packageItems=document.querySelectorAll(".package-item");
+const noResults=document.getElementById("noResults");
+function filterPackages(){
+if(!packageItems.length)return;
+const search=(searchInput.value||"").trim().toLowerCase();
+const status=statusFilter.value;
+let visible=0;
+packageItems.forEach(function(item){
+const itemSearch=item.dataset.search||"";
+const itemStatus=item.dataset.status||"";
+const searchMatch=!search||itemSearch.includes(search);
+const statusMatch=status==="all"||itemStatus===status;
+if(searchMatch&&statusMatch){
+item.style.display="";
+visible++;
+}else{
+item.style.display="none";
+}
 });
-
-// ---------------------------
-// AI DESCRIPTION SUGGESTION
-// ---------------------------
-document.querySelectorAll(".suggest-btn").forEach(btn => {
-    btn.addEventListener("click", async function() {
-        const pkgId = this.dataset.packageId;
-        const input = document.querySelector(`.description-input[data-package-id='${pkgId}']`);
-        const suggestionBox = document.getElementById(`suggestion-${pkgId}`);
-        suggestionBox.innerText = "Generating suggestion...";
-
-        try {
-            const response = await fetch("/customer/package/suggest_description", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: input.value })
-            });
-            const data = await response.json();
-            suggestionBox.innerText = data.suggestion || "No suggestion available";
-        } catch (err) {
-            suggestionBox.innerText = "Error generating suggestion";
-            console.error(err);
-        }
-    });
+if(noResults)noResults.style.display=visible===0?"block":"none";
+}
+if(searchInput)searchInput.addEventListener("input",filterPackages);
+if(statusFilter)statusFilter.addEventListener("change",filterPackages);
+document.querySelectorAll(".toggle-btn").forEach(function(btn){
+btn.addEventListener("click",function(){
+const packageId=this.dataset.packageId;
+const actions=document.querySelector('[data-actions-id="'+packageId+'"]');
+const text=this.querySelector(".toggle-text");
+const isOpen=actions&&!actions.classList.contains("d-none");
+document.querySelectorAll(".package-actions").forEach(function(action){action.classList.add("d-none")});
+document.querySelectorAll(".toggle-text").forEach(function(toggleText){toggleText.textContent="View Actions"});
+if(!isOpen&&actions){
+actions.classList.remove("d-none");
+if(text)text.textContent="Hide Actions";
+}
+});
+});
+document.querySelectorAll(".suggest-btn").forEach(function(btn){
+btn.addEventListener("click",async function(){
+const pkgId=this.dataset.packageId;
+const input=document.querySelector(".description-input[data-package-id='"+pkgId+"']");
+const suggestionBox=document.getElementById("suggestion-"+pkgId);
+const originalText=this.innerHTML;
+if(!input||!suggestionBox)return;
+suggestionBox.textContent="Generating suggestion...";
+this.disabled=true;
+this.innerHTML='<span class="spinner-border spinner-border-sm me-1" role="status"></span>Generating...';
+try{
+const response=await fetch("/customer/package/suggest_description",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:input.value})});
+if(!response.ok)throw new Error("Request failed");
+const data=await response.json();
+suggestionBox.textContent=data.suggestion||"No suggestion available";
+}catch(error){
+suggestionBox.textContent="Unable to generate a suggestion right now.";
+console.error(error);
+}finally{
+this.disabled=false;
+this.innerHTML=originalText;
+}
+});
+});
 });
 </script>
-
 {% endblock %}
