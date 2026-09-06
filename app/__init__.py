@@ -7,7 +7,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from apscheduler.schedulers.background import BackgroundScheduler
 from openai import OpenAI
-from .extensions import db, migrate, socketio
+from .extensions import db, migrate, socketio, csrf
 from .models import User, Announcement
 from . import events
 load_dotenv()
@@ -41,6 +41,7 @@ def create_app():
         }
     db.init_app(app)
     migrate.init_app(app, db)
+    csrf.init_app(app)
     socketio.init_app(
         app,
         cors_allowed_origins="*",
