@@ -124,10 +124,50 @@
 }
 .announcement-title {
     font-weight: 700;
-    margin-bottom: .4rem;
+    margin-bottom: .35rem;
 }
 .announcement-date {
     font-size: .78rem;
+}
+.announcement-preview {
+    color: #6c757d;
+    font-size: .92rem;
+    line-height: 1.55;
+    margin-bottom: .75rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.announcement-read-btn {
+    font-size: .82rem;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: .4rem .7rem;
+}
+.announcement-modal .modal-content {
+    border: 0;
+    border-radius: 16px;
+    overflow: hidden;
+}
+.announcement-modal .modal-header {
+    padding: 1.1rem 1.25rem;
+    border-bottom: 1px solid rgba(0,0,0,.08);
+}
+.announcement-modal .modal-title {
+    font-weight: 700;
+}
+.announcement-modal .modal-body {
+    padding: 1.35rem 1.25rem;
+    line-height: 1.7;
+}
+.announcement-full-message {
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+}
+.announcement-modal .modal-footer {
+    padding: .9rem 1.25rem;
+    border-top: 1px solid rgba(0,0,0,.08);
 }
 .search-header {
     background: #212529;
@@ -293,8 +333,34 @@
             {% for a in announcements %}
             <div class="announcement-item">
                 <div class="announcement-title">{{ a.title }}</div>
-                <div class="mb-2">{{ a.message|safe }}</div>
-                <small class="text-muted announcement-date">Posted: {{ a.created_at.strftime('%Y-%m-%d') }}</small>
+                <div class="announcement-preview">
+                    {{ a.message|striptags|truncate(180, True, '...') }}
+                </div>
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <small class="text-muted announcement-date">Posted: {{ a.created_at.strftime('%Y-%m-%d') }}</small>
+                    <button type="button" class="btn btn-outline-primary announcement-read-btn" data-bs-toggle="modal" data-bs-target="#announcementModal{{ a.id }}">
+                        Read full announcement
+                    </button>
+                </div>
+            </div>
+            <div class="modal fade announcement-modal" id="announcementModal{{ a.id }}" tabindex="-1" aria-labelledby="announcementModalLabel{{ a.id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content shadow-lg">
+                        <div class="modal-header">
+                            <div>
+                                <h5 class="modal-title" id="announcementModalLabel{{ a.id }}">{{ a.title }}</h5>
+                                <small class="text-muted">Posted: {{ a.created_at.strftime('%Y-%m-%d') }}</small>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="announcement-full-message">{{ a.message|safe }}</div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             {% endfor %}
             {% else %}
