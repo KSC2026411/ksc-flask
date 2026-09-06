@@ -42,6 +42,12 @@
     color: #0d6efd;
     white-space: nowrap;
 }
+.package-tracking.tracking-link {
+    text-decoration: none;
+}
+.package-tracking.tracking-link:hover {
+    text-decoration: underline;
+}
 .package-description {
     max-width: 220px;
     line-height: 1.45;
@@ -220,9 +226,17 @@
                     {% for p in packages.items %}
                     <tr class="package-row">
                         <td>
-                            <span class="package-tracking">
-                                {{ p.tracking_number or "Pending Approval" }}
-                            </span>
+                            {% if p.tracking_number %}
+                                <a href="{{ url_for('main.package_view', package_id=p.id) }}"
+                                   class="package-tracking tracking-link"
+                                   title="View package details">
+                                    {{ p.tracking_number }}
+                                </a>
+                            {% else %}
+                                <span class="package-tracking">
+                                    Pending Approval
+                                </span>
+                            {% endif %}
                         </td>
                         <td>
                             <div class="package-description">
@@ -295,6 +309,9 @@
                             <form method="POST"
                                   action="{{ url_for('main.admin_update_package', package_id=p.id) }}"
                                   class="package-form">
+                                <input type="hidden"
+                                       name="csrf_token"
+                                       value="{{ csrf_token() }}">
                                 {% set package_statuses = [
                                     'Pending Approval',
                                     'Approved',
@@ -336,6 +353,9 @@
                             <form method="POST"
                                   action="{{ url_for('main.admin_suggest_reschedule', package_id=p.id) }}"
                                   class="reschedule-form">
+                                <input type="hidden"
+                                       name="csrf_token"
+                                       value="{{ csrf_token() }}">
                                 <input type="date"
                                        name="new_date"
                                        class="form-control mb-2"
@@ -353,6 +373,9 @@
                                           action="{{ url_for('main.approve_package', package_id=p.id) }}"
                                           class="mb-2"
                                           onsubmit="return confirm('Approve this pickup request?');">
+                                        <input type="hidden"
+                                               name="csrf_token"
+                                               value="{{ csrf_token() }}">
                                         <button type="submit"
                                                 class="btn btn-success btn-sm w-100">
                                             Approve Pickup
@@ -376,6 +399,9 @@
                                         <form method="POST"
                                               action="{{ url_for('main.admin_accept_reschedule', package_id=p.id) }}"
                                               onsubmit="return confirm('Accept this reschedule?');">
+                                            <input type="hidden"
+                                                   name="csrf_token"
+                                                   value="{{ csrf_token() }}">
                                             <button type="submit"
                                                     class="btn btn-success btn-sm w-100">
                                                 Accept
@@ -384,6 +410,9 @@
                                         <form method="POST"
                                               action="{{ url_for('main.reject_admin_reschedule', package_id=p.id) }}"
                                               onsubmit="return confirm('Reject this reschedule?');">
+                                            <input type="hidden"
+                                                   name="csrf_token"
+                                                   value="{{ csrf_token() }}">
                                             <button type="submit"
                                                     class="btn btn-outline-danger btn-sm w-100">
                                                 Reject
@@ -394,6 +423,9 @@
                                 <form method="POST"
                                       action="{{ url_for('main.admin_delete_package', package_id=p.id) }}"
                                       onsubmit="return confirm('WARNING: This will permanently delete this package and its related records. This cannot be undone. Continue?');">
+                                    <input type="hidden"
+                                           name="csrf_token"
+                                           value="{{ csrf_token() }}">
                                     <button type="submit"
                                             class="btn btn-outline-danger btn-sm w-100 delete-package-btn">
                                         Delete Package

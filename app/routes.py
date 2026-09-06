@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify, current_app, send_from_directory
 from flask_login import login_required, login_user, logout_user, current_user
 from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import text, or_
@@ -1196,6 +1196,41 @@ def my_packages():
 
     return render_template("customer/packages.html", packages=packages)
 
+@main.route("/package/<int:package_id>")
+@login_required
+def package_view(package_id):
+    """
+    Read-only package details page.
+
+    Customers can only view their own packages.
+    Admins can view any package.
+    Container information is intentionally not exposed here.
+    """
+    package = Package.query.get_or_404(package_id)
+
+    # Customers may only view their own packages.
+    if current_user.role != "admin" and package.user_id != current_user.id:
+        abort(403)
+
+    # Load package photos directly.
+    photos = PackagePhoto.query.filter_by(
+        package_id=package.id
+    ).order_by(
+        PackagePhoto.uploaded_at.asc()
+    ).all()
+
+    if current_user.role == "admin":
+        return render_template(
+            "admin/package_view.html",
+            package=package,
+            photos=photos
+        )
+
+    return render_template(
+        "customer/package_view.html",
+        package=package,
+        photos=photos
+    )
 
 # -------------------
 # TRACK PACKAGE (CUSTOMER SEARCH FORM)
@@ -2139,3 +2174,21 @@ Rules:
         return jsonify({
             "answer": "Sorry, the AI assistant is currently unavailable."
         }), 500
+
+@main.route("/package-photo/<int:photo_id>")
+@login_required
+def package_photo(photo_id):
+    photo = PackagePhoto.query.get_or_404(photo_id)
+    package = Package.query.get_or_404(photo.package_id)
+
+    if current_user.role != "admin" and package.user_id != current_user.id:
+        abort(403)
+
+    upload_folder = os.environ.get(
+        "UPLOAD_FOLDER",
+        os.path.join(os.getcwd(), "static", "uploads", "packages")
+    )
+
+    filename = os.path.basename(photo.filename)
+
+    return send_from_directory(upload_folder, filename)

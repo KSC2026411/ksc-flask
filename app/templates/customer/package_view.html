@@ -1,0 +1,467 @@
+{% extends "customer/base_customer.html" %}
+
+{% block title %}Package Details{% endblock %}
+
+{% block customer_content %}
+
+<style>
+.package-view-page{
+    max-width:1100px;
+    margin:0 auto;
+    padding:20px 0 50px;
+}
+
+.package-view-header{
+    margin-bottom:25px;
+}
+
+.package-view-header h1{
+    font-size:36px;
+    font-weight:800;
+    color:#172033;
+    margin-bottom:6px;
+}
+
+.package-view-header p{
+    color:#697586;
+    margin:0;
+}
+
+.package-detail-card{
+    border:0;
+    border-radius:18px;
+    box-shadow:0 8px 28px rgba(0,0,0,.10);
+    overflow:hidden;
+}
+
+.package-detail-header{
+    background:#172033;
+    color:#fff;
+    padding:25px;
+}
+
+.package-detail-header small{
+    color:rgba(255,255,255,.65);
+    text-transform:uppercase;
+    letter-spacing:.7px;
+    font-weight:700;
+}
+
+.package-detail-header h2{
+    margin:5px 0 0;
+    font-size:25px;
+    font-weight:800;
+    word-break:break-word;
+}
+
+.detail-body{
+    padding:28px;
+}
+
+.detail-section{
+    margin-bottom:28px;
+}
+
+.detail-section:last-child{
+    margin-bottom:0;
+}
+
+.detail-section-title{
+    font-size:14px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:#697586;
+    margin-bottom:12px;
+}
+
+.detail-box{
+    background:#f7f9fb;
+    border:1px solid #e1e6ec;
+    border-radius:12px;
+    padding:16px;
+}
+
+.detail-value{
+    color:#303b4d;
+    font-size:16px;
+    line-height:1.6;
+    word-break:break-word;
+}
+
+.detail-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+}
+
+.photo-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+}
+
+.package-photo{
+    width:100%;
+    height:240px;
+    object-fit:cover;
+    border-radius:14px;
+    border:1px solid #e1e6ec;
+    cursor:pointer;
+    transition:transform .18s ease,box-shadow .18s ease;
+    background:#f7f9fb;
+}
+
+.package-photo:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 22px rgba(0,0,0,.15);
+}
+
+.no-photos{
+    text-align:center;
+    padding:35px 20px;
+    background:#f7f9fb;
+    border:1px dashed #ccd4df;
+    border-radius:14px;
+    color:#697586;
+}
+
+.no-photos i{
+    display:block;
+    font-size:38px;
+    margin-bottom:8px;
+}
+
+.back-btn{
+    font-weight:700;
+    border-radius:10px;
+}
+
+@media(max-width:767.98px){
+
+    .package-view-page{
+        padding:10px 0 35px;
+    }
+
+    .package-view-header h1{
+        font-size:29px;
+    }
+
+    .package-detail-header{
+        padding:20px;
+    }
+
+    .detail-body{
+        padding:20px;
+    }
+
+    .detail-grid{
+        grid-template-columns:1fr;
+    }
+
+    .photo-grid{
+        grid-template-columns:1fr;
+    }
+
+    .package-photo{
+        height:260px;
+    }
+}
+</style>
+
+
+<div class="package-view-page">
+
+    <!-- PAGE HEADER -->
+    <div class="package-view-header">
+
+        <a href="{{ url_for('main.my_packages') }}"
+           class="btn btn-outline-secondary back-btn mb-3">
+
+            <i class="bi bi-arrow-left me-2"></i>
+            Back to My Packages
+
+        </a>
+
+        <h1>Package Details</h1>
+
+        <p>
+            Read-only shipment information and package photos.
+        </p>
+
+    </div>
+
+
+    <!-- PACKAGE CARD -->
+    <div class="card package-detail-card">
+
+
+        <!-- HEADER -->
+        <div class="package-detail-header">
+
+            <small>
+                Tracking Number
+            </small>
+
+            <h2>
+                {{ package.tracking_number or "Pending Assignment" }}
+            </h2>
+
+        </div>
+
+
+        <div class="detail-body">
+
+
+            <!-- STATUS -->
+            <div class="detail-section">
+
+                <div class="detail-section-title">
+                    Shipment Status
+                </div>
+
+                {% if package.status == "Delivered" %}
+
+                <span class="badge bg-success fs-6 px-3 py-2">
+                    {{ package.status }}
+                </span>
+
+                {% elif package.status == "In Transit" %}
+
+                <span class="badge bg-info text-dark fs-6 px-3 py-2">
+                    {{ package.status }}
+                </span>
+
+                {% elif package.status == "Cancelled" %}
+
+                <span class="badge bg-danger fs-6 px-3 py-2">
+                    {{ package.status }}
+                </span>
+
+                {% elif package.status in ["Pending", "Pending Approval"] %}
+
+                <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+                    {{ package.status }}
+                </span>
+
+                {% else %}
+
+                <span class="badge bg-primary fs-6 px-3 py-2">
+                    {{ package.status or "Pending" }}
+                </span>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- DESCRIPTION -->
+            <div class="detail-section">
+
+                <div class="detail-section-title">
+                    Package Description
+                </div>
+
+                <div class="detail-box">
+
+                    <div class="detail-value">
+
+                        {{ package.description or
+                           "No description provided." }}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- PACKAGE INFORMATION -->
+            <div class="detail-section">
+
+                <div class="detail-section-title">
+                    Package Information
+                </div>
+
+                <div class="detail-grid">
+
+                    <div class="detail-box">
+
+                        <div class="small text-muted fw-bold mb-1">
+                            Pickup Date
+                        </div>
+
+                        <div class="detail-value">
+
+                            {{ package.pickup_date.strftime('%B %d, %Y')
+                               if package.pickup_date else "N/A" }}
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="detail-box">
+
+                        <div class="small text-muted fw-bold mb-1">
+                            Created
+                        </div>
+
+                        <div class="detail-value">
+
+                            {{ package.created_at.strftime('%B %d, %Y')
+                               if package.created_at else "N/A" }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- PICKUP ADDRESS -->
+            <div class="detail-section">
+
+                <div class="detail-section-title">
+                    Pickup Address
+                </div>
+
+                <div class="detail-box">
+
+                    <div class="detail-value">
+
+                        {{ package.street or "" }}<br>
+
+                        {{ package.city or "" }},
+                        {{ package.state or "" }}
+                        {{ package.zip_code or "" }}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- PHOTOS -->
+            <div class="detail-section">
+
+                <div class="detail-section-title">
+
+                    <i class="bi bi-images me-1"></i>
+                    Package Photos
+
+                </div>
+
+
+                {% if photos %}
+
+                <div class="photo-grid">
+
+                    {% for photo in photos %}
+
+                    <div>
+
+                        <img src="{{ url_for('static', filename='uploads/packages/' ~ photo.filename) }}"
+                             alt="Package photo"
+                             class="package-photo"
+                             loading="lazy"
+                             onclick="openPhoto(this.src)">
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+                {% else %}
+
+                <div class="no-photos">
+
+                    <i class="bi bi-image"></i>
+
+                    <strong>No package photos available.</strong>
+
+                    <div class="small mt-1">
+                        No photos were uploaded for this package.
+                    </div>
+
+                </div>
+
+                {% endif %}
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- PHOTO MODAL -->
+<div class="modal fade"
+     id="photoModal"
+     tabindex="-1"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+
+        <div class="modal-content bg-dark border-0">
+
+            <div class="modal-header border-0">
+
+                <button type="button"
+                        class="btn-close btn-close-white ms-auto"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                </button>
+
+            </div>
+
+            <div class="modal-body text-center p-2">
+
+                <img id="modalPhoto"
+                     src=""
+                     alt="Package photo"
+                     class="img-fluid rounded"
+                     style="max-height:80vh;">
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+function openPhoto(src){
+
+    const image = document.getElementById("modalPhoto");
+
+    if(!image){
+        return;
+    }
+
+    image.src = src;
+
+    const modalElement =
+        document.getElementById("photoModal");
+
+    if(!modalElement){
+        return;
+    }
+
+    const modal =
+        bootstrap.Modal.getOrCreateInstance(modalElement);
+
+    modal.show();
+}
+</script>
+
+{% endblock %}
