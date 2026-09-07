@@ -27,6 +27,7 @@ def create_app():
         print("⚠️ OpenAI client disabled because OPENAI_API_KEY is not set.")
     app.config["VAPID_PUBLIC_KEY"] = os.getenv("VAPID_PUBLIC_KEY")
     app.config["VAPID_PRIVATE_KEY"] = os.getenv("VAPID_PRIVATE_KEY")
+    app.config["VAPID_SUBJECT"] = os.getenv("VAPID_SUBJECT")
     CMA_CGM_API_KEY = os.getenv("CMA_CGM_API_KEY")
     CMA_CGM_API_BASE = "https://apis.cma-cgm.net"
     database_url = os.getenv("DATABASE_URL") or "sqlite:///site.db"

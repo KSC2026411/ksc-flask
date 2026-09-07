@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>{% block title %}KSC LOGISTICS - Customer{% endblock %}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -45,6 +46,8 @@ body{background:#f4f6f9;color:#172033;font-size:18px!important;line-height:1.6}
 #mobileMenu .btn{font-size:18px!important}
 #mobileMenu>div{padding:18px!important}
 .customer-page{min-height:100vh}
+.notification-toggle{white-space:nowrap}
+.notification-toggle:disabled{opacity:.75;cursor:not-allowed}
 @media(max-width:1199.98px){
 .customer-main{padding:35px 30px 55px}
 }
@@ -89,25 +92,55 @@ body{font-size:16px!important}
 <a href="{{ url_for('main.customer_analytics') }}" class="btn btn-secondary d-flex align-items-center gap-1"><i class="bi bi-bar-chart"></i><span>Analytics</span></a>
 </div>
 <div class="d-flex align-items-center gap-2">
-<button type="button" onclick="window.location.reload();" class="btn btn-warning d-flex align-items-center gap-1"><i class="bi bi-arrow-clockwise"></i><span>Refresh</span></button>
-<a href="{{ url_for('main.logout') }}" class="btn btn-danger d-flex align-items-center gap-1"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>
+<button type="button" id="customerNotificationButton" class="btn btn-outline-light notification-toggle d-flex align-items-center gap-1">
+<i class="bi bi-bell"></i>
+<span>Enable Notifications</span>
+</button>
+<button type="button" onclick="window.location.reload();" class="btn btn-warning d-flex align-items-center gap-1">
+<i class="bi bi-arrow-clockwise"></i>
+<span>Refresh</span>
+</button>
+<a href="{{ url_for('main.logout') }}" class="btn btn-danger d-flex align-items-center gap-1">
+<i class="bi bi-box-arrow-right"></i>
+<span>Logout</span>
+</a>
 </div>
 </div>
 <div class="d-none d-lg-block" style="height:82px;"></div>
 <nav class="navbar navbar-dark d-lg-none sticky-top shadow-sm px-3 mobile-navbar">
 <span class="navbar-brand mb-0 h1"><i class="bi bi-box-seam me-1"></i>KSC Logistics</span>
-<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu" aria-controls="mobileMenu" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu" aria-controls="mobileMenu" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
 </nav>
 <div class="collapse text-white d-lg-none shadow-sm" id="mobileMenu">
 <div class="p-3">
-<a class="d-block mb-2 p-3 text-white text-decoration-none rounded {% if request.endpoint == 'main.dashboard' %}bg-secondary{% endif %}" href="{{ url_for('main.dashboard') }}"><i class="bi bi-house-door me-2"></i>Dashboard</a>
-<a class="d-block mb-2 p-3 text-white text-decoration-none rounded {% if request.endpoint == 'main.schedule' %}bg-secondary{% endif %}" href="{{ url_for('main.schedule') }}"><i class="bi bi-calendar-plus me-2"></i>Schedule Pickup</a>
-<a class="d-block mb-2 p-3 text-white text-decoration-none rounded {% if request.endpoint == 'main.my_packages' %}bg-secondary{% endif %}" href="{{ url_for('main.my_packages') }}"><i class="bi bi-box-seam me-2"></i>My Packages</a>
-<a class="d-block mb-2 p-3 text-white text-decoration-none rounded {% if request.endpoint == 'main.track' %}bg-secondary{% endif %}" href="{{ url_for('main.track') }}"><i class="bi bi-truck me-2"></i>Track Shipment</a>
-<a class="d-block mb-3 p-3 text-white text-decoration-none rounded {% if request.endpoint == 'main.customer_analytics' %}bg-secondary{% endif %}" href="{{ url_for('main.customer_analytics') }}"><i class="bi bi-bar-chart me-2"></i>Analytics</a>
+<a class="d-block mb-2 p-3 text-white text-decoration-none rounded {% if request.endpoint == 'main.dashboard' %}bg-secondary{% endif %}" href="{{ url_for('main.dashboard') }}">
+<i class="bi bi-house-door me-2"></i>Dashboard
+</a>
+<a class="d-block mb-2 p-3 text-white text-decoration-none rounded {% if request.endpoint == 'main.schedule' %}bg-secondary{% endif %}" href="{{ url_for('main.schedule') }}">
+<i class="bi bi-calendar-plus me-2"></i>Schedule Pickup
+</a>
+<a class="d-block mb-2 p-3 text-white text-decoration-none rounded {% if request.endpoint == 'main.my_packages' %}bg-secondary{% endif %}" href="{{ url_for('main.my_packages') }}">
+<i class="bi bi-box-seam me-2"></i>My Packages
+</a>
+<a class="d-block mb-2 p-3 text-white text-decoration-none rounded {% if request.endpoint == 'main.track' %}bg-secondary{% endif %}" href="{{ url_for('main.track') }}">
+<i class="bi bi-truck me-2"></i>Track Shipment
+</a>
+<a class="d-block mb-3 p-3 text-white text-decoration-none rounded {% if request.endpoint == 'main.customer_analytics' %}bg-secondary{% endif %}" href="{{ url_for('main.customer_analytics') }}">
+<i class="bi bi-bar-chart me-2"></i>Analytics
+</a>
 <hr class="border-light">
-<button type="button" onclick="window.location.reload();" class="btn btn-warning btn-lg w-100 mb-3"><i class="bi bi-arrow-clockwise me-2"></i>Refresh</button>
-<a class="btn btn-danger btn-lg w-100" href="{{ url_for('main.logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a>
+<button type="button" id="customerNotificationButtonMobile" class="btn btn-outline-light btn-lg w-100 mb-3 notification-toggle">
+<i class="bi bi-bell me-2"></i>
+<span>Enable Notifications</span>
+</button>
+<button type="button" onclick="window.location.reload();" class="btn btn-warning btn-lg w-100 mb-3">
+<i class="bi bi-arrow-clockwise me-2"></i>Refresh
+</button>
+<a class="btn btn-danger btn-lg w-100" href="{{ url_for('main.logout') }}">
+<i class="bi bi-box-arrow-right me-2"></i>Logout
+</a>
 </div>
 </div>
 <main class="customer-main">
@@ -119,9 +152,25 @@ body{font-size:16px!important}
 document.addEventListener("DOMContentLoaded",function(){
 try{
 const customerSocket=io("/customer",{transports:["polling"]});
-customerSocket.on("connect",function(){console.log("Customer connected:",customerSocket.id);});
-customerSocket.on("disconnect",function(){console.log("Customer disconnected");});
-}catch(error){console.error("Customer Socket.IO error:",error);}
+customerSocket.on("connect",function(){
+console.log("Customer connected:",customerSocket.id);
+});
+customerSocket.on("disconnect",function(){
+console.log("Customer disconnected");
+});
+}catch(error){
+console.error("Customer Socket.IO error:",error);
+}
+});
+</script>
+<script src="{{ url_for('static', filename='js/push-notifications.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded",function(){
+const publicKey="{{ config.get('VAPID_PUBLIC_KEY','') }}";
+window.KSCPushNotifications.setupButtons([
+"customerNotificationButton",
+"customerNotificationButtonMobile"
+],publicKey);
 });
 </script>
 </body>

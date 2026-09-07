@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
 from sqlalchemy.orm import selectinload
 from datetime import datetime, timedelta, date
+from .services.notification_service import notify_user, notify_admins, notify_all_customers
 import json
 import re
 import string
@@ -181,6 +182,7 @@ def forgot_password():
             flash("Please enter your email address.", "danger")
             return redirect(url_for("main.forgot_password"))
         user = User.query.filter_by(email=email).first()
+        new_request_created = False
         if user:
             existing = PasswordResetRequest.query.filter_by(
                 user_id=user.id,
@@ -200,7 +202,23 @@ def forgot_password():
                     status="success"
                 )
                 db.session.add(audit)
-                db.session.commit()
+                try:
+                    db.session.commit()
+                    new_request_created = True
+                except Exception as e:
+                    db.session.rollback()
+                    print("❌ PASSWORD RESET REQUEST ERROR:", e)
+                    flash("Unable to submit your password reset request. Please try again.", "danger")
+                    return redirect(url_for("main.forgot_password"))
+        if new_request_created:
+            try:
+                notify_admins(
+                    "Password Reset Request",
+                    f"{user.full_name} requested a password reset and is awaiting admin approval.",
+                    url_for("main.password_resets")
+                )
+            except Exception as e:
+                print("❌ PASSWORD RESET REQUEST PUSH ERROR:", e)
         flash(
             "If an account exists with that email, your password reset request has been submitted. Please contact support.",
             "success"
@@ -235,7 +253,13 @@ def approve_reset(id):
     if not user:
         reset_request.status = "rejected"
         reset_request.handled_by = current_user.id
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print("❌ PASSWORD RESET USER NOT FOUND ERROR:", e)
+            flash("Unable to process the reset request.", "danger")
+            return redirect(url_for("main.password_resets"))
         flash(
             "The user associated with this request could not be found.",
             "danger"
@@ -257,7 +281,22 @@ def approve_reset(id):
         status="success"
     )
     db.session.add(audit)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print("❌ PASSWORD RESET APPROVAL ERROR:", e)
+        flash("Unable to approve the password reset. Please try again.", "danger")
+        return redirect(url_for("main.password_resets"))
+    try:
+        notify_user(
+            user.id,
+            "Password Reset Approved",
+            "Your password reset request has been approved. Please log in and change your temporary password.",
+            url_for("main.login")
+        )
+    except Exception as e:
+        print("❌ PASSWORD RESET APPROVAL PUSH ERROR:", e)
     return render_template(
         "admin/temporary_password.html",
         user=user,
@@ -286,7 +325,23 @@ def reject_reset(id):
         status="success"
     )
     db.session.add(audit)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print("❌ PASSWORD RESET REJECTION ERROR:", e)
+        flash("Unable to reject the password reset request. Please try again.", "danger")
+        return redirect(url_for("main.password_resets"))
+    if user:
+        try:
+            notify_user(
+                user.id,
+                "Password Reset Request Rejected",
+                "Your password reset request was not approved. Please contact support if you need assistance.",
+                url_for("main.forgot_password")
+            )
+        except Exception as e:
+            print("❌ PASSWORD RESET REJECTION PUSH ERROR:", e)
     flash(
         "Password reset request rejected.",
         "warning"
@@ -315,7 +370,13 @@ def change_password():
         current_user.must_change_password = False
         current_user.failed_attempts = 0
         current_user.next_allowed_login = None
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print("❌ PASSWORD CHANGE ERROR:", e)
+            flash("Unable to change your password. Please try again.", "danger")
+            return redirect(url_for("main.change_password"))
         flash(
             "Your password has been changed successfully.",
             "success"
@@ -352,7 +413,22 @@ def admin_reset_password(user_id):
         status="success"
     )
     db.session.add(audit)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print("❌ ADMIN PASSWORD RESET ERROR:", e)
+        flash("Unable to reset the password. Please try again.", "danger")
+        return redirect(url_for("main.password_resets"))
+    try:
+        notify_user(
+            user.id,
+            "Password Reset",
+            "An administrator reset your password. Please log in with your temporary password and change it immediately.",
+            url_for("main.login")
+        )
+    except Exception as e:
+        print("❌ ADMIN PASSWORD RESET PUSH ERROR:", e)
     return render_template(
         "admin/temporary_password.html",
         user=user,
@@ -447,37 +523,84 @@ def home():
 @login_required
 def save_subscription():
     try:
-        data = request.get_json()
-
+        data = request.get_json(silent=True)
         if not data:
-            return jsonify({"success": False, "error": "No data"}), 400
-
+            return jsonify({"success": False, "error": "No subscription data."}), 400
+        endpoint = data.get("endpoint")
+        keys = data.get("keys")
+        if not endpoint or not keys:
+            return jsonify({"success": False, "error": "Invalid push subscription."}), 400
         subscription_json = json.dumps(data)
-
-        existing = PushSubscription.query.filter_by(
+        existing = None
+        subscriptions = PushSubscription.query.filter_by(
             user_id=current_user.id
-        ).first()
-
+        ).all()
+        for subscription in subscriptions:
+            try:
+                existing_data = json.loads(subscription.subscription)
+                if existing_data.get("endpoint") == endpoint:
+                    existing = subscription
+                    break
+            except Exception:
+                continue
         if existing:
             existing.subscription = subscription_json
         else:
-            db.session.add(PushSubscription(
-                user_id=current_user.id,
-                subscription=subscription_json
-            ))
-
+            db.session.add(
+                PushSubscription(
+                    user_id=current_user.id,
+                    subscription=subscription_json
+                )
+            )
         db.session.commit()
-
         return jsonify({"success": True})
-
     except Exception as e:
+        db.session.rollback()
         print("❌ SAVE SUBSCRIPTION ERROR:", e)
-        return jsonify({"success": False}), 500
+        return jsonify({
+            "success": False,
+            "error": "Unable to save subscription."
+        }), 500
 
-
+@main.route("/remove-subscription", methods=["POST"])
+@login_required
+def remove_subscription():
+    try:
+        data = request.get_json(silent=True) or {}
+        endpoint = data.get("endpoint")
+        if not endpoint:
+            return jsonify({
+                "success": False,
+                "error": "Endpoint is required."
+            }), 400
+        subscriptions = PushSubscription.query.filter_by(
+            user_id=current_user.id
+        ).all()
+        removed = False
+        for subscription in subscriptions:
+            try:
+                subscription_data = json.loads(subscription.subscription)
+                if subscription_data.get("endpoint") == endpoint:
+                    db.session.delete(subscription)
+                    removed = True
+            except Exception:
+                continue
+        db.session.commit()
+        return jsonify({
+            "success": True,
+            "removed": removed
+        })
+    except Exception as e:
+        db.session.rollback()
+        print("❌ REMOVE SUBSCRIPTION ERROR:", e)
+        return jsonify({
+            "success": False,
+            "error": "Unable to remove subscription."
+        }), 500
+    
 @main.route("/announcement/<int:id>")
 def view_announcement(id):
-    announcement=Announcement.query.get_or_404(id)
+    announcement = Announcement.query.get_or_404(id)
     return render_template(
         "public/announcement_detail.html",
         announcement=announcement
@@ -486,102 +609,40 @@ def view_announcement(id):
     
 @main.route("/register", methods=["GET", "POST"])
 def register():
-
     if request.method == "POST":
-
-        # -------------------------
-        # Get form data
-        # -------------------------
         first_name = request.form.get("first_name", "").strip()
         last_name = request.form.get("last_name", "").strip()
-
         email = request.form.get("email", "").strip().lower()
         phone = request.form.get("phone", "").strip()
-
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
-
-        # -------------------------
-        # Validate names
-        # -------------------------
-        if (
-            not first_name
-            or any(char.isdigit() for char in first_name)
-        ):
-            flash(
-                "First name cannot contain numbers and cannot be empty.",
-                "warning"
-            )
+        if not first_name or any(char.isdigit() for char in first_name):
+            flash("First name cannot contain numbers and cannot be empty.", "warning")
             return redirect(url_for("main.register"))
-
-        if (
-            not last_name
-            or any(char.isdigit() for char in last_name)
-        ):
-            flash(
-                "Last name cannot contain numbers and cannot be empty.",
-                "warning"
-            )
+        if not last_name or any(char.isdigit() for char in last_name):
+            flash("Last name cannot contain numbers and cannot be empty.", "warning")
             return redirect(url_for("main.register"))
-
-        # -------------------------
-        # Validate email format
-        # -------------------------
         EMAIL_REGEX = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-
         if not email or not re.match(EMAIL_REGEX, email):
-            flash(
-                "Please provide a valid email address.",
-                "warning"
-            )
+            flash("Please provide a valid email address.", "warning")
             return redirect(url_for("main.register"))
-
-        # -------------------------
-        # Optional domain validation
-        # -------------------------
         domain = email.split("@")[1]
-
         try:
             import socket
             socket.gethostbyname(domain)
-
         except Exception:
-            flash(
-                "Email domain does not exist.",
-                "warning"
-            )
+            flash("Email domain does not exist.", "warning")
             return redirect(url_for("main.register"))
-
-        # -------------------------
-        # Check if email exists
-        # -------------------------
         if User.query.filter_by(email=email).first():
             flash("Email already registered", "warning")
             return redirect(url_for("main.register"))
-
-        # -------------------------
-        # Validate password
-        # -------------------------
         MIN_PASSWORD_LENGTH = 8
-
         if not password or password != confirm_password:
-            flash(
-                "Passwords do not match or are empty.",
-                "warning"
-            )
+            flash("Passwords do not match or are empty.", "warning")
             return redirect(url_for("main.register"))
-
         if len(password) < MIN_PASSWORD_LENGTH:
-            flash(
-                f"Password must be at least "
-                f"{MIN_PASSWORD_LENGTH} characters long.",
-                "warning"
-            )
+            flash(f"Password must be at least {MIN_PASSWORD_LENGTH} characters long.", "warning")
             return redirect(url_for("main.register"))
-
-        # -------------------------
-        # Create user
-        # -------------------------
         user = User(
             first_name=first_name,
             last_name=last_name,
@@ -590,19 +651,25 @@ def register():
             role="customer",
             is_active=False
         )
-
         user.password = password
-
-        db.session.add(user)
-        db.session.commit()
-
-        flash(
-            "Account created! Your account is pending admin approval.",
-            "success"
-        )
-
+        try:
+            db.session.add(user)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print("❌ CUSTOMER REGISTRATION ERROR:", e)
+            flash("Unable to create your account. Please try again.", "danger")
+            return redirect(url_for("main.register"))
+        try:
+            notify_admins(
+                "New Customer Registration",
+                f"{user.full_name} has registered and is awaiting admin approval.",
+                url_for("main.admin_users")
+            )
+        except Exception as e:
+            print("❌ REGISTRATION PUSH ERROR:", e)
+        flash("Account created! Your account is pending admin approval.", "success")
         return redirect(url_for("main.login"))
-
     return render_template("public/register.html")
 
 
@@ -736,22 +803,11 @@ def schedule():
         zip_code = request.form.get("zip", "").strip()
         phone = request.form.get("phone", "").strip()
         pickup_date_str = request.form.get("date", "").strip()
-        if not all([
-            description,
-            street,
-            city,
-            state,
-            zip_code,
-            phone,
-            pickup_date_str
-        ]):
+        if not all([description, street, city, state, zip_code, phone, pickup_date_str]):
             flash("All fields are required!", "warning")
             return redirect(url_for("main.schedule"))
         try:
-            pickup_datetime = datetime.strptime(
-                pickup_date_str,
-                "%Y-%m-%d"
-            )
+            pickup_datetime = datetime.strptime(pickup_date_str, "%Y-%m-%d")
         except ValueError:
             flash("Invalid pickup date!", "danger")
             return redirect(url_for("main.schedule"))
@@ -764,60 +820,31 @@ def schedule():
             if photo and photo.filename
         ]
         if not photos:
-            flash(
-                "At least one package photo is required before scheduling a pickup.",
-                "warning"
-            )
+            flash("At least one package photo is required before scheduling a pickup.", "warning")
             return redirect(url_for("main.schedule"))
         if len(photos) > 3:
-            flash(
-                "You can upload a maximum of 3 photos.",
-                "warning"
-            )
+            flash("You can upload a maximum of 3 photos.", "warning")
             return redirect(url_for("main.schedule"))
-        allowed_extensions = {
-            "jpg",
-            "jpeg",
-            "png",
-            "webp"
-        }
+        allowed_extensions = {"jpg", "jpeg", "png", "webp"}
         max_file_size = 10 * 1024 * 1024
         for photo in photos:
             original_name = secure_filename(photo.filename)
             if not original_name:
-                flash(
-                    "One of the uploaded files is invalid.",
-                    "danger"
-                )
+                flash("One of the uploaded files is invalid.", "danger")
                 return redirect(url_for("main.schedule"))
-            extension = (
-                original_name.rsplit(".", 1)[1].lower()
-                if "." in original_name
-                else ""
-            )
+            extension = original_name.rsplit(".", 1)[1].lower() if "." in original_name else ""
             if extension not in allowed_extensions:
-                flash(
-                    "Only JPG, JPEG, PNG, and WEBP photos are allowed.",
-                    "warning"
-                )
+                flash("Only JPG, JPEG, PNG, and WEBP photos are allowed.", "warning")
                 return redirect(url_for("main.schedule"))
             photo.seek(0, os.SEEK_END)
             file_size = photo.tell()
             photo.seek(0)
             if file_size > max_file_size:
-                flash(
-                    f"{original_name} is larger than 10 MB.",
-                    "warning"
-                )
+                flash(f"{original_name} is larger than 10 MB.", "warning")
                 return redirect(url_for("main.schedule"))
         upload_folder = os.environ.get(
             "UPLOAD_FOLDER",
-            os.path.join(
-                os.getcwd(),
-                "static",
-                "uploads",
-                "packages"
-            )
+            os.path.join(os.getcwd(), "static", "uploads", "packages")
         )
         os.makedirs(upload_folder, exist_ok=True)
         package = Package(
@@ -829,20 +856,25 @@ def schedule():
             state=state,
             zip_code=zip_code,
             user_id=current_user.id,
-            pickup_date=pickup_datetime.date()
+            pickup_date=pickup_datetime.date(),
+            updated_at=datetime.utcnow()
         )
         saved_files = []
         try:
             db.session.add(package)
             db.session.flush()
+            status_history = PackageStatusHistory(
+                package_id=package.id,
+                status="Pending Approval",
+                source="CUSTOMER",
+                note="Package created by customer and submitted for admin approval."
+            )
+            db.session.add(status_history)
             for photo in photos:
                 original_name = secure_filename(photo.filename)
                 extension = original_name.rsplit(".", 1)[1].lower()
                 filename = f"{uuid.uuid4().hex}.{extension}"
-                file_path = os.path.join(
-                    upload_folder,
-                    filename
-                )
+                file_path = os.path.join(upload_folder, filename)
                 photo.save(file_path)
                 saved_files.append(file_path)
                 package_photo = PackagePhoto(
@@ -863,14 +895,18 @@ def schedule():
                 except Exception:
                     pass
             print("SCHEDULE PACKAGE ERROR:", e)
-            flash(
-                "Unable to schedule pickup. Please try again.",
-                "danger"
-            )
+            flash("Unable to schedule pickup. Please try again.", "danger")
             return redirect(url_for("main.schedule"))
+        try:
+            notify_admins(
+                "New Package Awaiting Approval",
+                f"{current_user.full_name} submitted a new package for approval.",
+                url_for("main.admin_packages")
+            )
+        except Exception as e:
+            print("❌ NEW PACKAGE PUSH ERROR:", e)
         flash(
-            f"Pickup scheduled with {len(photos)} photo(s). "
-            "Awaiting admin approval.",
+            f"Pickup scheduled with {len(photos)} photo(s). Awaiting admin approval.",
             "success"
         )
         return redirect(url_for("main.schedule"))
@@ -884,12 +920,8 @@ def schedule():
 @login_required
 def edit_package(package_id):
     package = Package.query.get_or_404(package_id)
-
-    # Ownership check
     if package.user_id != current_user.id:
         abort(403)
-
-    # Lock editing for certain statuses
     LOCKED_STATUSES = [
         "Picked Up",
         "In Transit",
@@ -900,111 +932,162 @@ def edit_package(package_id):
         "Delivered",
         "Cancelled"
     ]
-
     if package.status in LOCKED_STATUSES:
         flash("This package can no longer be edited.", "warning")
         return redirect(url_for("main.customer_packages"))
-
     if request.method == "POST":
-        # Update fields from form
         package.description = request.form.get("description")
         package.street = request.form.get("street")
         package.city = request.form.get("city")
         package.state = request.form.get("state")
         package.zip_code = request.form.get("zip_code")
-
-        # Pickup date validation
         pickup_date = request.form.get("pickup_date")
         if pickup_date:
-            pickup_date_obj = datetime.strptime(pickup_date, "%Y-%m-%d").date()
+            try:
+                pickup_date_obj = datetime.strptime(pickup_date, "%Y-%m-%d").date()
+            except ValueError:
+                flash("Invalid pickup date.", "danger")
+                return redirect(url_for("main.edit_package", package_id=package.id))
             if pickup_date_obj < date.today():
                 flash("Pickup date cannot be in the past.", "danger")
                 return redirect(url_for("main.edit_package", package_id=package.id))
             package.pickup_date = pickup_date_obj
-
-        # Admin suggested date validation
         admin_date = request.form.get("admin_suggested_date")
         if admin_date:
-            admin_date_obj = datetime.strptime(admin_date, "%Y-%m-%d").date()
+            try:
+                admin_date_obj = datetime.strptime(admin_date, "%Y-%m-%d").date()
+            except ValueError:
+                flash("Invalid admin suggested date.", "danger")
+                return redirect(url_for("main.edit_package", package_id=package.id))
+            if not package.pickup_date:
+                flash("A pickup date must be selected before an admin suggested date.", "danger")
+                return redirect(url_for("main.edit_package", package_id=package.id))
             if admin_date_obj < package.pickup_date:
                 flash("Admin suggested date cannot be before the pickup date.", "danger")
                 return redirect(url_for("main.edit_package", package_id=package.id))
             package.admin_suggested_date = admin_date_obj
-
-        # Deposit checkbox
+        else:
+            package.admin_suggested_date = None
         deposit_paid = request.form.get("deposit_paid") == "on"
         package.deposit_paid = deposit_paid
-
-        db.session.commit()
+        package.updated_at = datetime.utcnow()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print("❌ CUSTOMER PACKAGE EDIT FAILED:", e)
+            flash("Unable to update the package. Please try again.", "danger")
+            return redirect(url_for("main.edit_package", package_id=package.id))
+        try:
+            notify_admins(
+                "Package Updated",
+                f"{current_user.full_name} updated package {package.tracking_number or 'package'}.",
+                url_for("main.admin_packages")
+            )
+        except Exception as e:
+            print("❌ PACKAGE EDIT PUSH ERROR:", e)
         flash("Package updated successfully.", "success")
         return redirect(url_for("main.customer_packages"))
-
-    # Render edit page with today's date for client-side min
     return render_template(
         "customer/edit_package.html",
         package=package,
         today=date.today().strftime("%Y-%m-%d")
     )
 
-
 @main.route("/customer/package/<int:package_id>/reschedule", methods=["POST"])
 @login_required
 def reschedule_package(package_id):
     package = Package.query.get_or_404(package_id)
     if package.user_id != current_user.id:
-        flash("Unauthorized.")
+        flash("Unauthorized.", "danger")
         return redirect(url_for("main.my_packages"))
-
     new_date_str = request.form.get("new_date")
     if not new_date_str:
-        flash("Select a new date.")
+        flash("Select a new date.", "warning")
         return redirect(url_for("main.my_packages"))
-
     try:
-        new_date = datetime.strptime(new_date_str,"%Y-%m-%d")
+        new_date = datetime.strptime(new_date_str, "%Y-%m-%d")
     except ValueError:
-        flash("Invalid date format.")
+        flash("Invalid date format.", "danger")
         return redirect(url_for("main.my_packages"))
-
     if new_date < datetime.now() + timedelta(hours=72):
-        flash("Rescheduled date must be at least 72 hours from now.")
+        flash("Rescheduled date must be at least 72 hours from now.", "warning")
         return redirect(url_for("main.my_packages"))
-
     package.reschedule_attempts = (package.reschedule_attempts or 0) + 1
     if package.reschedule_attempts > 3:
-        flash("Maximum reschedules reached.")
+        flash("Maximum reschedules reached.", "warning")
         return redirect(url_for("main.my_packages"))
-
+    old_status = package.status
     package.pickup_date = new_date.date()
     package.status = "Pending Reschedule"
-    db.session.commit()
-    flash("Reschedule request submitted.")
+    package.updated_at = datetime.utcnow()
+    if old_status != package.status:
+        status_history = PackageStatusHistory(
+            package_id=package.id,
+            status=package.status,
+            source="CUSTOMER",
+            note=f"Customer requested a new pickup date: {package.pickup_date.strftime('%Y-%m-%d')}."
+        )
+        db.session.add(status_history)
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print("❌ CUSTOMER RESCHEDULE FAILED:", e)
+        flash("Unable to submit the reschedule request. Please try again.", "danger")
+        return redirect(url_for("main.my_packages"))
+    try:
+        notify_admins(
+            "Package Reschedule Request",
+            f"{current_user.full_name} requested a new pickup date for package {package.tracking_number or 'package'}: {package.pickup_date.strftime('%Y-%m-%d')}.",
+            url_for("main.admin_packages")
+        )
+    except Exception as e:
+        print("❌ CUSTOMER RESCHEDULE PUSH ERROR:", e)
+    flash("Reschedule request submitted.", "success")
     return redirect(url_for("main.my_packages"))
-
 
 @main.route("/customer/package/<int:package_id>/cancel", methods=["POST"], endpoint="cancel_package")
 @login_required
 def cancel_package(package_id):
-
     package = Package.query.get_or_404(package_id)
-
     if package.user_id != current_user.id:
         flash("Unauthorized.", "danger")
         return redirect(url_for("main.my_packages"))
-
     if package.status in ["Picked Up", "Delivered"]:
         flash("Cannot cancel this package.", "warning")
         return redirect(url_for("main.my_packages"))
-
     if package.pickup_date:
         days_left = (package.pickup_date - datetime.utcnow().date()).days
         if days_left < 3:
             flash("Must cancel at least 72 hours before pickup.", "warning")
             return redirect(url_for("main.my_packages"))
-
+    old_status = package.status
     package.status = "Cancelled"
-    db.session.commit()
-
+    package.updated_at = datetime.utcnow()
+    if old_status != package.status:
+        status_history = PackageStatusHistory(
+            package_id=package.id,
+            status=package.status,
+            source="CUSTOMER",
+            note="Package cancelled by customer."
+        )
+        db.session.add(status_history)
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print("❌ CUSTOMER PACKAGE CANCELLATION FAILED:", e)
+        flash("Unable to cancel the package. Please try again.", "danger")
+        return redirect(url_for("main.my_packages"))
+    try:
+        notify_admins(
+            "Package Cancelled",
+            f"{current_user.full_name} cancelled package {package.tracking_number or 'package'}.",
+            url_for("main.admin_packages")
+        )
+    except Exception as e:
+        print("❌ CUSTOMER CANCELLATION PUSH ERROR:", e)
     flash("Package cancelled.", "success")
     return redirect(url_for("main.my_packages"))
 
@@ -1020,16 +1103,21 @@ def accept_admin_reschedule(package_id):
     if package.user_id != current_user.id or package.status != "Admin Suggested Reschedule":
         flash("Unauthorized or invalid action.")
         return redirect(url_for("main.my_packages"))
-
     if package.updated_at and datetime.utcnow() > package.updated_at + timedelta(hours=24):
         flash("This reschedule offer has expired.")
         return redirect(url_for("main.my_packages"))
-
     if package.admin_suggested_date:
         package.pickup_date = package.admin_suggested_date
     package.admin_suggested_date = None
     package.status = "Scheduled"
-    db.session.commit()
+    package.updated_at = datetime.utcnow()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print("❌ CUSTOMER RESCHEDULE ACCEPT FAILED:", e)
+        flash("Unable to accept the reschedule. Please try again.", "danger")
+        return redirect(url_for("main.my_packages"))
     flash("Reschedule accepted.")
     return redirect(url_for("main.my_packages"))
 
@@ -1040,14 +1128,19 @@ def customer_reject_admin_reschedule(package_id):
     if package.user_id != current_user.id or package.status != "Admin Suggested Reschedule":
         flash("Unauthorized or invalid action.")
         return redirect(url_for("main.my_packages"))
-
     if package.updated_at and package.updated_at < datetime.utcnow() - timedelta(hours=24):
         flash("This reschedule offer has expired.")
         return redirect(url_for("main.my_packages"))
-
     package.admin_suggested_date = None
     package.status = "Scheduled"
-    db.session.commit()
+    package.updated_at = datetime.utcnow()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print("❌ CUSTOMER RESCHEDULE REJECT FAILED:", e)
+        flash("Unable to reject the reschedule. Please try again.", "danger")
+        return redirect(url_for("main.my_packages"))
     flash("Admin reschedule rejected.")
     return redirect(url_for("main.my_packages"))
 
@@ -1055,77 +1148,84 @@ def customer_reject_admin_reschedule(package_id):
 @login_required
 def propose_reschedule(package_id):
     package = Package.query.get_or_404(package_id)
+    if package.user_id != current_user.id:
+        abort(403)
     new_date_str = request.form.get("new_date")
     if not new_date_str:
         flash("Select a valid date.", "danger")
         return redirect(url_for("main.my_packages"))
-
     try:
-        new_date = datetime.strptime(new_date_str,"%Y-%m-%d")
+        new_date = datetime.strptime(new_date_str, "%Y-%m-%d")
     except ValueError:
         flash("Invalid date format.", "danger")
         return redirect(url_for("main.my_packages"))
-
+    old_status = package.status
     package.pickup_date = new_date.date()
     package.status = "Customer Proposed Reschedule"
-    db.session.commit()
+    package.updated_at = datetime.utcnow()
+    if old_status != package.status:
+        status_history = PackageStatusHistory(
+            package_id=package.id,
+            status=package.status,
+            source="CUSTOMER",
+            note=f"Customer proposed a new pickup date: {package.pickup_date.strftime('%Y-%m-%d')}."
+        )
+        db.session.add(status_history)
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print("❌ CUSTOMER RESCHEDULE PROPOSAL FAILED:", e)
+        flash("Unable to propose the new pickup date. Please try again.", "danger")
+        return redirect(url_for("main.my_packages"))
+    try:
+        notify_admins(
+            "Customer Reschedule Request",
+            f"{current_user.full_name} proposed a new pickup date for package {package.tracking_number or 'package'}.",
+            url_for("main.admin_packages")
+        )
+    except Exception as e:
+        print("❌ CUSTOMER RESCHEDULE PUSH ERROR:", e)
     flash("New pickup date proposed.")
     return redirect(url_for("main.my_packages"))
 
 @main.route("/admin/package/<int:package_id>/delete", methods=["POST"])
 @login_required
 def admin_delete_package(package_id):
-    # Admin-only protection
     if current_user.role != "admin":
         abort(403)
-
     package = Package.query.get_or_404(package_id)
     package_id_value = package.id
-
-    # Get photo file paths before deleting the package.
     upload_folder = os.environ.get(
         "UPLOAD_FOLDER",
         os.path.join(os.getcwd(), "static", "uploads", "packages")
     )
-
     photo_paths = []
-
     for photo in package.photos:
         if photo.filename:
             photo_paths.append(
                 os.path.join(upload_folder, photo.filename)
             )
-
     try:
-        # SQLAlchemy cascade will remove:
-        # - PackagePhoto records
-        # - PackageStatusHistory records
-        # - PackageContainer records
         db.session.delete(package)
         db.session.commit()
-
-        # Remove physical photo files after successful DB deletion.
         for file_path in photo_paths:
             try:
                 if os.path.exists(file_path):
                     os.remove(file_path)
             except OSError as e:
                 print("PACKAGE PHOTO DELETE ERROR:", e)
-
         flash(
             f"Package #{package_id_value} was permanently deleted.",
             "success"
         )
-
     except Exception as e:
         db.session.rollback()
         print("ADMIN PACKAGE DELETE ERROR:", e)
-
         flash(
             "Unable to delete the package. No changes were made.",
             "danger"
         )
-
     return redirect(url_for("main.admin_packages"))
 
 @main.route("/my-packages")
@@ -1463,9 +1563,17 @@ def approve_package(package_id):
         print("COMMIT FAILED:", e)
         flash("Unable to approve package. Please try again.", "danger")
         return redirect(url_for("main.admin_packages"))
+    try:
+        notify_user(
+            package.user_id,
+            "Package Approved",
+            f"Your package {package.tracking_number} has been approved and is now scheduled.",
+            url_for("main.package_view", package_id=package.id)
+        )
+    except Exception as e:
+        print("❌ PACKAGE APPROVAL PUSH ERROR:", e)
     flash(f"Pickup approved. Tracking #: {package.tracking_number}", "success")
     return redirect(url_for("main.admin_packages"))
-
 
 @main.route("/admin/package/<int:package_id>/update", methods=["POST"])
 @login_required
@@ -1473,8 +1581,10 @@ def approve_package(package_id):
 def admin_update_package(package_id):
     package = Package.query.get_or_404(package_id)
     status = request.form.get("status", "").strip()
-    if status:
-        old_status = package.status
+    status_changed = False
+    old_status = package.status
+    if status and old_status != status:
+        status_changed = True
         package.status = status
         if status == "Delivered":
             if not package.delivered_at:
@@ -1485,50 +1595,72 @@ def admin_update_package(package_id):
             package.delivered_at = None
             for photo in package.photos:
                 photo.delete_at = None
-        if old_status != status:
-            status_history = PackageStatusHistory(
-                package_id=package.id,
-                status=status,
-                source="ADMIN",
-                note=f"Status changed from {old_status} to {status}."
-            )
-            db.session.add(status_history)
+        status_history = PackageStatusHistory(
+            package_id=package.id,
+            status=status,
+            source="ADMIN",
+            note=f"Status changed from {old_status} to {status}."
+        )
+        db.session.add(status_history)
     package.updated_at = datetime.utcnow()
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print("❌ PACKAGE UPDATE FAILED:", e)
+        flash("Unable to update package. Please try again.", "danger")
+        return redirect(url_for("main.admin_packages"))
+    if status_changed:
+        try:
+            notify_user(
+                package.user_id,
+                "Package Status Updated",
+                f"Your package {package.tracking_number or 'package'} status changed to {status}.",
+                url_for("main.package_view", package_id=package.id)
+            )
+        except Exception as e:
+            print("❌ PACKAGE STATUS PUSH ERROR:", e)
     flash("Package updated successfully.", "success")
     return redirect(url_for("main.admin_packages"))
-
 
 @main.route("/admin/package/<int:package_id>/suggest-reschedule", methods=["POST"])
 @login_required
 @admin_required
 def admin_suggest_reschedule(package_id):
-
     package = Package.query.get_or_404(package_id)
     new_date_str = request.form.get("new_date")
-
     if not new_date_str:
         flash("Please provide a date.", "warning")
         return redirect(url_for("main.admin_packages"))
-
     try:
         new_date = datetime.strptime(new_date_str, "%Y-%m-%d").date()
     except ValueError:
         flash("Invalid date format.", "danger")
         return redirect(url_for("main.admin_packages"))
-
     package.admin_suggested_date = new_date
     package.status = "Admin Suggested Reschedule"
     package.updated_at = datetime.utcnow()
-
-    db.session.commit()
-
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print("❌ RESCHEDULE SUGGESTION FAILED:", e)
+        flash("Unable to send reschedule suggestion. Please try again.", "danger")
+        return redirect(url_for("main.admin_packages"))
     socketio.emit(
         "reschedule_alert",
         {"message": f"New pickup date suggested for {package.tracking_number}"},
         namespace="/customer"
     )
-
+    try:
+        notify_user(
+            package.user_id,
+            "Pickup Date Change",
+            f"A new pickup date has been suggested for your package {package.tracking_number or 'package'}.",
+            url_for("main.package_view", package_id=package.id)
+        )
+    except Exception as e:
+        print("❌ RESCHEDULE SUGGESTION PUSH ERROR:", e)
     flash("Reschedule suggestion sent.", "success")
     return redirect(url_for("main.admin_packages"))
 
@@ -1541,10 +1673,25 @@ def admin_accept_reschedule(package_id):
         package.pickup_date = package.admin_suggested_date
     package.admin_suggested_date = None
     package.status = "Scheduled"
-    db.session.commit()
+    package.updated_at = datetime.utcnow()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print("❌ RESCHEDULE ACCEPT FAILED:", e)
+        flash("Unable to accept reschedule. Please try again.", "danger")
+        return redirect(url_for("main.admin_packages"))
+    try:
+        notify_user(
+            package.user_id,
+            "Reschedule Accepted",
+            f"The new pickup date for your package {package.tracking_number or 'package'} has been accepted.",
+            url_for("main.package_view", package_id=package.id)
+        )
+    except Exception as e:
+        print("❌ RESCHEDULE ACCEPT PUSH ERROR:", e)
     flash("Reschedule accepted.", "success")
     return redirect(url_for("main.admin_packages"))
-
 
 @main.route("/admin/package/<int:package_id>/reject-reschedule", methods=["POST"])
 @login_required
@@ -1553,7 +1700,23 @@ def reject_admin_reschedule(package_id):
     package = Package.query.get_or_404(package_id)
     package.admin_suggested_date = None
     package.status = "Pending"
-    db.session.commit()
+    package.updated_at = datetime.utcnow()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print("❌ RESCHEDULE REJECT FAILED:", e)
+        flash("Unable to reject reschedule. Please try again.", "danger")
+        return redirect(url_for("main.admin_packages"))
+    try:
+        notify_user(
+            package.user_id,
+            "Reschedule Rejected",
+            f"The proposed pickup date for your package {package.tracking_number or 'package'} was rejected.",
+            url_for("main.package_view", package_id=package.id)
+        )
+    except Exception as e:
+        print("❌ RESCHEDULE REJECT PUSH ERROR:", e)
     flash("Reschedule rejected.", "info")
     return redirect(url_for("main.admin_packages"))
 
@@ -1681,11 +1844,8 @@ def admin_bulk_update_packages():
 @login_required
 @admin_required
 def admin_users():
-
     users = User.query.order_by(User.id.desc()).all()
-
     return render_template("admin/users.html", users=users)
-
 @main.route("/admin/user/<int:user_id>/promote", methods=["POST"])
 @login_required
 @admin_required
@@ -1698,8 +1858,6 @@ def promote_user(user_id):
     else:
         flash(f"{user.full_name} is already an admin.", "info")
     return redirect(url_for("main.admin_users"))
-
-
 @main.route("/admin/user/<int:user_id>/demote", methods=["POST"])
 @login_required
 @admin_required
@@ -1712,69 +1870,59 @@ def demote_user(user_id):
     else:
         flash(f"{user.full_name} is already a customer.", "info")
     return redirect(url_for("main.admin_users"))
-
-
 @main.route("/admin/user/<int:user_id>/activate", methods=["POST"])
 @login_required
 @admin_required
 def activate_user(user_id):
-
     user = User.query.get_or_404(user_id)
-
+    was_inactive = not user.is_active
     user.is_active = True
-
     db.session.commit()
-
+    if was_inactive:
+        try:
+            from .services.notification_service import notify_user
+            notify_user(
+                user.id,
+                "KSC Logistics",
+                "Your KSC Logistics account has been approved. You can now log in.",
+                url_for("main.login")
+            )
+        except Exception as e:
+            print("❌ ACCOUNT ACTIVATION PUSH ERROR:", e)
     flash(f"{user.full_name} activated.", "success")
-
     return redirect(url_for("main.admin_users"))
-
-
 @main.route("/admin/user/<int:user_id>/deactivate", methods=["POST"])
 @login_required
 @admin_required
 def deactivate_user(user_id):
-
     user = User.query.get_or_404(user_id)
-
     user.is_active = False
-
     db.session.commit()
-
     flash(f"{user.full_name} deactivated.", "warning")
-
     return redirect(url_for("main.admin_users"))
-
 
 @main.route('/admin/announcements', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def admin_announcements():
-
     if request.method == 'POST':
-
         title = request.form.get('title')
         message = request.form.get('message')
-
         if not title or not message:
             flash("All fields are required.", "danger")
             return redirect(url_for('main.admin_announcements'))
-
         clean_message = BeautifulSoup(
             message,
             "html.parser"
         ).get_text(separator="\n")
-
         announcement = Announcement(
             title=title,
             message=clean_message,
             created_at=datetime.utcnow(),
             expires_at=datetime.utcnow() + timedelta(days=7)
         )
-
         db.session.add(announcement)
         db.session.commit()
-
         socketio.emit(
             'new_announcement',
             {
@@ -1784,35 +1932,35 @@ def admin_announcements():
             },
             namespace='/customer'
         )
-
+        try:
+            notify_all_customers(
+                "KSC Logistics Announcement",
+                announcement.title,
+                url_for("main.customer_dashboard")
+            )
+        except Exception as e:
+            print("❌ ANNOUNCEMENT PUSH ERROR:", e)
         flash("Announcement posted.", "success")
         return redirect(url_for('main.admin_announcements'))
-
     announcements = Announcement.query.filter(
         Announcement.expires_at > datetime.utcnow()
     ).order_by(Announcement.created_at.desc()).all()
-
     return render_template(
         "admin/admin_announcements.html",
         announcements=announcements,
         now=datetime.utcnow()
     )
-
 @main.route('/admin/announcements/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def edit_announcement(id):
-
     announcement = Announcement.query.get_or_404(id)
-
     if request.method == 'POST':
         announcement.title = request.form['title']
         announcement.message = request.form['message']
         db.session.commit()
-
         flash("Updated successfully.", "success")
         return redirect(url_for('main.admin_announcements'))
-
     return render_template(
         "admin/edit_announcement.html",
         announcement=announcement
@@ -1869,111 +2017,120 @@ def admin_packages_bulk_action():
     package_ids = request.form.getlist("package_ids")
     action = request.form.get("action", "").strip()
     status = request.form.get("status", "").strip()
-
     if not package_ids:
         flash("Please select at least one package.", "warning")
         return redirect(request.referrer or url_for("main.admin_packages"))
-
     packages = Package.query.filter(Package.id.in_(package_ids)).all()
-
     if not packages:
         flash("No valid packages were selected.", "warning")
         return redirect(request.referrer or url_for("main.admin_packages"))
-
-    # BULK APPROVE
     if action == "approve":
         approved_count = 0
         already_approved = 0
-
+        approved_packages = []
         try:
             for package in packages:
                 if package.tracking_number:
                     already_approved += 1
                     continue
-
                 package.tracking_number = generate_tracking()
                 package.status = "Scheduled"
                 package.updated_at = datetime.utcnow()
+                approved_packages.append(package)
                 approved_count += 1
-
             db.session.commit()
         except Exception as e:
             db.session.rollback()
             print("BULK APPROVE FAILED:", e)
             flash("Bulk approval failed. No packages were changed.", "danger")
             return redirect(request.referrer or url_for("main.admin_packages"))
-
+        try:
+            for package in approved_packages:
+                notify_user(
+                    package.user_id,
+                    "Package Approved",
+                    f"Your package {package.tracking_number} has been approved and is now scheduled.",
+                    url_for("main.package_view", package_id=package.id)
+                )
+        except Exception as e:
+            print("❌ BULK APPROVAL PUSH ERROR:", e)
         if approved_count and already_approved:
             flash(f"{approved_count} package(s) approved. {already_approved} already approved.", "success")
         elif approved_count:
             flash(f"{approved_count} package(s) approved successfully.", "success")
         else:
             flash("All selected packages were already approved.", "warning")
-
         return redirect(request.referrer or url_for("main.admin_packages"))
-
-    # BULK ARCHIVE
     if action == "archive":
         archived_count = 0
-
+        archived_packages = []
         try:
             for package in packages:
                 if package.status == "Archived":
                     continue
-
                 package.status = "Archived"
                 package.updated_at = datetime.utcnow()
+                archived_packages.append(package)
                 archived_count += 1
-
             db.session.commit()
         except Exception as e:
             db.session.rollback()
             print("BULK ARCHIVE FAILED:", e)
             flash("Bulk archive failed. No packages were changed.", "danger")
             return redirect(request.referrer or url_for("main.admin_packages"))
-
+        try:
+            for package in archived_packages:
+                notify_user(
+                    package.user_id,
+                    "Package Update",
+                    f"Your package {package.tracking_number or 'package'} has been archived.",
+                    url_for("main.package_view", package_id=package.id)
+                )
+        except Exception as e:
+            print("❌ BULK ARCHIVE PUSH ERROR:", e)
         if archived_count:
             flash(f"{archived_count} package(s) archived successfully.", "success")
         else:
             flash("All selected packages were already archived.", "warning")
-
         return redirect(request.referrer or url_for("main.admin_packages"))
-
-    # BULK STATUS UPDATE
     if action == "update":
         updated_count = 0
-
+        changed_packages = []
         try:
             for package in packages:
-                if status:
+                old_status = package.status
+                if status and old_status != status:
                     package.status = status
-
                     if status == "Delivered":
                         if not package.delivered_at:
                             package.delivered_at = datetime.utcnow()
-
                         for photo in package.photos:
                             photo.delete_at = package.delivered_at + timedelta(days=15)
-
                     elif status != "Delivered":
                         package.delivered_at = None
-
                         for photo in package.photos:
                             photo.delete_at = None
-
+                    changed_packages.append((package, old_status, status))
                 package.updated_at = datetime.utcnow()
                 updated_count += 1
-
             db.session.commit()
         except Exception as e:
             db.session.rollback()
             print("BULK UPDATE FAILED:", e)
             flash("Bulk update failed. No packages were changed.", "danger")
             return redirect(request.referrer or url_for("main.admin_packages"))
-
+        try:
+            for package, old_status, new_status in changed_packages:
+                notify_user(
+                    package.user_id,
+                    "Package Status Updated",
+                    f"Your package {package.tracking_number or 'package'} status changed to {new_status}.",
+                    url_for("main.package_view", package_id=package.id)
+                )
+        except Exception as e:
+            print("❌ BULK STATUS PUSH ERROR:", e)
         flash(f"{updated_count} package(s) updated successfully.", "success")
         return redirect(request.referrer or url_for("main.admin_packages"))
-
     flash("Invalid bulk action.", "danger")
     return redirect(request.referrer or url_for("main.admin_packages"))
 
