@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
 from sqlalchemy.orm import selectinload
 from datetime import datetime, timedelta, date
+from flask import current_app, send_from_directory
 from .services.notification_service import notify_user, notify_admins, notify_all_customers
 import json
 import re
@@ -165,6 +166,14 @@ def fix_user_schema():
 @main.route("/test")
 def test():
     return "TEST OK"
+
+@main.route("/service-worker.js")
+def service_worker():
+    return send_from_directory(
+        current_app.static_folder,
+        "service-worker.js",
+        mimetype="application/javascript"
+    )
 
 
 @main.route("/offline")
