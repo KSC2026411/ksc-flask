@@ -16,7 +16,15 @@ if not OPENAI_API_KEY:
     print("⚠️ OPENAI_API_KEY not set. Smart Description and Chatbot will not work.")
 def create_app():
     app = Flask(__name__)
-    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret")
+    secret_key = os.getenv("SECRET_KEY")
+    if not secret_key:
+        raise RuntimeError("SECRET_KEY environment variable is required.")
+    app.config["SECRET_KEY"] = secret_key
+    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["WTF_CSRF_ENABLED"] = True
+    app.config["WTF_CSRF_TIME_LIMIT"] = None
     app.config["DEV_MODE"] = os.getenv("DEV_MODE", "false").lower() == "true"
     app.config["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
     if app.config["OPENAI_API_KEY"]:
