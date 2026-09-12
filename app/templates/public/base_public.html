@@ -9,7 +9,38 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- PWA / APP ICON -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+
+    <link rel="icon"
+          type="image/png"
+          sizes="192x192"
+          href="{{ url_for('static', filename='icons/icon-192.png') }}">
+
+    <link rel="icon"
+          type="image/png"
+          sizes="512x512"
+          href="{{ url_for('static', filename='icons/icon-512.png') }}">
+
+    <link rel="apple-touch-icon"
+          href="{{ url_for('static', filename='icons/icon-192.png') }}">
+
+    <meta name="theme-color" content="#0F172A">
+
+    <meta name="description"
+          content="KSC Logistics cargo and shipment management platform.">
+
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <meta name="apple-mobile-web-app-title" content="KSC Cargo">
+
+    <meta name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+          rel="stylesheet">
 
     <style>
 
@@ -47,7 +78,7 @@
         main {
             flex: 1 0 auto;
 
-            /* ✅ REMOVES EXTRA SPACE UNDER HEADER */
+            /* REMOVES EXTRA SPACE UNDER HEADER */
             margin: 0;
             padding-top: 0;
         }
@@ -103,7 +134,7 @@
                 width: 140px;
             }
 
-            /* ✅ REMOVE EMPTY SPACE UNDER HEADER */
+            /* REMOVE EMPTY SPACE UNDER HEADER */
             main {
                 padding-top: 0 !important;
                 margin-top: 0 !important;
@@ -119,7 +150,7 @@
                 margin-top: 0 !important;
             }
 
-            /* optional tighter navbar */
+            /* OPTIONAL TIGHTER NAVBAR */
             .navbar {
                 padding-bottom: 6px;
             }
@@ -176,7 +207,9 @@
             {% for category, message in messages %}
                 <div class="alert alert-{{ category }} alert-dismissible fade show">
                     {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="alert"></button>
                 </div>
             {% endfor %}
         </div>
@@ -215,5 +248,37 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+<!-- SERVICE WORKER -->
+<script>
+
+    if ("serviceWorker" in navigator) {
+
+        window.addEventListener("load", function () {
+
+            navigator.serviceWorker.register("/service-worker.js")
+                .then(function (registration) {
+
+                    console.log(
+                        "✅ KSC Service Worker registered:",
+                        registration.scope
+                    );
+
+                })
+                .catch(function (error) {
+
+                    console.error(
+                        "❌ KSC Service Worker registration failed:",
+                        error
+                    );
+
+                });
+
+        });
+
+    }
+
+</script>
+
 </body>
+
 </html>
