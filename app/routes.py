@@ -81,6 +81,8 @@ def generate_temp_password(length=10):
 # -----------------------------------
 def get_us_federal_holidays(year):
     holidays = {}
+    def add_holiday(day, message):
+        holidays[day.strftime("%m-%d")] = message
     def nth_weekday(month, weekday, n):
         first_day = datetime(year, month, 1)
         days_until = (weekday - first_day.weekday()) % 7
@@ -92,17 +94,23 @@ def get_us_federal_holidays(year):
             last_day = datetime(year, month + 1, 1) - timedelta(days=1)
         days_back = (last_day.weekday() - weekday) % 7
         return last_day - timedelta(days=days_back)
-    holidays[datetime(year, 1, 1).strftime("%m-%d")] = "Happy New Year! 🎉"
-    holidays[nth_weekday(1, 0, 3).strftime("%m-%d")] = "Happy Martin Luther King Jr. Day! ✊"
-    holidays[nth_weekday(2, 0, 3).strftime("%m-%d")] = "Happy Presidents' Day! 🇺🇸"
-    holidays[last_weekday(5, 0).strftime("%m-%d")] = "Happy Memorial Day! 🇺🇸"
-    holidays[datetime(year, 6, 19).strftime("%m-%d")] = "Happy Juneteenth! ✊"
-    holidays[datetime(year, 7, 4).strftime("%m-%d")] = "Happy Independence Day! 🎆"
-    holidays[nth_weekday(9, 0, 1).strftime("%m-%d")] = "Happy Labor Day! 🛠️"
-    holidays[nth_weekday(10, 0, 2).strftime("%m-%d")] = "Happy Columbus Day! ⛵"
-    holidays[datetime(year, 11, 11).strftime("%m-%d")] = "Happy Veterans Day! 🇺🇸"
-    holidays[nth_weekday(11, 3, 4).strftime("%m-%d")] = "Happy Thanksgiving! 🦃"
-    holidays[datetime(year, 12, 25).strftime("%m-%d")] = "Merry Christmas! 🎄"
+    def observed_date(day):
+        if day.weekday() == 5:
+            return day - timedelta(days=1)
+        if day.weekday() == 6:
+            return day + timedelta(days=1)
+        return day
+    add_holiday(datetime(year, 1, 1), "Happy New Year! 🎉")
+    add_holiday(nth_weekday(1, 0, 3), "Happy Martin Luther King Jr. Day! ✊")
+    add_holiday(nth_weekday(2, 0, 3), "Happy Presidents' Day! 🇺🇸")
+    add_holiday(last_weekday(5, 0), "Happy Memorial Day! 🇺🇸")
+    add_holiday(datetime(year, 6, 19), "Happy Juneteenth! ✊")
+    add_holiday(datetime(year, 7, 4), "Happy Independence Day! 🎆")
+    add_holiday(nth_weekday(9, 0, 1), "Happy Labor Day! 🛠️")
+    add_holiday(nth_weekday(10, 0, 2), "Happy Columbus Day! ⛵")
+    add_holiday(datetime(year, 11, 11), "Happy Veterans Day! 🇺🇸")
+    add_holiday(nth_weekday(11, 3, 4), "Happy Thanksgiving! 🦃")
+    add_holiday(datetime(year, 12, 25), "Merry Christmas! 🎄")
     return holidays
 
 UPLOAD_FOLDER = os.environ.get(
@@ -511,7 +519,7 @@ def home():
     # -----------------------------------
     # Holiday Logic
     # -----------------------------------
-    today = datetime.utcnow()
+    today = date.today()
     today_str = today.strftime("%m-%d")
     us_federal_holidays = get_us_federal_holidays(today.year)
     holiday_message = us_federal_holidays.get(today_str)
