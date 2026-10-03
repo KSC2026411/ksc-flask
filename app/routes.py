@@ -702,6 +702,15 @@ def login():
                 flash("Your account is not activated. Please contact the admin.", "danger")
                 return redirect(url_for("main.login"))
             login_user(user)
+            login_log = AuditLog(
+                user_id=user.id,
+                action="LOGIN",
+                details="Successful login",
+                ip_address=request.remote_addr,
+                status="SUCCESS"
+            )
+            db.session.add(login_log)
+            db.session.commit()
             flash(f"Welcome back, {user.full_name}!", "success")
             if user.must_change_password:
                 return redirect(url_for("main.change_password"))
@@ -2156,14 +2165,34 @@ def admin_packages_bulk_action():
 @login_required
 @admin_required
 def audit_dashboard():
+    cutoff = datetime.utcnow() - timedelta(hours=72)
 
     logs = AuditLog.query.order_by(
         AuditLog.created_at.desc()
     ).limit(200).all()
 
+    recent_logins = AuditLog.query.filter(
+        AuditLog.action == "LOGIN",
+        AuditLog.status == "success",
+        AuditLog.created_at >= cutoff
+    ).order_by(
+        AuditLog.created_at.desc()
+    ).all()
+
+    recent_login_users = {}
+
+    for log in recent_logins:
+        if log.user_id and log.user_id not in recent_login_users:
+            user = User.query.get(log.user_id)
+            if user:
+                recent_login_users[log.user_id] = user
+
     return render_template(
         "admin/audit_dashboard.html",
-        logs=logs
+        logs=logs,
+        recent_logins=recent_logins,
+        recent_login_users=recent_login_users,
+        login_cutoff=cutoff
     )
 
 #
