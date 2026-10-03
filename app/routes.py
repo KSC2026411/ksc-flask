@@ -2174,7 +2174,8 @@ def audit_dashboard():
     recent_logins = AuditLog.query.filter(
         AuditLog.action == "LOGIN",
         AuditLog.status == "success",
-        AuditLog.created_at >= cutoff
+        AuditLog.created_at >= cutoff,
+        AuditLog.created_at <= datetime.utcnow()
     ).order_by(
         AuditLog.created_at.desc()
     ).all()
@@ -2184,6 +2185,7 @@ def audit_dashboard():
     for log in recent_logins:
         if log.user_id and log.user_id not in recent_login_users:
             user = User.query.get(log.user_id)
+
             if user:
                 recent_login_users[log.user_id] = user
 
