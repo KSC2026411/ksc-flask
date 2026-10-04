@@ -697,28 +697,37 @@ def login():
         password = request.form.get("password")
         email = email.strip().lower() if email else None
         user = User.query.filter_by(email=email).first()
+
         if user and user.check_password(password):
             if user.is_active is not None and not user.is_active:
                 flash("Your account is not activated. Please contact the admin.", "danger")
                 return redirect(url_for("main.login"))
+
             login_user(user)
+
             login_log = AuditLog(
                 user_id=user.id,
                 action="LOGIN",
                 details="Successful login",
                 ip_address=request.remote_addr,
-                status="SUCCESS"
+                status="success"
             )
+
             db.session.add(login_log)
             db.session.commit()
+
             flash(f"Welcome back, {user.full_name}!", "success")
+
             if user.must_change_password:
                 return redirect(url_for("main.change_password"))
+
             if user.role == "admin":
                 return redirect(url_for("main.admin_dashboard"))
             else:
                 return redirect(url_for("main.dashboard"))
+
         flash("Invalid email or password", "danger")
+
     return render_template("public/login.html")
 
 
@@ -2165,7 +2174,8 @@ def admin_packages_bulk_action():
 @login_required
 @admin_required
 def audit_dashboard():
-    cutoff = datetime.utcnow() - timedelta(hours=72)
+    now = datetime.utcnow()
+    cutoff = now - timedelta(hours=72)
 
     logs = AuditLog.query.order_by(
         AuditLog.created_at.desc()
@@ -2173,9 +2183,9 @@ def audit_dashboard():
 
     recent_logins = AuditLog.query.filter(
         AuditLog.action == "LOGIN",
-        AuditLog.status == "success",
+        AuditLog.status.ilike("success"),
         AuditLog.created_at >= cutoff,
-        AuditLog.created_at <= datetime.utcnow()
+        AuditLog.created_at <= now
     ).order_by(
         AuditLog.created_at.desc()
     ).all()
@@ -2194,7 +2204,8 @@ def audit_dashboard():
         logs=logs,
         recent_logins=recent_logins,
         recent_login_users=recent_login_users,
-        login_cutoff=cutoff
+        login_cutoff=cutoff,
+        login_window_end=now
     )
 
 #
