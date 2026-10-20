@@ -633,33 +633,44 @@ def register():
         phone = request.form.get("phone", "").strip()
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
+
         if not first_name or any(char.isdigit() for char in first_name):
-            flash("First name cannot contain numbers and cannot be empty.", "warning")
+            flash(
+                "First name cannot contain numbers and cannot be empty.",
+                "warning"
+            )
             return redirect(url_for("main.register"))
+
         if not last_name or any(char.isdigit() for char in last_name):
-            flash("Last name cannot contain numbers and cannot be empty.", "warning")
+            flash(
+                "Last name cannot contain numbers and cannot be empty.",
+                "warning"
+            )
             return redirect(url_for("main.register"))
-        EMAIL_REGEX = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-        if not email or not re.match(EMAIL_REGEX, email):
+
+        email_regex = r"^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$"
+
+        if not email or not re.match(email_regex, email):
             flash("Please provide a valid email address.", "warning")
             return redirect(url_for("main.register"))
-        domain = email.split("@")[1]
-        try:
-            import socket
-            socket.gethostbyname(domain)
-        except Exception:
-            flash("Email domain does not exist.", "warning")
-            return redirect(url_for("main.register"))
+
         if User.query.filter_by(email=email).first():
             flash("Email already registered", "warning")
             return redirect(url_for("main.register"))
-        MIN_PASSWORD_LENGTH = 8
+
         if not password or password != confirm_password:
             flash("Passwords do not match or are empty.", "warning")
             return redirect(url_for("main.register"))
-        if len(password) < MIN_PASSWORD_LENGTH:
-            flash(f"Password must be at least {MIN_PASSWORD_LENGTH} characters long.", "warning")
+
+        min_password_length = 8
+
+        if len(password) < min_password_length:
+            flash(
+                f"Password must be at least {min_password_length} characters long.",
+                "warning"
+            )
             return redirect(url_for("main.register"))
+
         user = User(
             first_name=first_name,
             last_name=last_name,
@@ -668,25 +679,39 @@ def register():
             role="customer",
             is_active=False
         )
+
         user.password = password
+
         try:
             db.session.add(user)
             db.session.commit()
+
         except Exception as e:
             db.session.rollback()
-            print("❌ CUSTOMER REGISTRATION ERROR:", e)
-            flash("Unable to create your account. Please try again.", "danger")
+            print("CUSTOMER REGISTRATION ERROR:", repr(e))
+
+            flash(
+                "Unable to create your account. Please try again.",
+                "danger"
+            )
             return redirect(url_for("main.register"))
+
         try:
             notify_admins(
                 "New Customer Registration",
                 f"{user.full_name} has registered and is awaiting admin approval.",
                 url_for("main.admin_users")
             )
+
         except Exception as e:
-            print("❌ REGISTRATION PUSH ERROR:", e)
-        flash("Account created! Your account is pending admin approval.", "success")
+            print("REGISTRATION PUSH ERROR:", repr(e))
+
+        flash(
+            "Account created! Your account is pending admin approval.",
+            "success"
+        )
         return redirect(url_for("main.login"))
+
     return render_template("public/register.html")
 
 

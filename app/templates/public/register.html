@@ -17,11 +17,15 @@
         {% endif %}
     {% endwith %}
 
-    <form method="POST">
+    <form method="POST" action="{{ url_for('main.register') }}">
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token() }}"
+        >
 
         <!-- FIRST + LAST NAME -->
         <div class="row">
-
             <div class="col-md-6 mb-3">
                 <input
                     type="text"
@@ -41,7 +45,6 @@
                     required
                 >
             </div>
-
         </div>
 
         <input
@@ -76,7 +79,7 @@
             required
         >
 
-        <button class="btn btn-success w-100">
+        <button type="submit" class="btn btn-success w-100">
             Register
         </button>
     </form>
