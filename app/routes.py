@@ -76,6 +76,25 @@ def generate_temp_password(length=10):
     characters=string.ascii_letters+string.digits
     return "KSC-"+"".join(secrets.choice(characters) for _ in range(length))
 
+def record_auth_attempt(action, status, details, user_id=None):
+    """Record a login or registration event in the admin audit log."""
+
+    try:
+        audit_entry = AuditLog(
+            user_id=user_id,
+            action=action,
+            details=details,
+            ip_address=request.remote_addr,
+            status=status
+        )
+
+        db.session.add(audit_entry)
+        db.session.commit()
+
+    except Exception as e:
+        db.session.rollback()
+        print("AUTH AUDIT LOG ERROR:", repr(e))
+
 # -----------------------------------
 # US Federal Holidays
 # -----------------------------------
@@ -635,6 +654,11 @@ def register():
         confirm_password = request.form.get("confirm_password", "")
 
         if not first_name or any(char.isdigit() for char in first_name):
+            record_auth_attempt(
+                action="REGISTER",
+                status="failed",
+                details=f"Invalid first name. Email: {email or 'not provided'}"
+            )
             flash(
                 "First name cannot contain numbers and cannot be empty.",
                 "warning"
@@ -642,6 +666,11 @@ def register():
             return redirect(url_for("main.register"))
 
         if not last_name or any(char.isdigit() for char in last_name):
+            record_auth_attempt(
+                action="REGISTER",
+                status="failed",
+                details=f"Invalid last name. Email: {email or 'not provided'}"
+            )
             flash(
                 "Last name cannot contain numbers and cannot be empty.",
                 "warning"
@@ -651,20 +680,40 @@ def register():
         email_regex = r"^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$"
 
         if not email or not re.match(email_regex, email):
+            record_auth_attempt(
+                action="REGISTER",
+                status="failed",
+                details=f"Invalid email format. Email: {email or 'not provided'}"
+            )
             flash("Please provide a valid email address.", "warning")
             return redirect(url_for("main.register"))
 
         if User.query.filter_by(email=email).first():
+            record_auth_attempt(
+                action="REGISTER",
+                status="failed",
+                details=f"Email already registered. Email: {email}"
+            )
             flash("Email already registered", "warning")
             return redirect(url_for("main.register"))
 
         if not password or password != confirm_password:
+            record_auth_attempt(
+                action="REGISTER",
+                status="failed",
+                details=f"Passwords missing or do not match. Email: {email}"
+            )
             flash("Passwords do not match or are empty.", "warning")
             return redirect(url_for("main.register"))
 
         min_password_length = 8
 
         if len(password) < min_password_length:
+            record_auth_attempt(
+                action="REGISTER",
+                status="failed",
+                details=f"Password too short. Email: {email}"
+            )
             flash(
                 f"Password must be at least {min_password_length} characters long.",
                 "warning"
@@ -690,11 +739,24 @@ def register():
             db.session.rollback()
             print("CUSTOMER REGISTRATION ERROR:", repr(e))
 
+            record_auth_attempt(
+                action="REGISTER",
+                status="failed",
+                details=f"Database error during registration. Email: {email}"
+            )
+
             flash(
                 "Unable to create your account. Please try again.",
                 "danger"
             )
             return redirect(url_for("main.register"))
+
+        record_auth_attempt(
+            action="REGISTER",
+            status="success",
+            details=f"Registration successful; awaiting approval. Email: {email}",
+            user_id=user.id
+        )
 
         try:
             notify_admins(
@@ -718,28 +780,34 @@ def register():
 @main.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        email = request.form.get("email")
-        password = request.form.get("password")
-        email = email.strip().lower() if email else None
-        user = User.query.filter_by(email=email).first()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+
+        user = User.query.filter_by(email=email).first() if email else None
 
         if user and user.check_password(password):
             if user.is_active is not None and not user.is_active:
-                flash("Your account is not activated. Please contact the admin.", "danger")
+                record_auth_attempt(
+                    action="LOGIN",
+                    status="failed",
+                    details=f"Inactive account login attempt. Email: {email}",
+                    user_id=user.id
+                )
+
+                flash(
+                    "Your account is not activated. Please contact the admin.",
+                    "danger"
+                )
                 return redirect(url_for("main.login"))
 
             login_user(user)
 
-            login_log = AuditLog(
-                user_id=user.id,
+            record_auth_attempt(
                 action="LOGIN",
+                status="success",
                 details="Successful login",
-                ip_address=request.remote_addr,
-                status="success"
+                user_id=user.id
             )
-
-            db.session.add(login_log)
-            db.session.commit()
 
             flash(f"Welcome back, {user.full_name}!", "success")
 
@@ -748,8 +816,14 @@ def login():
 
             if user.role == "admin":
                 return redirect(url_for("main.admin_dashboard"))
-            else:
-                return redirect(url_for("main.dashboard"))
+
+            return redirect(url_for("main.dashboard"))
+
+        record_auth_attempt(
+            action="LOGIN",
+            status="failed",
+            details=f"Invalid email or password. Submitted email: {email or 'not provided'}"
+        )
 
         flash("Invalid email or password", "danger")
 
@@ -759,12 +833,20 @@ def login():
 @main.route("/logout")
 @login_required
 def logout():
+    user_id = current_user.id
+    user_email = current_user.email
+
+    record_auth_attempt(
+        action="LOGOUT",
+        status="success",
+        details=f"User logged out. Email: {user_email}",
+        user_id=user_id
+    )
 
     logout_user()
 
     flash("Logged out.", "info")
     return redirect(url_for("main.home"))
-
 
 ######                        #######
 ###### CUSTOMER SYSTEM ROUTES #######
