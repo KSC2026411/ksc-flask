@@ -1988,6 +1988,7 @@ def admin_bulk_update_packages():
 def admin_users():
     users = User.query.order_by(User.id.desc()).all()
     return render_template("admin/users.html", users=users)
+
 @main.route("/admin/user/<int:user_id>/promote", methods=["POST"])
 @login_required
 @admin_required
@@ -2000,6 +2001,7 @@ def promote_user(user_id):
     else:
         flash(f"{user.full_name} is already an admin.", "info")
     return redirect(url_for("main.admin_users"))
+
 @main.route("/admin/user/<int:user_id>/demote", methods=["POST"])
 @login_required
 @admin_required
@@ -2012,6 +2014,7 @@ def demote_user(user_id):
     else:
         flash(f"{user.full_name} is already a customer.", "info")
     return redirect(url_for("main.admin_users"))
+
 @main.route("/admin/user/<int:user_id>/activate", methods=["POST"])
 @login_required
 @admin_required
@@ -2033,6 +2036,7 @@ def activate_user(user_id):
             print("❌ ACCOUNT ACTIVATION PUSH ERROR:", e)
     flash(f"{user.full_name} activated.", "success")
     return redirect(url_for("main.admin_users"))
+
 @main.route("/admin/user/<int:user_id>/deactivate", methods=["POST"])
 @login_required
 @admin_required
