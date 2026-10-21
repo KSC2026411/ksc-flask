@@ -2277,6 +2277,7 @@ def admin_packages_bulk_action():
     return redirect(request.referrer or url_for("main.admin_packages"))
 
 
+
 @main.route("/admin/audit")
 @login_required
 @admin_required
@@ -2284,12 +2285,15 @@ def audit_dashboard():
     now = datetime.utcnow()
     cutoff = now - timedelta(hours=72)
 
+    # Get the latest 200 audit events of all types.
+    # This includes LOGIN, LOGOUT, failed login, and registration events.
     logs = AuditLog.query.order_by(
         AuditLog.created_at.desc()
     ).limit(200).all()
 
+    # Get successful logins from the past 72 hours.
     recent_logins = AuditLog.query.filter(
-        AuditLog.action == "LOGIN",
+        AuditLog.action.ilike("LOGIN"),
         AuditLog.status.ilike("success"),
         AuditLog.created_at >= cutoff,
         AuditLog.created_at <= now
@@ -2297,11 +2301,12 @@ def audit_dashboard():
         AuditLog.created_at.desc()
     ).all()
 
+    # Build a list of users who logged in during this period.
     recent_login_users = {}
 
     for log in recent_logins:
         if log.user_id and log.user_id not in recent_login_users:
-            user = User.query.get(log.user_id)
+            user = db.session.get(User, log.user_id)
 
             if user:
                 recent_login_users[log.user_id] = user
@@ -2314,6 +2319,7 @@ def audit_dashboard():
         login_cutoff=cutoff,
         login_window_end=now
     )
+
 
 #
 # -------------UTILITIES---------------

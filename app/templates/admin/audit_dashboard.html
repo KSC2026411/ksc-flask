@@ -1,5 +1,7 @@
 {% extends "admin/base_admin.html" %}
+
 {% block title %}Audit Dashboard{% endblock %}
+
 {% block admin_content %}
 
 <style>
@@ -39,8 +41,13 @@
         border: 1px solid #e9ecef;
         border-radius: 14px;
         background: #fff;
-        box-shadow: 0 .35rem 1rem rgba(0,0,0,.05);
+        box-shadow: 0 .35rem 1rem rgba(0, 0, 0, .05);
         overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .audit-card:last-child {
+        margin-bottom: 0;
     }
 
     .audit-card-header {
@@ -59,10 +66,6 @@
         margin: .2rem 0 0;
         color: #6c757d;
         font-size: .85rem;
-    }
-
-    .login-summary-card {
-        margin-bottom: 1.5rem;
     }
 
     .login-summary-header {
@@ -86,13 +89,22 @@
         white-space: nowrap;
     }
 
-    .login-table-wrapper {
+    .login-table-wrapper,
+    .audit-table-wrapper {
         overflow-x: auto;
     }
 
-    .login-table {
+    .login-table,
+    .audit-table {
         margin-bottom: 0;
+    }
+
+    .login-table {
         min-width: 900px;
+    }
+
+    .audit-table {
+        min-width: 1000px;
     }
 
     .login-table thead th {
@@ -107,13 +119,27 @@
         white-space: nowrap;
     }
 
-    .login-table tbody td {
+    .audit-table thead th {
+        background: #212529;
+        color: #fff;
+        border: 0;
+        padding: .85rem .9rem;
+        font-size: .76rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        white-space: nowrap;
+    }
+
+    .login-table tbody td,
+    .audit-table tbody td {
         padding: .85rem .9rem;
         border-color: #edf0f2;
         vertical-align: middle;
     }
 
-    .login-table tbody tr:hover {
+    .login-table tbody tr:hover,
+    .audit-table tbody tr:hover {
         background-color: #f8f9fa;
     }
 
@@ -140,16 +166,19 @@
         white-space: nowrap;
     }
 
-    .login-time {
+    .login-time,
+    .audit-time {
         color: #495057;
         font-size: .85rem;
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
     }
 
-    .login-ip {
+    .login-ip,
+    .ip-address {
         color: #6c757d;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco,
+            Consolas, "Liberation Mono", monospace;
         font-size: .8rem;
         white-space: nowrap;
     }
@@ -174,53 +203,6 @@
         background: #198754;
     }
 
-    .login-history {
-        color: #6c757d;
-        font-size: .8rem;
-    }
-
-    .audit-table-wrapper {
-        overflow-x: auto;
-    }
-
-    .audit-table {
-        margin-bottom: 0;
-        min-width: 1000px;
-    }
-
-    .audit-table thead th {
-        background: #212529;
-        color: #fff;
-        border: 0;
-        padding: .85rem .9rem;
-        font-size: .76rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: .04em;
-        white-space: nowrap;
-    }
-
-    .audit-table tbody td {
-        padding: .85rem .9rem;
-        border-color: #edf0f2;
-        vertical-align: middle;
-    }
-
-    .audit-table tbody tr {
-        transition: background-color .15s ease;
-    }
-
-    .audit-table tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-
-    .audit-time {
-        color: #495057;
-        font-size: .85rem;
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
-    }
-
     .audit-user {
         font-weight: 600;
         color: #343a40;
@@ -241,11 +223,34 @@
         align-items: center;
         padding: .42rem .65rem;
         border-radius: 7px;
-        background: #e7f1ff;
-        color: #0d6efd;
         font-size: .76rem;
         font-weight: 700;
         white-space: nowrap;
+    }
+
+    .action-login {
+        background: #e7f1ff;
+        color: #0d6efd;
+    }
+
+    .action-logout {
+        background: #d1e7dd;
+        color: #146c43;
+    }
+
+    .action-register {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .action-failed {
+        background: #f8d7da;
+        color: #b02a37;
+    }
+
+    .action-default {
+        background: #e9ecef;
+        color: #495057;
     }
 
     .details-cell {
@@ -258,13 +263,6 @@
         max-width: 420px;
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .ip-address {
-        color: #6c757d;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-        font-size: .8rem;
         white-space: nowrap;
     }
 
@@ -283,6 +281,7 @@
         width: 7px;
         height: 7px;
         border-radius: 50%;
+        flex-shrink: 0;
     }
 
     .status-success {
@@ -301,6 +300,11 @@
 
     .status-failed .status-dot {
         background: #dc3545;
+    }
+
+    .status-unknown {
+        background: #e9ecef;
+        color: #495057;
     }
 
     .empty-state {
@@ -344,6 +348,10 @@
         .audit-card {
             border-radius: 10px;
         }
+
+        .audit-card-header {
+            padding: .9rem;
+        }
     }
 </style>
 
@@ -367,11 +375,10 @@
 
     </div>
 
-    <!-- LOGIN ACTIVITY - LAST 72 HOURS -->
-    <div class="audit-card login-summary-card">
+    <!-- SUCCESSFUL LOGINS IN THE LAST 72 HOURS -->
+    <div class="audit-card">
 
         <div class="audit-card-header">
-
             <div class="login-summary-header">
 
                 <div>
@@ -389,11 +396,9 @@
                 </div>
 
             </div>
-
         </div>
 
         <div class="login-table-wrapper">
-
             <table class="table login-table align-middle">
 
                 <thead>
@@ -408,107 +413,61 @@
                 </thead>
 
                 <tbody>
-
                     {% if recent_logins %}
 
                         {% for log in recent_logins %}
-
                             {% set user = recent_login_users.get(log.user_id) %}
 
                             <tr>
-
                                 <td>
-
                                     {% if user %}
-
                                         <div class="login-user">
                                             {{ user.full_name }}
                                         </div>
-
                                     {% else %}
-
                                         <div class="login-user">
-                                            User #{{ log.user_id }}
+                                            User #{{ log.user_id or "Unknown" }}
                                         </div>
-
                                     {% endif %}
-
                                 </td>
 
                                 <td>
-
-                                    {% if user %}
-
-                                        <span class="login-email">
-                                            {{ user.email }}
-                                        </span>
-
-                                    {% else %}
-
-                                        <span class="login-email">
-                                            N/A
-                                        </span>
-
-                                    {% endif %}
-
-                                </td>
-
-                                <td>
-
-                                    {% if user %}
-
-                                        <span class="login-role">
-                                            {{ user.role }}
-                                        </span>
-
-                                    {% else %}
-
-                                        <span class="login-role">
-                                            Unknown
-                                        </span>
-
-                                    {% endif %}
-
-                                </td>
-
-                                <td>
-
-                                    <span class="login-time">
-                                        {{ log.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                    <span class="login-email">
+                                        {{ user.email if user else "N/A" }}
                                     </span>
-
                                 </td>
 
                                 <td>
+                                    <span class="login-role">
+                                        {{ user.role if user else "Unknown" }}
+                                    </span>
+                                </td>
 
+                                <td>
+                                    <span class="login-time">
+                                        {{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') if log.created_at else "N/A" }}
+                                    </span>
+                                </td>
+
+                                <td>
                                     <span class="login-ip">
                                         {{ log.ip_address or "N/A" }}
                                     </span>
-
                                 </td>
 
                                 <td>
-
                                     <span class="login-status">
                                         <span class="login-status-dot"></span>
                                         Logged In
                                     </span>
-
                                 </td>
-
                             </tr>
-
                         {% endfor %}
 
                     {% else %}
-
                         <tr>
-
                             <td colspan="6" class="empty-state">
-
-                                <div class="empty-icon">
-                                    👤
-                                </div>
+                                <div class="empty-icon">👤</div>
 
                                 <div class="empty-title">
                                     No Logins in the Last 72 Hours
@@ -517,17 +476,12 @@
                                 <p class="empty-text">
                                     No successful user logins have been recorded during the previous 72 hours.
                                 </p>
-
                             </td>
-
                         </tr>
-
                     {% endif %}
-
                 </tbody>
 
             </table>
-
         </div>
 
     </div>
@@ -536,23 +490,19 @@
     <div class="audit-card">
 
         <div class="audit-card-header">
-
             <h5 class="audit-card-title">
                 Recent Activity
             </h5>
 
             <p class="audit-card-subtitle">
-                Showing the latest system activity (last 200 events)
+                Showing the latest 200 audit events, including login, logout, registration, and other recorded actions.
             </p>
-
         </div>
 
         <div class="audit-table-wrapper">
-
             <table class="table audit-table align-middle">
 
                 <thead>
-
                     <tr>
                         <th>Time</th>
                         <th>User ID</th>
@@ -561,99 +511,87 @@
                         <th>IP Address</th>
                         <th>Status</th>
                     </tr>
-
                 </thead>
 
                 <tbody>
-
                     {% for log in logs %}
 
+                        {% set action_name = (log.action or "UNKNOWN")|upper %}
+                        {% set status_name = (log.status or "unknown")|lower %}
+
+                        {% if status_name == "failed" or "FAILED" in action_name %}
+                            {% set action_class = "action-failed" %}
+                        {% elif action_name == "LOGIN" %}
+                            {% set action_class = "action-login" %}
+                        {% elif action_name == "LOGOUT" %}
+                            {% set action_class = "action-logout" %}
+                        {% elif "REGISTER" in action_name %}
+                            {% set action_class = "action-register" %}
+                        {% else %}
+                            {% set action_class = "action-default" %}
+                        {% endif %}
+
                         <tr>
-
                             <td>
-
                                 <span class="audit-time">
-                                    {{ log.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                    {{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') if log.created_at else "N/A" }}
                                 </span>
-
                             </td>
 
                             <td>
-
                                 {% if log.user_id %}
-
                                     <span class="audit-user">
                                         {{ log.user_id }}
                                     </span>
-
                                 {% else %}
-
                                     <span class="system-user">
-                                        ⚙ System
+                                        ⚙ System / Unknown User
                                     </span>
-
                                 {% endif %}
-
                             </td>
 
                             <td>
-
-                                <span class="action-badge">
-                                    {{ log.action }}
+                                <span class="action-badge {{ action_class }}">
+                                    {{ action_name }}
                                 </span>
-
                             </td>
 
                             <td class="details-cell">
-
                                 <span class="details-text"
                                       title="{{ log.details or 'N/A' }}">
-
                                     {{ log.details or "N/A" }}
-
                                 </span>
-
                             </td>
 
                             <td>
-
                                 <span class="ip-address">
                                     {{ log.ip_address or "N/A" }}
                                 </span>
-
                             </td>
 
                             <td>
-
-                                {% if log.status == "success" %}
-
+                                {% if status_name == "success" %}
                                     <span class="status-badge status-success">
                                         <span class="status-dot"></span>
                                         Success
                                     </span>
-
-                                {% else %}
-
+                                {% elif status_name == "failed" %}
                                     <span class="status-badge status-failed">
                                         <span class="status-dot"></span>
                                         Failed
                                     </span>
-
+                                {% else %}
+                                    <span class="status-badge status-unknown">
+                                        {{ log.status or "Unknown" }}
+                                    </span>
                                 {% endif %}
-
                             </td>
-
                         </tr>
 
                     {% else %}
-
                         <tr>
-
                             <td colspan="6" class="empty-state">
-
-                                <div class="empty-icon">
-                                    🔐
-                                </div>
+                                <div class="empty-icon">🔐</div>
 
                                 <div class="empty-title">
                                     No Audit Events Found
@@ -662,17 +600,12 @@
                                 <p class="empty-text">
                                     There is currently no system activity to display.
                                 </p>
-
                             </td>
-
                         </tr>
-
                     {% endfor %}
-
                 </tbody>
 
             </table>
-
         </div>
 
     </div>
