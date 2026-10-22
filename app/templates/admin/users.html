@@ -1,3 +1,4 @@
+
 {% extends "admin/base_admin.html" %}
 
 {% block title %}All Users{% endblock %}
@@ -336,12 +337,9 @@
                                     <form method="POST"
                                           action="{{ url_for('main.admin_reset_password', user_id=user.id) }}"
                                           onsubmit="return confirm('Generate a temporary password for this user?');">
-
-                                        {% if csrf_token is defined %}
-                                            <input type="hidden"
-                                                   name="csrf_token"
-                                                   value="{{ csrf_token() }}">
-                                        {% endif %}
+                                        <input type="hidden"
+                                               name="csrf_token"
+                                               value="{{ csrf_token() }}">
 
                                         <button type="submit"
                                                 class="btn btn-outline-warning btn-sm">
@@ -354,12 +352,9 @@
                                         <form method="POST"
                                               action="{{ url_for('main.demote_user', user_id=user.id) }}"
                                               onsubmit="return confirm('Demote this admin user?');">
-
-                                            {% if csrf_token is defined %}
-                                                <input type="hidden"
-                                                       name="csrf_token"
-                                                       value="{{ csrf_token() }}">
-                                            {% endif %}
+                                            <input type="hidden"
+                                                   name="csrf_token"
+                                                   value="{{ csrf_token() }}">
 
                                             <button type="submit"
                                                     class="btn btn-outline-danger btn-sm">
@@ -370,12 +365,9 @@
                                         <form method="POST"
                                               action="{{ url_for('main.promote_user', user_id=user.id) }}"
                                               onsubmit="return confirm('Promote this user to admin?');">
-
-                                            {% if csrf_token is defined %}
-                                                <input type="hidden"
-                                                       name="csrf_token"
-                                                       value="{{ csrf_token() }}">
-                                            {% endif %}
+                                            <input type="hidden"
+                                                   name="csrf_token"
+                                                   value="{{ csrf_token() }}">
 
                                             <button type="submit"
                                                     class="btn btn-outline-success btn-sm">
@@ -389,12 +381,9 @@
                                         <form method="POST"
                                               action="{{ url_for('main.deactivate_user', user_id=user.id) }}"
                                               onsubmit="return confirm('Deactivate this account?');">
-
-                                            {% if csrf_token is defined %}
-                                                <input type="hidden"
-                                                       name="csrf_token"
-                                                       value="{{ csrf_token() }}">
-                                            {% endif %}
+                                            <input type="hidden"
+                                                   name="csrf_token"
+                                                   value="{{ csrf_token() }}">
 
                                             <button type="submit"
                                                     class="btn btn-outline-danger btn-sm">
@@ -405,12 +394,9 @@
                                         <form method="POST"
                                               action="{{ url_for('main.activate_user', user_id=user.id) }}"
                                               onsubmit="return confirm('Activate this account?');">
-
-                                            {% if csrf_token is defined %}
-                                                <input type="hidden"
-                                                       name="csrf_token"
-                                                       value="{{ csrf_token() }}">
-                                            {% endif %}
+                                            <input type="hidden"
+                                                   name="csrf_token"
+                                                   value="{{ csrf_token() }}">
 
                                             <button type="submit"
                                                     class="btn btn-outline-success btn-sm">
@@ -426,7 +412,9 @@
                     {% else %}
                         <tr>
                             <td colspan="7" class="empty-state">
-                                <div class="empty-icon" aria-hidden="true">👥</div>
+                                <div class="empty-icon" aria-hidden="true">
+                                    👥
+                                </div>
                                 <div class="empty-title">No users found</div>
                                 <p class="empty-text">
                                     There are currently no user accounts to display.
